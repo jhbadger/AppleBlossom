@@ -96,7 +96,8 @@ WALKABLE = {
     "grass", "meadow", "flowers", "path", "cobble", "sand", "bridge", "dock",
     "soil", "soil_w", "tallgrass", "snowpath", "plaza",
     # indoors
-    "floor", "boards", "rug", "tile", "exit", "logfloor", "stone_floor"}
+    "floor", "boards", "rug", "tile", "exit", "logfloor", "stone_floor",
+    "straw"}
 WATER = {"water", "river", "pond"}
 TILLABLE = {"grass", "meadow", "flowers", "path", "tallgrass"}
 OUTDOOR_GROUND = {"grass", "meadow", "flowers", "path", "cobble", "sand",
@@ -610,6 +611,28 @@ def draw_terrain(name, frame=0, season=0):
             for x in range(16):
                 if (x // 4 + y // 4) % 2:
                     g[y][x] = "#a0d0b0"
+        return g
+    if name in ("straw", "nest"):
+        g = grid_of("#d8b860")
+        for _ in range(40):
+            x, y = rng.randrange(16), rng.randrange(16)
+            for k in range(rng.randrange(2, 5)):
+                if x + k < 16:
+                    g[y][x + k] = rng.choice(("#e8cc78", "#b8983e",
+                                              "#f0dc90"))
+        if name == "nest":
+            rect(g, 0, 0, 15, 3, "#8a5a30")
+            rect(g, 0, 12, 15, 15, "#8a5a30")
+            rect(g, 0, 0, 1, 15, "#6a4020")
+            rect(g, 14, 0, 15, 15, "#6a4020")
+            disc(g, 7.5, 8, 4.5, "#c8a050")
+            disc(g, 7.5, 8, 3, "#a88038")
+        return g
+    if name == "trough":
+        g = draw_terrain("straw", frame, s)
+        rect(g, 1, 5, 14, 11, "#7a5030")
+        rect(g, 2, 6, 13, 8, "#e0c060")
+        speckle_within(g, rng, "#e0c060", ["#c8a040", "#f0d880"], 0.4)
         return g
     if name == "exit":
         g = planks(rng, "#c09060", "#9a7048")
@@ -1134,7 +1157,7 @@ ITEMS = {
     "stew": (90, 60, "food"), "fish supper": (100, 55, "food"),
     "pancakes": (60, 40, "food"), "salad": (50, 30, "food"),
     "energy tonic": (0, 80, "food"), "chocolate": (40, 10, "food"),
-    "honey cake": (90, 35, "food"),
+    "honey cake": (90, 35, "food"), "egg": (50, 15, "animal"),
     "book of poems": (0, 0, "gift"), "sketchbook": (0, 0, "gift"),
     "silver ring": (0, 0, "gift"), "wool scarf": (0, 0, "gift"),
     "fishing lure": (0, 0, "gift"), "fine tools": (0, 0, "gift"),
@@ -1192,6 +1215,7 @@ WAND_RANGE = 8                  # how far a spell flies
 SPELLS = {   # the wand's spells: what each one does, for the menu
     "petrify": "turns someone to gold, and back",
     "genderswap": "turns someone into the other sex, and back",
+    "chickenfy": "turns someone into a chicken, and back",
 }
 DEBRIS = {   # debris -> the tool that clears it, what it drops
     "weed": ("scythe", ("fiber", 1)),
@@ -2558,6 +2582,8 @@ VILLAGERS = {
                        "...Anyway. I had Pip to look after. So I did.",
             "race": "(laugh)Rowan and I race to the woods every spring. I "
                     "win. He says he lets me. He doesn't.",
+            "coop": "A chicken coop by your cabin: 1,500g and 80 wood. "
+                    "Room for eight hens. Mabel sells the chickens.",
             "wood": "Bring me wood and I'll love you forever. Kidding. "
                     "Mostly. Branches, stumps, all of it.",
         },
@@ -2786,7 +2812,7 @@ VILLAGERS = {
                  "lips": "#b06070"},
         "birthday": (2, 23), "home": "rose", "rest": 6,
         "loves": ["apple", "daffodil", "honey cake", "wool scarf"],
-        "likes": ["tea", "cranberry", "wild plum", "blackberry",
+        "likes": ["tea", "cranberry", "wild plum", "blackberry", "egg",
                   "kind:crop", "kind:forage"],
         "dislikes": ["energy tonic", "coffee"],
         "hates": [],
@@ -3257,7 +3283,8 @@ VILLAGERS = {
                  "extras": ("mustache", "apron"), "beardc": "#7a7070"},
         "birthday": (3, 11), "home": "inn", "rest": 7,
         "loves": ["tomato", "morel", "chanterelle"],
-        "likes": ["eggplant", "potato", "yam", "kind:fish", "wild leek"],
+        "likes": ["eggplant", "potato", "yam", "kind:fish", "wild leek",
+                  "egg"],
         "dislikes": ["chocolate", "fiber"],
         "hates": ["energy tonic"],
         "intro": "(happy)Welcome, welcome! Bernard Calloway! I run the "
@@ -3367,7 +3394,7 @@ ROMANCE = [k for k, v in VILLAGERS.items() if v["romance"]]
 
 # What the shops sell: (item, price), with "seeds" meaning this season's.
 SHOP_STOCK = {
-    "store": ["seeds", ("bread", 60), ("chocolate", 80), ("rose", 100),
+    "store": ["seeds", ("chicken", 800), ("bread", 60), ("chocolate", 80), ("rose", 100),
               ("sketchbook", 200), ("book of poems", 250),
               ("sheet music", 250), ("wool scarf", 300),
               ("blossom bouquet", 400)],
@@ -3378,10 +3405,12 @@ SHOP_STOCK = {
     "smithy": [("sprinkler", 400), ("fine tools", 350),
                ("silver ring", 500), ("copper can", 800),
                ("blossom pendant", 2000)],
-    "carpentry": [("wood", 50), ("cabin extension", 3000)],
+    "carpentry": [("wood", 50), ("chicken coop", 1500),
+                  ("cabin extension", 3000)],
     "tackle": [("fishing rod", 100), ("fishing lure", 120)],
 }
 EXTRA_COST = {"sprinkler": {"stone": 5}, "copper can": {"stone": 15},
+              "chicken coop": {"wood": 80},
               "cabin extension": {"wood": 150}}
 BUNDLES = {"wood": 10}           # bought ten at a time
 
@@ -3424,7 +3453,10 @@ BUILDINGS = {
     "smithhouse": (56, 42, 7, 5, "red", "brick", "the Brandt House"),
     "juniper": (66, 42, 6, 5, "pink", "white", "Juniper's Cottage"),
     "shack": (86, 43, 6, 5, "blue", "wood", "Theo's Shack"),
+    "coop": (25, 21, 5, 4, "red", "wood", "your chicken coop"),
 }
+ON_ORDER = {"coop"}             # buildings that stand only once you've
+                                # paid for them
 
 
 def door_of(key):
@@ -3450,8 +3482,32 @@ FEST_SPOTS = {
 }
 
 
-def make_valley(seed):
-    """The valley's terrain, the labels on its doors, and its debris."""
+def put_building(g, labels, key):
+    """Draw a building into the valley, with a path from its door down to
+    the nearest path."""
+    x0, y0, w, h, rf, wall, name = BUILDINGS[key]
+    for y in range(y0, y0 + h):
+        for x in range(x0, x0 + w):
+            if y < y0 + h - 2:
+                t = ("eave_" if y == y0 + h - 3 else "roof_") + rf
+            else:
+                t = ("win_" if (x - x0) % 3 == 1 and key not in ON_ORDER
+                     else "wall_") + wall
+            g[y][x] = t
+    if key not in ON_ORDER:
+        g[y0][x0 + w - 2] = "chimney"
+    dx, dy = door_of(key)
+    g[dy][dx] = "door_" + wall
+    labels[(dx, dy)] = name
+    y = dy + 1
+    while 0 < y < VH and g[y][dx] not in ("path", "cobble", "bridge"):
+        g[y][dx] = "path"
+        y += 1
+
+
+def make_valley(seed, built=()):
+    """The valley's terrain and the labels on its doors.  built names
+    the buildings on order (ON_ORDER) that have been put up."""
     rng = random.Random(7)              # the valley is always the same
     g = [["grass"] * VW for _ in range(VH)]
     fx0, fy0, fx1, fy1 = FARM
@@ -3513,22 +3569,9 @@ def make_valley(seed):
             put(x, y, "blossomtree")
     # buildings, with a path from each door
     labels = {}
-    for key, (x0, y0, w, h, rf, wall, name) in BUILDINGS.items():
-        for y in range(y0, y0 + h):
-            for x in range(x0, x0 + w):
-                if y < y0 + h - 2:
-                    t = ("eave_" if y == y0 + h - 3 else "roof_") + rf
-                else:
-                    t = ("win_" if (x - x0) % 3 == 1 else "wall_") + wall
-                put(x, y, t)
-        put(x0 + w - 2, y0, "chimney")
-        dx, dy = door_of(key)
-        put(dx, dy, "door_" + wall)
-        labels[(dx, dy)] = name
-        y = dy + 1
-        while 0 < y < VH and g[y][dx] not in ("path", "cobble", "bridge"):
-            put(dx, y, "path")
-            y += 1
+    for key in BUILDINGS:
+        if key not in ON_ORDER or key in built:
+            put_building(g, labels, key)
     # the square: paving round the fountain, flowers, trees at the corners
     for y in range(SQUARE[1] + 2, SQUARE[3] - 1):
         for x in range(SQUARE[0] + 2, SQUARE[2] - 1):
@@ -3741,7 +3784,15 @@ ROOMS = {
         "W......PNW",
         "WWWWxWWWWW")),
 }
-ROOM_TILES = {"W": "wall", "w": "iwin", "l": "logwall", "L": "toolrack",
+ROOMS["coop"] = ("straw", "l", (
+    "llwllwll",
+    "lnnnnnnl",
+    "l......l",
+    "l..q...l",
+    "l......l",
+    "lllxllll"))
+COOP_ROOM = 8                   # chickens it holds
+ROOM_TILES = {"n": "nest", "q": "trough", "W": "wall", "w": "iwin", "l": "logwall", "L": "toolrack",
               "x": "exit", "B": "bed", "D": "bed2", "T": "table",
               "h": "chair", "C": "counter", "S": "shelf", "G": "goods",
               "K": "seeds", "O": "stove", "F": "fireplace", "X": "forge",
@@ -4557,8 +4608,11 @@ The hoe tills, the can waters (fill it at water or the
 well), seeds go in tilled soil.  Watered crops grow a day
 each night.  Pick ripe crops by using anything on them.
 Put things in the shipping bin and you're paid overnight.
+Ivy builds chicken coops and Mabel sells hens; each hen
+lays an egg a night.  Walk into a hen to pet or rename her.
 Go to bed before 2 am.
 
+Someone in your way?  Talk to them and ask them PAST.
 Talk every day, and give gifts (two a week each).  At
 some heart levels a friend shares a moment with you.  A
 Blossom Bouquet at 8 hearts asks someone to go steady; a
@@ -4567,7 +4621,8 @@ Blossom Pendant at 10 asks them to marry you.
 Grandmother's magic wand: hold it, use it, choose a spell,
 then press an arrow (or tap) to zap that way.  Petrify
 turns someone to gold; genderswap turns them into the
-other sex.  Cast the same spell again to undo it.
+other sex; chickenfy, into a hen.  Cast the same spell
+again to undo it.
 
 Tap a square to walk there, next to you to step or use
 your tool there, yourself to use it ahead.
@@ -4663,7 +4718,9 @@ class Game:
         self.entry.pack(side="left", fill="x", expand=True, padx=(0, 8),
                         pady=4)
         self.entry.bind("<Return>", self.on_entry)
-        self.entry.bind("<Escape>", lambda e: self.end_talk())
+        self.entry.bind("<Escape>", lambda e: self.end_naming()
+                        if getattr(self, "naming", None) is not None
+                        else self.end_talk())
         self.canvas = tk.Canvas(left, bg="black", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
 
@@ -4683,6 +4740,7 @@ class Game:
         self.walking = None
         self.busy = False
         self.portraits = {}
+        self.naming = None
         self.heard = []
         self.npcs = {}
         self.area = None
@@ -4832,7 +4890,9 @@ class Game:
         for name, px in all_tiles(season).items():
             sprite = name.split("@")[0] in SPRITES
             for lvl, k in enumerate(SHADES):
-                if lvl and name.startswith(("v_", "s_", "vx_", "sx_")):
+                if lvl and name.startswith(("v_", "s_", "vx_", "sx_",
+                                            "shen_",
+                                            "hen_")):
                     continue
                 img = tk.PhotoImage(width=16, height=16)
                 if sprite:
@@ -5104,10 +5164,10 @@ class Game:
 
     # ── A new game, and saved ones ──
 
-    def build_world(self, seed):
+    def build_world(self, seed, built=()):
         """The valley and every room, from the code (and the farm's debris
         from the seed)."""
-        grid, labels = make_valley(seed)
+        grid, labels = make_valley(seed, built)
         v = Area("valley", grid, "Apple Blossom Village")
         v.labels = labels
         self.areas = {"valley": v}
@@ -5119,7 +5179,8 @@ class Game:
         self.forage_zones = forage_spots(grid)
         self.lamps = [(x, y) for y in range(VH) for x in range(VW)
                       if grid[y][x] in ("lamp", "fountain")]
-        self.door_at = {door_of(k): k for k in BUILDINGS}
+        self.door_at = {door_of(k): k for k in BUILDINGS
+                        if k not in ON_ORDER or k in built}
         self.npcs = {vid: Villager(vid) for vid in VILLAGERS}
 
     def new_game(self, who=None):
@@ -5142,7 +5203,7 @@ class Game:
                             "scythe", "magic wand"],
                   "water": 20, "can": 20, "hand": "hoe",
                   "items": {"turnip seeds": 15, "potato seeds": 5},
-                  "extension": False}
+                  "extension": False, "built": []}
         self.p["look"]["bg"] = "#f8e0c0"
         st = self.st = {
             "seed": seed, "day": 0, "minute": WAKE, "weather": "sun",
@@ -5155,7 +5216,8 @@ class Game:
                               "status": None, "dated": -1}
                         for vid in VILLAGERS},
             "spouse": None, "wedding": None, "request": None, "flags": [],
-            "statues": [], "swapped": [],
+            "statues": [], "swapped": [], "chickens": [], "eggs": [],
+            "chickenfied": [],
             "topics": [], "secret": None, "stats": {"shipped": 0,
                                                     "harvested": 0,
                                                     "fish": 0, "earned": 0},
@@ -5203,11 +5265,15 @@ class Game:
     def restore(self, g):
         self.p = g["p"]
         self.st = st = g["st"]
+        self.p.setdefault("built", [])
         st.setdefault("statues", [])
         st.setdefault("swapped", [])
+        st.setdefault("chickens", [])
+        st.setdefault("eggs", [])
+        st.setdefault("chickenfied", [])
         if "magic wand" not in self.p["tools"]:
             self.p["tools"].append("magic wand")     # older saves
-        self.build_world(st["seed"])
+        self.build_world(st["seed"], self.p["built"])
         for vid, (area, x, y) in st["npcs"].items():
             n = self.npcs.get(vid)
             if n and area in self.areas:
@@ -5346,7 +5412,11 @@ class Game:
     def ready(self):
         return bool(self.p) and self.area is not None and not (
             self.busy or self.menu or self.talk or self.overlay or
-            self.scene or getattr(self, "aim", False))
+            self.scene or getattr(self, "aim", False) or
+            getattr(self, "naming", None) is not None)
+
+    def built(self):
+        return self.p.get("built", ()) if self.p else ()
 
     # ── Moving ──
 
@@ -5396,6 +5466,8 @@ class Game:
             th = self.thing_at(x, y)
             if th and th[0] in ("debris", "sprinkler"):
                 return False
+        elif a.key == "coop" and self.chicken_at(x, y) is not None:
+            return False
         return True
 
     def face(self, dx, dy):
@@ -5430,6 +5502,11 @@ class Game:
             self.render()
             return
         self.st["pos"] = [nx, ny]
+        if a.key == "coop" and [nx, ny] in self.st["eggs"]:
+            self.st["eggs"].remove([nx, ny])
+            self.give("egg")
+            self.sound.play("pick")
+            self.say("You pick up a fresh egg. Still warm.", "good")
         if a.outdoor:
             self.step_on(nx, ny)
         elif t == "exit":
@@ -5482,6 +5559,19 @@ class Game:
                 return True
             self.say("Nobody's behind the counter.", "info")
             return True
+        if a.key == "coop":
+            i = self.chicken_at(x, y)
+            if i is not None:
+                self.chicken_menu(i)
+                return True
+            if t == "nest":
+                self.say("Nest boxes, lined with straw. The hens lay "
+                         "wherever they please anyway.", "info")
+                return True
+            if t == "trough":
+                self.say("The feed trough. Ivy fills it from a sack that "
+                         "never seems to run out.", "info")
+                return True
         if t == "bed2" and a.key == "cabin":
             self.bed_menu()
             return True
@@ -5517,7 +5607,7 @@ class Game:
     def enter_room(self, key):
         a = self.areas[key]
         hours = OPEN_HOURS.get(key)
-        if key not in ("cabin",) and not self.open_now(key):
+        if not self.open_now(key):
             self.say("%s is locked. %s" % (cap(BUILDINGS[key][6]),
                                             hours or ""), "info")
             self.render()
@@ -5536,7 +5626,7 @@ class Game:
         """Homes are open while someone's home and awake; shops in their
         hours; your own cabin always."""
         h = self.hhmm()
-        if key == "cabin":
+        if key in ("cabin", "coop"):
             return True
         if self.festival_on() and key not in ("inn",):
             return False
@@ -5725,10 +5815,26 @@ class Game:
         vid = n.vid
         name = VILLAGERS[vid]["short"]
         self.flash(n.x, n.y, "sparkle")
-        if self.p.get("spell") == "genderswap":
+        spell = self.p.get("spell")
+        if spell == "genderswap":
+            if self.chicken(vid) and not self.statue(vid):
+                self.say("The spell bounces off the chicken's feathers. "
+                         "Chickens are chickens.", "info")
+                self.end_turn(TOOL_COST)
+                return
             self.genderswap(n)
             return
-        if self.statue(vid):
+        if spell == "chickenfy":
+            self.chickenfy(n)
+            return
+        if self.statue(vid) and self.chicken(vid):
+            self.st["statues"].remove(vid)
+            n.goal, n.path, n.stuck = None, [], 0
+            self.say("Gold flakes away like falling leaves, and the hen "
+                     "that is %s shakes out her feathers and clucks." % name,
+                     "quest")
+            self.end_turn(TOOL_COST)
+        elif self.statue(vid):
             self.st["statues"].remove(vid)
             n.goal, n.path, n.stuck = None, [], 0
             self.say("Gold flakes away like falling leaves, and %s blinks "
@@ -5748,14 +5854,100 @@ class Game:
                      "gold." % name, "gold")
             self.end_turn(TOOL_COST)
 
+    def npc_tile(self, vid):
+        """Somebody's sprite: as they are, swapped, turned to a hen, and
+        any of those in gold."""
+        gold = self.statue(vid)
+        if self.chicken(vid):
+            return ("shen_" if gold else "hen_") + self.hen_colour(vid)
+        return ("s" if gold else "v") + ("x" if self.swapped(vid) else
+                                         "") + "_" + vid
+
     def swapped(self, vid):
         return vid in self.st.setdefault("swapped", [])
 
-    def likes_change(self, vid):
-        """Some people like what the spell did. Some really don't.  Who is
-        which is dealt anew each game."""
-        return random.Random("%s:%s:likes" % (self.st["seed"], vid)
-                             ).random() < 0.5
+    def likes_change(self, vid, spell="genderswap"):
+        """Some people like what a spell did. Some really don't.  Who is
+        which is dealt anew each game, spell by spell."""
+        key = "%s:%s:likes" if spell == "genderswap" else \
+            "%s:%s:" + spell
+        return random.Random(key % (self.st["seed"], vid)).random() < 0.5
+
+    def chicken(self, vid):
+        return vid in self.st.setdefault("chickenfied", [])
+
+    def chickenfy(self, n):
+        """The chickenfy spell: a hen like the ones Mabel sells, going
+        about the villager's day; cast again, and back they come.  As with
+        genderswap, some like it and some don't, and you'll hear about it
+        (in clucks, and then in words)."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        st = self.st
+        flags = st["flags"]
+        likes = self.likes_change(vid, "chickenfy")
+        if self.statue(vid):
+            if self.chicken(vid):
+                st["chickenfied"].remove(vid)
+            else:
+                st["chickenfied"].append(vid)
+            self.say("The golden statue of %s ripples and shifts shape. "
+                     "It doesn't seem to mind. It's a statue." % name,
+                     "gold")
+            self.end_turn(TOOL_COST)
+            return
+        if self.talk:
+            self.end_talk()
+        if not self.chicken(vid):
+            st["chickenfied"].append(vid)
+            self.say("Feathers burst out everywhere, and where %s stood "
+                     "there's a %s hen, %s." % (
+                         name, self.hen_colour(vid),
+                         "clucking happily" if likes else
+                         "clucking furiously"), "quest")
+            if likes:
+                pts = 0 if "chickliked:" + vid in flags else 150
+                flags.append("chickliked:" + vid)
+            else:
+                pts = -200
+            if pts:
+                self.befriend(vid, pts, quiet=True)
+                self.say("(%s %s.)" % (name, "seems to enjoy being a "
+                                       "chicken" if pts > 0 else
+                                       "is upset with you"),
+                         "heart" if pts > 0 else "bad")
+            self.end_turn(TOOL_COST)
+            return
+        st["chickenfied"].remove(vid)
+        n.goal, n.path, n.stuck = None, [], 0
+        self.say("A puff of feathers, and %s is back on two feet, without "
+                 "a beak." % name, "quest")
+        if likes:
+            pts = -80
+        else:
+            pts = 0 if "chickfixed:" + vid in flags else 120
+            flags.append("chickfixed:" + vid)
+        self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
+                     "text": ""}
+        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.friend(vid)["met"] = True
+        self.speak(vid, CHICKEN_BACK[vid][0 if likes else 1])
+        if pts:
+            self.befriend(vid, pts)
+            self.say("(%s %s.)" % (name, "likes you more for it" if pts > 0
+                                   else "is upset with you"),
+                     "heart" if pts > 0 else "bad")
+        self.pass_time(TOOL_COST)
+        self.talk_menu()
+
+    def hen_colour(self, vid):
+        """The hen somebody becomes, by the colour of their hair."""
+        hair = VILLAGERS[vid]["look"].get("hair", "")
+        return {"#1e1a1a": "black", "#4a4040": "black",
+                "#5a3a1e": "brown", "#8a4a22": "brown", "#a83a1e": "brown",
+                "#d0502a": "brown", "#e8c870": "speckled",
+                "#9a9a9a": "speckled", "#eeeeee": "white"}.get(hair,
+                                                              "white")
 
     def look_of(self, vid):
         look = VILLAGERS[vid]["look"]
@@ -5824,10 +6016,155 @@ class Game:
         self.pass_time(TOOL_COST)
         self.talk_menu()
 
-    def statue_bump(self, n):
-        self.say(random.choice(STATUE_PHRASES).replace(
-            "{who}", VILLAGERS[n.vid]["short"]), "info")
+    # ── The chicken coop ──
+
+    def build_coop(self):
+        """Put the coop up beside the cabin, clearing whatever's there."""
+        p, st = self.p, self.st
+        if "coop" in p["built"]:
+            return
+        p["built"].append("coop")
+        v = self.areas["valley"]
+        x0, y0, w, h = BUILDINGS["coop"][:4]
+        put_building(v.grid, v.labels, "coop")
+        dx, dy = door_of("coop")
+        for y in range(y0, VH):
+            for x in range(x0, x0 + w):
+                if y >= y0 + h and (x != dx or v.grid[y][x] != "path"):
+                    continue
+                k = "%d,%d" % (x, y)
+                for d in (st["debris"], st["soil"], st["forage"]):
+                    d.pop(k, None)
+                if k in st["sprinklers"]:
+                    st["sprinklers"].remove(k)
+                    self.give("sprinkler")
+            if y >= y0 + h and v.grid[y][dx] != "path":
+                break
+        self.door_at[(dx, dy)] = "coop"
+        if self.area is v:
+            self.layout()
+
+    def coop_squares(self):
+        a = self.areas["coop"]
+        return [(x, y) for y in range(a.h) for x in range(a.w)
+                if a.grid[y][x] == "straw"]
+
+    def chicken_at(self, x, y):
+        for i, c in enumerate(self.st["chickens"]):
+            if (c["x"], c["y"]) == (x, y):
+                return i
+        return None
+
+    def free_coop_square(self, eggs_too=False):
+        here = self.pos() if self.area and self.area.key == "coop" else None
+        free = [sq for sq in self.coop_squares()
+                if self.chicken_at(*sq) is None and sq != here and
+                (not eggs_too or list(sq) not in self.st["eggs"])]
+        return random.choice(free) if free else None
+
+    def add_chicken(self):
+        used = {c["name"] for c in self.st["chickens"]}
+        names = [n for n in HEN_NAMES if n not in used] or HEN_NAMES
+        x, y = self.free_coop_square() or self.coop_squares()[0]
+        c = {"name": random.choice(names), "colour": random.choice(
+            HEN_COLOURS), "x": x, "y": y, "petted": -1,
+            "day": self.st["day"], "eggs": 0}
+        self.st["chickens"].append(c)
+        if self.area.key == "coop":
+            self.render()
+        return c
+
+    def chicken_minute(self):
+        a = self.areas["coop"]
+        for i, c in enumerate(self.st["chickens"]):
+            if random.random() > 0.2:
+                continue
+            dx, dy = random.choice(DIRS)
+            x, y = c["x"] + dx, c["y"] + dy
+            if a.inside(x, y) and a.grid[y][x] == "straw" and \
+                    self.chicken_at(x, y) is None and (x, y) != self.pos():
+                c["x"], c["y"] = x, y
+
+    def chicken_menu(self, i):
+        c = self.st["chickens"][i]
+        age = self.st["day"] - c.get("day", 0)
+        self.open_menu("%s, a %s hen (%s; %d egg%s laid)" % (
+            c["name"], c["colour"], "new today" if age == 0 else
+            "%d day%s with you" % (age, "s" if age > 1 else ""),
+            c.get("eggs", 0), "" if c.get("eggs", 0) == 1 else "s"), [
+            ("Pet %s" % c["name"], lambda: self.pet_chicken(i)),
+            ("Give her a new name", lambda: self.start_naming(i)),
+            ("Leave her be", lambda: None)])
+
+    def pet_chicken(self, i):
+        c = self.st["chickens"][i]
+        self.flash(c["x"], c["y"], "heart")
+        if c.get("petted") == self.st["day"]:
+            self.say("%s has had her fuss for today, and lets you know "
+                     "it." % c["name"], "info")
+        else:
+            c["petted"] = self.st["day"]
+            self.say(random.choice(HEN_PETS) % c["name"], "good")
         self.end_turn(1)
+
+    def start_naming(self, i):
+        """Rename a hen: the talk bar asks, and Return settles it."""
+        self.naming = i
+        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.prompt.config(text="Her new name:")
+        self.entry.delete(0, "end")
+        self.entry.insert(0, self.st["chickens"][i]["name"])
+        self.entry.select_range(0, "end")
+        self.entry.focus_set()
+        self.say("Type a new name for %s and press Return (Esc keeps the "
+                 "old one)." % self.st["chickens"][i]["name"], "info")
+        self.render()
+
+    def finish_naming(self, text):
+        i = self.naming
+        name = " ".join(text.split())[:16]
+        if i is not None and name:
+            c = self.st["chickens"][i]
+            old, c["name"] = c["name"], name
+            if old != name:
+                self.say("%s is now called %s. She seems to approve." % (
+                    old, name), "good")
+        self.end_naming()
+
+    def end_naming(self):
+        self.naming = None
+        self.prompt.config(text="Ask about:")
+        self.talkbar.pack_forget()
+        self.canvas.focus_set()
+        self.render()
+
+    def statue_bump(self, n):
+        """Walking into a statue: a polish, a rub for luck...  and walk
+        into the same one again straight away to squeeze past it."""
+        here = (n.vid, self.area.key, n.x, n.y, self.pos())
+        if getattr(self, "last_statue", None) == here and \
+                self.squeeze_past(n):
+            self.last_statue = None
+            self.say("You squeeze past the statue of %s, breathing in." %
+                     VILLAGERS[n.vid]["short"], "info")
+        else:
+            self.last_statue = here
+            self.say(random.choice(STATUE_PHRASES).replace(
+                "{who}", VILLAGERS[n.vid]["short"]) +
+                " (Walk into it again to squeeze past.)", "info")
+        self.end_turn(1)
+
+    def squeeze_past(self, n):
+        """Trade places with somebody standing next to you, so nobody can
+        block a doorway for good: True if you did."""
+        x, y = self.pos()
+        if n.where != self.area.key or abs(n.x - x) + abs(n.y - y) != 1:
+            return False
+        n.x, n.y, self.st["pos"] = x, y, [n.x, n.y]
+        n.path, n.stuck = [], 0
+        if self.area.outdoor:
+            self.step_on(*self.pos())
+        return True
 
     def spend(self, h):
         need = TOOL_ENERGY.get(h, 0)
@@ -6243,6 +6580,17 @@ class Game:
                           for n, c in sorted(st["shipped"].items())), pay),
                 "gold")
             st["shipped"] = {}
+        # the hens lay
+        for c in st["chickens"]:
+            spot = self.free_coop_square(eggs_too=True)
+            if spot and len(st["eggs"]) < 2 * COOP_ROOM:
+                st["eggs"].append(list(spot))
+                c["eggs"] = c.get("eggs", 0) + 1
+        n = len(st["chickens"])
+        if n:
+            self.say("%s laid %s overnight." % (
+                "Your hen" if n == 1 else "Your %d hens" % n,
+                "an egg" if n == 1 else "an egg each"), "good")
         # the crops
         for k, s in st["soil"].items():
             if s[1] and s[0] and not s[3]:
@@ -6435,6 +6783,8 @@ class Game:
         """A minute for everyone: whoever's going somewhere takes a step
         (or, out of your sight, simply gets there)."""
         here = self.area.key
+        if here == "coop" and visible:
+            self.chicken_minute()
         taken = {(n.where, n.x, n.y) for n in self.npcs.values()}
         for vid, n in self.npcs.items():
             if self.talk and self.talk.get("v") == vid or self.statue(vid):
@@ -6588,6 +6938,16 @@ class Game:
             self.walking = None
             self.statue_bump(n)
             return
+        if self.chicken(vid):
+            self.walking = None
+            self.say(random.choice(
+                CLUCK_HAPPY if self.likes_change(vid, "chickenfy") else
+                CLUCK_ANGRY).replace("{who}", VILLAGERS[vid]["short"]),
+                "info")
+            if self.squeeze_past(n):
+                self.say("She scuttles past you, still clucking.", "info")
+            self.end_turn(1)
+            return
         v = VILLAGERS[vid]
         f = self.friend(vid)
         self.walking = None
@@ -6650,7 +7010,7 @@ class Game:
                 words.append(w.upper())
         if self.swapped(vid):
             words.append("CHANGE")
-        words += ["NAME", "JOB", "NEWS", "ABOUT..."]
+        words += ["NAME", "JOB", "NEWS", "ABOUT...", "PAST"]
         return words
 
     def talk_menu(self):
@@ -6688,6 +7048,9 @@ class Game:
     def on_entry(self, ev=None):
         text = self.entry.get().strip()
         self.entry.delete(0, "end")
+        if getattr(self, "naming", None) is not None:
+            self.finish_naming(text)
+            return
         if self.menu and (not text or text.isdigit()):
             i = int(text) - 1 if text.isdigit() else None
             if i is None or 0 <= i < len(self.menu["items"]):
@@ -6709,6 +7072,17 @@ class Game:
         w = w.strip().rstrip("?!.").strip()
         if w in ("", "bye", "goodbye"):
             self.speak(vid, random.choice(BYES[self.tier(vid)]))
+            self.end_talk()
+            self.end_turn(1)
+            return
+        if w[:4] in ("past", "move", "excu", "scoo", "swap"):
+            if self.squeeze_past(self.npcs[vid]):
+                self.say("%s: %s" % (v["short"], random.choice(
+                    PAST_LINES)), "talk")
+                self.say("%s steps aside, and you squeeze past." %
+                         v["short"], "info")
+            else:
+                self.say("You're not in each other's way.", "info")
             self.end_talk()
             self.end_turn(1)
             return
@@ -7110,6 +7484,11 @@ class Game:
                 continue
             if name == "cabin extension" and self.p["extension"]:
                 continue
+            if name == "chicken coop" and "coop" in self.built():
+                continue
+            if name == "chicken" and ("coop" not in self.built() or len(
+                    self.st["chickens"]) >= COOP_ROOM):
+                continue
             if name == "blossom pendant" and not (
                     self.partner() and self.hearts(self.partner()) >= 10):
                 continue
@@ -7183,6 +7562,18 @@ class Game:
             self.speak(vid, "(laugh)There! A copper can! Holds twice as "
                             "much!")
             return
+        elif name == "chicken coop":
+            self.build_coop()
+            self.speak(vid, "(happy)Done and dusted. Your coop's up beside "
+                            "the cabin. Room for eight hens. Go see Mabel "
+                            "about chickens.")
+            return
+        elif name == "chicken":
+            c = self.add_chicken()
+            self.speak(vid, "(happy)One hen, healthy and laying! She's "
+                            "called %s. I've had her sent up to your "
+                            "coop." % c["name"])
+            return
         elif name == "cabin extension":
             p["extension"] = True
             self.speak(vid, "(happy)Deal. I'll have it done by morning. A "
@@ -7232,7 +7623,7 @@ class Game:
             return
         food = sorted(n for n, c in self.p["items"].items()
                       if c and ITEMS.get(n, (0, 0, "?"))[2] in
-                      ("crop", "food", "fruit", "fish", "forage")
+                      ("crop", "food", "fruit", "fish", "forage", "animal")
                       and ITEMS[n][1])
         if not food:
             self.speak(vid, "Bring something to share! Anything you can "
@@ -7469,6 +7860,10 @@ class Game:
     def on_key(self, ev):
         k = ev.keysym
         if getattr(self, "dialog", None) is not None:
+            return
+        if getattr(self, "naming", None) is not None:
+            if k == "Escape":
+                self.end_naming()
             return
         if self.talk and ev.widget is self.entry:
             # typing a word: the entry has it, but arrows still move
@@ -7865,9 +8260,11 @@ class Game:
         self.cam = cx, cy = self.camera()
         px, py = self.pos()
         lvl = self.light_level()
-        people = {(n.x, n.y): ("s" if self.statue(n.vid) else "v") +
-                  ("x" if self.swapped(n.vid) else "") + "_" + n.vid
+        people = {(n.x, n.y): self.npc_tile(n.vid)
                   for n in self.npcs.values() if n.where == a.key}
+        if a.key == "coop":
+            for hen in st["chickens"]:
+                people[(hen["x"], hen["y"])] = "hen_" + hen["colour"]
         lit = {}
         if lvl and a.outdoor:
             for lx, ly in self.lamps + [(px, py)]:
@@ -7901,6 +8298,8 @@ class Game:
                                    else "sprinkler" if kind == "sprinkler"
                                    else what)
                     base = t
+                    if a.key == "coop" and [x, y] in st["eggs"]:
+                        mid = "egg"
                     top = people.get((x, y))
                     if (x, y) == (px, py):
                         top = "you"
@@ -8106,6 +8505,8 @@ class Game:
                        tags="overlay")
         small = F("Helvetica", 9 if z < 9 else 11)
         for key in BUILDINGS:
+            if key in ON_ORDER and key not in self.built():
+                continue
             x, y = door_of(key)
             name = BUILDINGS[key][6].replace("the ", "", 1)
             c.create_text(mx + (x + 0.5) * z, my + (y - 4) * z,
@@ -8220,8 +8621,14 @@ class Game:
                 v["short"], "♥" * h + "♡" * (10 - h), bd,
                 "  talked" if f["talked"] == self.st["day"] else "",
                 "gifts %d/2" % f["week"], mark))
-        lines += ["", "❀ could become a sweetheart",
-                  "(Any key closes.)"]
+        lines += ["", "❀ could become a sweetheart"]
+        hens = self.st["chickens"]
+        if hens:
+            lines += [""] + wrap("Your hens: " + ", ".join(
+                "%s%s" % (c["name"], " \u2665" if c.get("petted") ==
+                          self.st["day"] else "") for c in hens) +
+                ".  (\u2665 petted today)", 64)
+        lines.append("(Any key closes.)")
         self.show_text("\n".join(lines))
 
     def show_diary(self):
@@ -8550,6 +8957,9 @@ COMMON_TOPICS = {
     "seeds": "Mabel sells seeds at the General Store.",
     "fishing": "Theo's the one to ask about fishing.",
     "cabin": "Ivy's the carpenter. She can make your cabin bigger.",
+    "chickens": "Ivy builds coops, and Mabel sells chickens. Fresh eggs "
+                "every morning!",
+    "coop": "Ivy builds coops. Ask her.",
     "bouquet": "Mabel sells blossom bouquets. For someone special, you "
                "know.",
     "pendant": "Otto makes the blossom pendants. Only for a sweetheart at "
@@ -8739,6 +9149,61 @@ SWAP_LINES = {   # liked it, hated it, glad to be back, sorry to be back
                 "(happy)Thank you! Now I'll cry from relief!",
                 "(sad)Oh. And I'd just found the perfect apron for it."),
 }
+PAST_LINES = ["Oh! Sorry, after you.", "Excuse me!", "Mind your step.",
+              "Scoot, scoot."]
+CLUCK_HAPPY = ["The chicken that is {who} clucks happily and fluffs up "
+               "her feathers.",
+               "{who} clucks happily and pecks at your bootlace.",
+               "{who} the hen makes a contented, trilling cluck.",
+               "{who} clucks happily, flaps, and very nearly flies."]
+CLUCK_ANGRY = ["The chicken that is {who} clucks angrily at you.",
+               "{who} clucks angrily and pecks your shin. Hard.",
+               "{who} the hen glares, flaps, and clucks something very "
+               "rude.",
+               "{who} clucks angrily and turns her back on you."]
+CHICKEN_BACK = {   # turned back: sorry to be human again, glad of it
+    "rowan": ("(sad)...Being a hen was quiet. Nobody expected me to say "
+              "anything. I miss it already.",
+              "(cross)I laid an egg. I am never talking about this. Ever."),
+    "felix": ("(happy)Do you know, I've never been so relaxed? No patients. "
+              "Just grain. Prescribe it to me again sometime.",
+              "(cross)I had a beak, {name}. A BEAK. Do you know what that "
+              "does to a person's dignity?"),
+    "theo": ("(laugh)Aw! I was getting good at it! I almost caught a fish "
+             "with my face!",
+             "(cross)Not cool! A seagull tried to fight me! I LOST!"),
+    "juniper": ("(blush)Oh... it was lovely, actually. Warm straw, and no "
+                "one asked me anything. Can I go back?",
+                "(sad)I couldn't read. I tried. I just pecked the pages."),
+    "wren": ("(laugh)I could cluck in harmony! I was a chicken SOPRANO!",
+             "(cross)I clucked a whole song and nobody clapped! CHANGE ME "
+             "BACK NEXT TIME FASTER!"),
+    "ivy": ("(laugh)Huh. Chickens get a lot done. I fixed a fence post. "
+            "With my beak.",
+            "(cross)Pip tried to put me in your coop. Your COOP, {name}."),
+    "edmund": ("(happy)Splendid! A mayor should experience every walk of "
+               "life. Even the scratching, pecking walk.",
+               "(cross)I attempted to give a speech and it came out entirely "
+               "in clucks! The indignity!"),
+    "rose": ("(laugh)Oh, how wonderful! I haven't felt so spry in sixty "
+             "years. I laid a lovely egg, too.",
+             "(sad)Oh, sweetheart. My old knees were not made for "
+             "scratching about. Please don't."),
+    "mabel": ("(surprised)Do you know chickens get fed for free? FREE! I "
+              "could get used to that.",
+              "(cross)Biscuit chased me round the store! My own cat!"),
+    "otto": ("(laugh)HA! A magnificent chicken! The best chicken! Do it "
+             "again so Rowan can see!",
+             "(cross)My beard! I had FEATHERS instead of a beard! It's not "
+             "the same!"),
+    "pip": ("(laugh)THAT WAS THE BEST! I found SO many bugs! And I ate "
+            "them! Was that bad?",
+            "(cross)Ivy laughed at me! She laughed so hard she cried!"),
+    "bernard": ("(happy)Oh! You know, it gave me ideas for a new egg dish. "
+                "From a very personal angle.",
+                "(sad)Oh no, oh no. I was a chicken, in a kitchen! Do you "
+                "know how frightening that is?"),
+}
 SWAP_GREET_LIKE = ["(happy)Hey! Check out the new me!",
                    "(happy)Like the new look? I do.",
                    "(laugh)It's me! Well, a new me!"]
@@ -8754,6 +9219,59 @@ SWAP_ABOUT_HATE = ["(cross)I want to be me again. Use that wand!",
                    "(sad)I keep catching my reflection and jumping. Please "
                    "change me back.",
                    "(cross)Every minute of this is your fault, you know."]
+
+
+HEN_NAMES = ["Clucky", "Henrietta", "Nugget", "Pecky", "Omelette",
+             "Dumpling", "Sunny", "Buttercup", "Peep", "Daisy", "Marigold",
+             "Feathers", "Scramble", "Pickles", "Toffee", "Waffles",
+             "Gertrude", "Lady Cluckington", "Popcorn", "Hazel", "Custard",
+             "Penny", "Sprout", "Bramble"]
+HEN_COLOURS = ("white", "brown", "black", "speckled")
+HEN_PETS = ["You scratch %s under the chin. She closes her eyes, pleased.",
+            "%s clucks softly and leans into your hand.",
+            "You smooth %s's feathers. She fluffs them right back up.",
+            "%s pecks your bootlace, affectionately. Probably.",
+            "%s makes the little trilling sound that means she likes you."]
+
+
+def hen_art(colour):
+    body, dark = {"white": ("#f4f0e8", "#c8c0b0"),
+                  "brown": ("#b0703a", "#7a4a22"),
+                  "black": ("#3a3a44", "#1e1e26"),
+                  "speckled": ("#d8c8a8", "#7a6a50")}[colour]
+    pal = {"b": body, "B": dark, "r": "#e03030", "y": "#e8a020",
+           "e": "#101010"}
+    rows = ("................",
+            "................",
+            "................",
+            "................",
+            "........rr......",
+            ".......rbbb.....",
+            ".......bbebyy...",
+            ".......bbbbr....",
+            "..bb...bbbb.....",
+            "..bbbbbbbbb.....",
+            "..bBbbbbbbb.....",
+            "...bBBbbbbb.....",
+            "....bbbbbb......",
+            ".....y..y.......",
+            ".....y..y.......",
+            "....yy.yy.......")
+    px = art_pixels(pal, rows)
+    if colour == "speckled":
+        for (x, y) in ((4, 9), (7, 10), (9, 9), (5, 11), (8, 12), (3, 10)):
+            px[y][x] = dark
+    return px
+
+
+def egg_art():
+    g = [[None] * 16 for _ in range(16)]
+    for y in range(16):
+        for x in range(16):
+            if ((x - 7.5) / 3.2) ** 2 + ((y - 10.5) / 4.0) ** 2 <= 1:
+                g[y][x] = "#f8f0e0" if x < 9 else "#e0d4bc"
+    g[8][6] = g[9][6] = "#ffffff"
+    return g
 
 
 STATUE_PHRASES = [
@@ -8804,7 +9322,8 @@ TERRAIN = ["grass", "tallgrass", "meadow", "flowers", "path", "cobble",
            "tile", "exit", "wall", "iwin", "logwall", "shelf", "goods",
            "seeds", "counter", "bed", "bed2", "table", "chair", "stove",
            "fireplace", "forge", "anvil", "barrel", "crates", "plant", "cot",
-           "cabinet", "piano", "easel", "nets", "toolrack"]
+           "cabinet", "piano", "easel", "nets", "toolrack", "straw", "nest",
+           "trough"]
 TERRAIN += ["roof_" + r for r in ROOFS] + ["eave_" + r for r in ROOFS]
 TERRAIN += [k + "_" + m for m in WALLS for k in ("wall", "win", "door")]
 ANIMATED_TERRAIN = {"water", "river", "pond", "fountain", "lamp",
@@ -8835,10 +9354,15 @@ def all_tiles(season=0):
         sprites["s_" + vid] = golden(sprites["v_" + vid])
         sprites["vx_" + vid] = art_pixels(*person_art(swap_look(v["look"])))
         sprites["sx_" + vid] = golden(sprites["vx_" + vid])
+    for colour in HEN_COLOURS:
+        sprites["hen_" + colour] = hen_art(colour)
+    sprites["egg"] = egg_art()
+    for colour in HEN_COLOURS:
+        sprites["shen_" + colour] = golden(sprites["hen_" + colour])
     for name, px in sprites.items():
         tiles[name] = px
         SPRITES.add(name)
-        if name.startswith(("v_", "vx_")):
+        if name.startswith(("v_", "vx_", "hen_")):
             tiles[name + "@1"] = px[1:] + [[None] * 16]   # a bob
     return tiles
 
@@ -8871,7 +9395,8 @@ def selftest():
             if len(px) != 16 or any(len(r) != 16 for r in px):
                 problems.append("tile %s is not 16x16" % name)
     for vid, v in VILLAGERS.items():
-        if vid not in SWAP_LINES or vid not in UNSTATUE:
+        if vid not in SWAP_LINES or vid not in UNSTATUE or \
+                vid not in CHICKEN_BACK:
             problems.append("%s lacks spell reactions" % vid)
         for expr in EXPRESSIONS:
             px = portrait(swap_look(v["look"]), expr)
@@ -8906,6 +9431,7 @@ def selftest():
         for ch, pos in spots.items():
             if pos not in seen:
                 problems.append("room %s spot %s unreachable" % (key, ch))
+    grid, labels = make_valley(1, built=ON_ORDER)
     for key in BUILDINGS:
         dx, dy = door_of(key)
         if grid[dy + 1][dx] not in WALKABLE:
@@ -8943,6 +9469,7 @@ def selftest():
         for entry in stock:
             if entry != "seeds" and entry[0] not in ITEMS and entry[0] not \
                     in ("checkup", "copper can", "cabin extension",
+                        "chicken", "chicken coop",
                         "fishing rod", "sprinkler"):
                 problems.append("shop %s sells unknown %s" % (kind, entry))
     for name, tune in MUSIC.items():

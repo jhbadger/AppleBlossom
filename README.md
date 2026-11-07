@@ -71,6 +71,22 @@ Grandmother's apple trees fruit in the fall. Wild things to forage turn up in
 the woods, the meadows and on the beach every morning. Otto's **sprinklers**
 water the four squares around them each morning.
 
+### Chickens
+
+Ivy will build you a **chicken coop** beside your cabin for 1,500g and 80
+wood. Once it's up, Mabel sells **hens** at 800g each, up to eight. Each hen
+arrives with a random name (Clucky, Henrietta, Lady Cluckington, Omelette,
+and others) and a colour (white, brown, black or speckled). Hens potter about
+the coop while you're there.
+
+- **Eggs:** every hen lays an egg each night, somewhere on the coop floor.
+  Walk over an egg to pick it up. Eggs sell for 50g, give 15 energy eaten,
+  and Bernard and Granny Rose like them as gifts.
+- **Your hens:** walk into a hen to pet her (once a day) or to give her a new
+  name. Type the name in the bar under the map and press Return; Esc keeps
+  the old one. The Friends list (F) shows your hens and which you've petted
+  today.
+
 ## The magic wand
 
 Among Grandmother's tools is a **magic wand**. (Someday it will be the reward
@@ -84,7 +100,8 @@ up to eight squares until it hits someone or something solid.
 
 - **Petrify** turns whoever it hits into a golden statue. A statue can't move
   or talk. Walk into one and you polish it, rub its nose for luck, or knock on
-  it to hear it ring. Petrify a statue again and it turns back into the
+  it to hear it ring; walk into it again straight away and you squeeze past
+  it. Petrify a statue again and it turns back into the
   villager, who has something to say about it.
 - **Genderswap**, after Homeroom's Boy/Girl Gun, turns whoever it hits into the
   other sex. Their sprite and portrait change: face, build and hairstyle,
@@ -94,16 +111,27 @@ up to eight squares until it hits someone or something solid.
   it earns you friendship (once); hating it costs you. Cast it again to change
   them back, which pleases the ones who hated it and disappoints the ones who
   liked it. You can swap a statue too, but it doesn't mind.
+- **Chickenfy** turns whoever it hits into a hen just like the ones Mabel
+  sells, in a colour that suits their hair. The hen goes on with the
+  villager's day: Theo the hen still minds the tackle stand, and Wren the hen
+  still turns up at the inn. A hen can't talk. Walk into one and she clucks
+  happily or clucks angrily, then scuttles past you, depending on whether
+  this villager likes being a
+  chicken (dealt each game, separately from genderswap). As with genderswap,
+  liking it earns you friendship (once) and hating it costs you. Cast it again
+  to turn them back, and they'll tell you all about it. Genderswap bounces off
+  a chicken; petrify makes a golden hen. (Someday you'll be able to catch a
+  chickenfied villager and keep her in your coop.)
 
 ## The village
 
 | Place | Who | What's there |
 | --- | --- | --- |
-| Pike's General Store | Mabel Pike | seeds for the season, gifts, the Blossom Bouquet |
+| Pike's General Store | Mabel Pike | seeds for the season, hens, gifts, the Blossom Bouquet |
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
 | Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, the copper watering can, fine gifts, the Blossom Pendant |
-| Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, and the cabin extension |
+| Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, and the cabin extension |
 | The dock | Theo Fairweather | fishing rods and lures, 10 till 3 |
 | The Library | Juniper Marsh | books, and Pip's schoolroom |
 | Mayor's House | Mayor Edmund Pell | festivals, history |
@@ -123,7 +151,8 @@ festival notices and news.
 Walk into someone to talk. Their **portrait** appears beside what they say,
 and it smiles, blushes, frowns or looks surprised as they talk. Choose a word
 from the menu or type one: everyone knows CHAT, GIFT, NAME, JOB and NEWS, and
-ABOUT... asks what they think of the others. Words in CAPITALS are worth
+ABOUT... asks what they think of the others, and PAST asks them to step aside
+so you can squeeze by, if they're standing in a doorway. Words in CAPITALS are worth
 asking about. Each villager has their own topics, opinions, secrets and
 sense of humour.
 
