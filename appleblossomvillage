@@ -1189,7 +1189,10 @@ TOOL_KEYS = {"hoe": "Hoe", "watering can": "Can", "axe": "Axe",
 TOOL_ENERGY = {"hoe": 2, "watering can": 1, "axe": 3, "pickaxe": 3,
                "scythe": 1, "fishing rod": 4, "magic wand": 2}
 WAND_RANGE = 8                  # how far a spell flies
-SPELLS = ("petrify",)           # the wand's spells (more to come)
+SPELLS = {   # the wand's spells: what each one does, for the menu
+    "petrify": "turns someone to gold, and back",
+    "genderswap": "turns someone into the other sex, and back",
+}
 DEBRIS = {   # debris -> the tool that clears it, what it drops
     "weed": ("scythe", ("fiber", 1)),
     "stone": ("pickaxe", ("stone", 2)),
@@ -4561,9 +4564,10 @@ some heart levels a friend shares a moment with you.  A
 Blossom Bouquet at 8 hearts asks someone to go steady; a
 Blossom Pendant at 10 asks them to marry you.
 
-Grandmother's magic wand casts petrify: hold it, use it
-to raise it, then press an arrow (or tap) to zap that way.
-Whoever it hits turns to gold; zap a statue to undo it.
+Grandmother's magic wand: hold it, use it, choose a spell,
+then press an arrow (or tap) to zap that way.  Petrify
+turns someone to gold; genderswap turns them into the
+other sex.  Cast the same spell again to undo it.
 
 Tap a square to walk there, next to you to step or use
 your tool there, yourself to use it ahead.
@@ -4828,7 +4832,7 @@ class Game:
         for name, px in all_tiles(season).items():
             sprite = name.split("@")[0] in SPRITES
             for lvl, k in enumerate(SHADES):
-                if lvl and name.startswith(("v_", "s_")):
+                if lvl and name.startswith(("v_", "s_", "vx_", "sx_")):
                     continue
                 img = tk.PhotoImage(width=16, height=16)
                 if sprite:
@@ -4887,10 +4891,10 @@ class Game:
     def portrait_image(self, who, expr, z):
         """A portrait as a Tk image, zoomed z times; who is a villager's
         id, or "you"."""
-        key = (who, expr, z)
+        key = (who, expr, z, who != "you" and self.swapped(who))
         img = self.portraits.get(key)
         if img is None:
-            look = self.p["look"] if who == "you" else VILLAGERS[who]["look"]
+            look = self.p["look"] if who == "you" else self.look_of(who)
             px = portrait(look, expr)
             base = tk.PhotoImage(width=PW, height=PW)
             base.put(" ".join("{" + " ".join(r) + "}" for r in px))
@@ -5151,7 +5155,7 @@ class Game:
                               "status": None, "dated": -1}
                         for vid in VILLAGERS},
             "spouse": None, "wedding": None, "request": None, "flags": [],
-            "statues": [],
+            "statues": [], "swapped": [],
             "topics": [], "secret": None, "stats": {"shipped": 0,
                                                     "harvested": 0,
                                                     "fish": 0, "earned": 0},
@@ -5200,6 +5204,7 @@ class Game:
         self.p = g["p"]
         self.st = st = g["st"]
         st.setdefault("statues", [])
+        st.setdefault("swapped", [])
         if "magic wand" not in self.p["tools"]:
             self.p["tools"].append("magic wand")     # older saves
         self.build_world(st["seed"])
@@ -5578,6 +5583,8 @@ class Game:
         h = h or self.held()
         if h == "watering can":
             return "watering can (%d/%d)" % (self.p["water"], self.p["can"])
+        if h == "magic wand":
+            return "magic wand (%s)" % self.p.get("spell", "petrify")
         if h and h in self.p["items"]:
             return "%s (%d)" % (h, self.p["items"][h])
         return h or "nothing"
@@ -5674,11 +5681,22 @@ class Game:
         return None
 
     def start_aim(self):
-        """Raise the wand: the next direction you press (or tap) is the
-        way the spell flies."""
+        """Raise the wand: choose a spell, then the next direction you
+        press (or tap) is the way it flies."""
+        cur = self.p.get("spell", "petrify")
+        names = list(SPELLS)
+        self.open_menu("Cast which spell?", [
+            ("%s: %s" % (cap(n), SPELLS[n]), lambda n=n: self.aim_spell(n))
+            for n in names] + [("Lower the wand", lambda: None)])
+        self.menu["sel"] = names.index(cur) if cur in names else 0
+        self.render()
+
+    def aim_spell(self, spell):
+        self.p["spell"] = spell
         self.aim = True
         self.walking = None
-        self.say("Zap which way? Press an arrow key, or tap that way. "
+        self.say(cap(spell) + "! Zap which way? Press an arrow key, or "
+                 "tap that way. "
                  "(Space zaps the way you're facing; Esc lowers the "
                  "wand.)", "quest")
         self.render()
@@ -5689,8 +5707,7 @@ class Game:
         self.render()
 
     def zap(self, dx=None, dy=None):
-        """Cast petrify: someone turns to gold, or a statue back to
-        themselves."""
+        """Cast the spell in hand that way."""
         self.aim = False
         if dx is None:
             dx, dy = self.st["facing"]
@@ -5708,6 +5725,9 @@ class Game:
         vid = n.vid
         name = VILLAGERS[vid]["short"]
         self.flash(n.x, n.y, "sparkle")
+        if self.p.get("spell") == "genderswap":
+            self.genderswap(n)
+            return
         if self.statue(vid):
             self.st["statues"].remove(vid)
             n.goal, n.path, n.stuck = None, [], 0
@@ -5727,6 +5747,82 @@ class Game:
             self.say("Your spell strikes %s, who turns to solid, gleaming "
                      "gold." % name, "gold")
             self.end_turn(TOOL_COST)
+
+    def swapped(self, vid):
+        return vid in self.st.setdefault("swapped", [])
+
+    def likes_change(self, vid):
+        """Some people like what the spell did. Some really don't.  Who is
+        which is dealt anew each game."""
+        return random.Random("%s:%s:likes" % (self.st["seed"], vid)
+                             ).random() < 0.5
+
+    def look_of(self, vid):
+        look = VILLAGERS[vid]["look"]
+        return swap_look(look) if self.swapped(vid) else look
+
+    def display_name(self, vid):
+        name = VILLAGERS[vid]["name"]
+        if self.swapped(vid):
+            for a, b in (("Granny", "Grandpa"),):
+                name = name.replace(a, b) if a in name else name.replace(
+                    b, a)
+        return name
+
+    def genderswap(self, n):
+        """The genderswap spell: the other sex, sprite and portrait; again,
+        and back as they were.  They like it or they don't, and say so,
+        and it shows in how they feel about you."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        st = self.st
+        back = self.swapped(vid)
+        if back:
+            st["swapped"].remove(vid)
+        else:
+            st["swapped"].append(vid)
+        self.portraits = {}
+        if self.statue(vid):
+            self.say("The golden statue of %s ripples and shifts shape. "
+                     "It doesn't seem to mind. It's a statue." % name,
+                     "gold")
+            self.end_turn(TOOL_COST)
+            return
+        if self.talk:
+            self.end_talk()
+        likes = self.likes_change(vid)
+        lines = SWAP_LINES[vid]
+        flags = st["flags"]
+        if not back:
+            self.say("Pink sparks fizz round %s, and when they clear, %s "
+                     "is the other sex entirely." % (name, name), "quest")
+            line = lines[0] if likes else lines[1]
+            if likes:
+                pts = 0 if "swapliked:" + vid in flags else 150
+                flags.append("swapliked:" + vid)
+            else:
+                pts = -200
+        else:
+            self.say("Pink sparks again, and %s is back as they were." %
+                     name, "quest")
+            line = lines[3] if likes else lines[2]
+            if likes:
+                pts = -80
+            else:
+                pts = 0 if "swapfixed:" + vid in flags else 120
+                flags.append("swapfixed:" + vid)
+        self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
+                     "text": ""}
+        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.friend(vid)["met"] = True
+        self.speak(vid, line)
+        if pts:
+            self.befriend(vid, pts)
+            self.say("(%s %s.)" % (name, "likes you more for it" if pts > 0
+                                   else "is upset with you"),
+                     "heart" if pts > 0 else "bad")
+        self.pass_time(TOOL_COST)
+        self.talk_menu()
 
     def statue_bump(self, n):
         self.say(random.choice(STATUE_PHRASES).replace(
@@ -6511,6 +6607,10 @@ class Game:
             if birthday:
                 self.speak(vid, "(happy)It's my birthday today! Did you "
                                 "remember?")
+            elif self.swapped(vid):
+                self.speak(vid, random.choice(
+                    SWAP_GREET_LIKE if self.likes_change(vid) else
+                    SWAP_GREET_HATE))
             else:
                 self.speak(vid, random.choice(v["greet"][self.tier(vid)]))
         if f["talked"] != self.st["day"]:
@@ -6548,6 +6648,8 @@ class Game:
         for w in self.st["topics"]:
             if w in v["topics"] and w.upper() not in words:
                 words.append(w.upper())
+        if self.swapped(vid):
+            words.append("CHANGE")
         words += ["NAME", "JOB", "NEWS", "ABOUT..."]
         return words
 
@@ -6648,6 +6750,11 @@ class Game:
                                       "tomorrow, I'd bet on it.",
                              "snow": "Snow tomorrow, I think."}[
                                  self.st["tomorrow"]])
+        elif w[:4] in ("chan", "swap", "zap", "wand", "spel") and \
+                self.swapped(vid):
+            self.speak(vid, random.choice(
+                SWAP_ABOUT_LIKE if self.likes_change(vid) else
+                SWAP_ABOUT_HATE))
         elif w in ("farm", "crops"):
             self.speak(vid, self.farm_talk(vid))
         elif w in ("love", "marry", "marriage", "date me", "romance"):
@@ -7478,6 +7585,8 @@ class Game:
         self.back_to_talk()
 
     def menu_cancel(self):
+        if self.scene and self.menu and not self.menu["cancel"]:
+            return              # a scene's choice has to be answered
         m, self.menu = self.menu, None
         if m is None:
             return
@@ -7756,7 +7865,8 @@ class Game:
         self.cam = cx, cy = self.camera()
         px, py = self.pos()
         lvl = self.light_level()
-        people = {(n.x, n.y): "s_" + n.vid if self.statue(n.vid) else n.tile
+        people = {(n.x, n.y): ("s" if self.statue(n.vid) else "v") +
+                  ("x" if self.swapped(n.vid) else "") + "_" + n.vid
                   for n in self.npcs.values() if n.where == a.key}
         lit = {}
         if lvl and a.outdoor:
@@ -7925,10 +8035,11 @@ class Game:
         status = {"dating": "  (sweetheart)", "engaged": "  (engaged)",
                   "married": "  (spouse)"}.get(f_["status"], "")
         c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
-                      text=v["name"], font=bold, fill=ACCENT)
+                      text=self.display_name(vid), font=bold, fill=ACCENT)
         hf = F("Helvetica", 13)
         hearts = "♥" * h + "♡" * (10 - h) + status
-        hx, hy = tx + bold.measure(v["name"]) + S(12), y0 + pad
+        hx, hy = tx + bold.measure(self.display_name(vid)) + S(12), \
+            y0 + pad
         if hx + hf.measure(hearts) > W - pad * 2:
             hx, hy = tx, y0 + pad + lh
         c.create_text(hx, hy, anchor="nw", tags="overlay", text=hearts,
@@ -8520,6 +8631,131 @@ def golden(px):
     return out
 
 
+STYLE_TO_F = {"short": "bob", "messy": "long", "spiky": "ponytail",
+              "curly": "curly", "bald": "bun"}
+STYLE_TO_M = {"long": "messy", "bob": "short", "ponytail": "short",
+              "pigtails": "spiky", "bun": "short", "braid": "messy",
+              "curly": "curly"}
+
+
+def swap_look(look):
+    """How someone looks after the genderswap spell: the other face and
+    build, the hair done to match, beards and moustaches gone (and, for
+    the old ladies, a fine white moustache)."""
+    new = dict(look)
+    fem = look.get("face", "M") == "F"
+    child = look.get("age") == "child"
+    new["face"] = "M" if fem else "F"
+    if look.get("body") in ("M", "F"):
+        new["body"] = "M" if fem else "F"
+    style = look.get("style", "short")
+    if child:
+        new["style"] = "messy" if fem else "pigtails"
+    else:
+        new["style"] = (STYLE_TO_M if fem else STYLE_TO_F).get(style, style)
+    extras = [e for e in look.get("extras", ())
+              if e not in ("beard", "mustache")]
+    if fem and "wrinkles" in extras:
+        extras.append("mustache")
+        new["beardc"] = look.get("hair")
+    new["extras"] = tuple(extras)
+    new.pop("lips", None)
+    return new
+
+
+SWAP_LINES = {   # liked it, hated it, glad to be back, sorry to be back
+    "rowan": ("(blush)...Huh. I look like my mother. ...I don't hate it. "
+              "Don't tell Otto I don't hate it.",
+              "(cross)Change me back. Now. I can't swing a hammer like "
+              "this. Just change me back.",
+              "Good. Thanks. Never again.",
+              "(sad)...Oh. Back to normal. Right. That's... fine."),
+    "felix": ("(surprised)Remarkable. Every system working, just... "
+              "differently. You know, I feel rather wonderful. Thank you?",
+              "(cross)This is a serious medical event, {name}! Reverse it, "
+              "please!",
+              "(happy)Thank you. I'll write this up for a journal nobody "
+              "will believe.",
+              "(sad)Oh. I'd only just got used to her. To me."),
+    "theo": ("(laugh)Whoa! Look at me! I'm gorgeous! The fish are going to "
+             "lose their minds!",
+             "(cross)Hey! Not cool! My hat doesn't even fit right now!",
+             "(laugh)Phew! Me again! The hat fits!",
+             "Aw, man. I was just getting good at being her."),
+    "juniper": ("(blush)Oh! I've read about this. In fairy tales. I always "
+                "wondered... I think I like it.",
+                "(sad)Please change me back. I don't recognise myself, and "
+                "I hate that most of all.",
+                "(happy)Thank you. I'm me again. I'll write about this "
+                "someday. Maybe.",
+                "(sad)Oh. That chapter was over too soon."),
+    "wren": ("(laugh)OH MY GOSH! I'm a guy! Dad's going to faint! I LOVE "
+             "it!",
+             "(cross)Hey! My voice is all low! I can't hit the high notes! "
+             "CHANGE ME BACK!",
+             "(laugh)My high notes are back! La la LAAA!",
+             "(sad)Aw! I was halfway through writing a song about it!"),
+    "ivy": ("(laugh)Huh. Stronger grip. I could get used to this. Pip is "
+            "going to freak out.",
+            "(cross)You've got five seconds to fix this before I fix you.",
+            "Good. Don't ever do that without asking. ...Thanks.",
+            "(cross)Hey! I was using that!"),
+    "edmund": ("(happy)Good heavens! A whole new constituency! I feel "
+               "thirty years younger. Margaret would have laughed and "
+               "laughed.",
+               "(cross)This is no way to treat an elected official! "
+               "Restore me at once!",
+               "(happy)Ah! Order restored. Splendid.",
+               "(sad)Oh. Well. It was a fine term in office while it "
+               "lasted."),
+    "rose": ("(laugh)Oh my goodness! Grandpa Rose! Lily would have loved "
+             "this. I feel like a young man!",
+             "(sad)Oh, dear. I'm too old for surprises like this, "
+             "sweetheart. Change me back?",
+             "(happy)Thank you, dear. One life is plenty of adventure at my "
+             "age.",
+             "(laugh)Oh! Back again. Well, that was fun while it lasted."),
+    "mabel": ("(surprised)Well! Nobody will recognise me. Do you know what "
+              "that's worth? I could haggle anywhere.",
+              "(cross)Is this what you do with that wand? Change me back "
+              "this instant!",
+              "Hmph. About time.",
+              "(cross)And just when people had started giving me "
+              "discounts."),
+    "otto": ("(laugh)HA! Look at me! A magnificent woman! Ivy, arm-wrestle "
+             "me NOW!",
+             "(cross)What did you DO? My beard! Where's my BEARD?!",
+             "(laugh)My beard! HA! Welcome back, old friend!",
+             "(laugh)Aw! I was going to enter the arm-wrestling as my own "
+             "sister!"),
+    "pip": ("(laugh)WHOA! I'm a girl! That's SO COOL! Do it to Ivy!",
+            "(cross)Hey! Ivy's gonna laugh at me! Change me back!",
+            "(laugh)Phew! Hey, can I borrow the wand?",
+            "(sad)Aww! I didn't even get to show Ivy!"),
+    "bernard": ("(happy)Oh my! I look just like my mother! I've got to show "
+                "Wren! ...She'll faint.",
+                "(sad)Oh no, oh no. How will I explain this to the "
+                "customers? Please change me back.",
+                "(happy)Thank you! Now I'll cry from relief!",
+                "(sad)Oh. And I'd just found the perfect apron for it."),
+}
+SWAP_GREET_LIKE = ["(happy)Hey! Check out the new me!",
+                   "(happy)Like the new look? I do.",
+                   "(laugh)It's me! Well, a new me!"]
+SWAP_GREET_HATE = ["(cross)You! You did this! Change me back!",
+                   "(cross)Oh, it's you. Got that wand handy?",
+                   "(sad)Please tell me you came to fix this."]
+SWAP_ABOUT_LIKE = ["(happy)Honestly? I love it. I've never felt more me.",
+                   "(happy)Everyone says the new look really works. Don't "
+                   "you dare change me back.",
+                   "(laugh)I was startled at first. Now I'm thinking of "
+                   "keeping it."]
+SWAP_ABOUT_HATE = ["(cross)I want to be me again. Use that wand!",
+                   "(sad)I keep catching my reflection and jumping. Please "
+                   "change me back.",
+                   "(cross)Every minute of this is your fault, you know."]
+
+
 STATUE_PHRASES = [
     "You polish the statue so it is nice and shiny.",
     "You rub the statue's nose for luck.",
@@ -8597,10 +8833,12 @@ def all_tiles(season=0):
     for vid, v in VILLAGERS.items():
         sprites["v_" + vid] = art_pixels(*person_art(v["look"]))
         sprites["s_" + vid] = golden(sprites["v_" + vid])
+        sprites["vx_" + vid] = art_pixels(*person_art(swap_look(v["look"])))
+        sprites["sx_" + vid] = golden(sprites["vx_" + vid])
     for name, px in sprites.items():
         tiles[name] = px
         SPRITES.add(name)
-        if name.startswith("v_"):
+        if name.startswith(("v_", "vx_")):
             tiles[name + "@1"] = px[1:] + [[None] * 16]   # a bob
     return tiles
 
@@ -8633,7 +8871,12 @@ def selftest():
             if len(px) != 16 or any(len(r) != 16 for r in px):
                 problems.append("tile %s is not 16x16" % name)
     for vid, v in VILLAGERS.items():
+        if vid not in SWAP_LINES or vid not in UNSTATUE:
+            problems.append("%s lacks spell reactions" % vid)
         for expr in EXPRESSIONS:
+            px = portrait(swap_look(v["look"]), expr)
+            if len(px) != PW or any(len(r) != PW for r in px):
+                problems.append("swapped portrait %s/%s" % (vid, expr))
             px = portrait(v["look"], expr)
             if len(px) != PW or any(len(r) != PW for r in px):
                 problems.append("portrait %s/%s" % (vid, expr))

@@ -75,17 +75,25 @@ water the four squares around them each morning.
 
 Among Grandmother's tools is a **magic wand**. (Someday it will be the reward
 for a quest; for now you start with it.) Hold it and use it (Space, E, the Use
-button, or tap yourself) to raise it, then pick a direction: an arrow key, a
-tap on that side of you, or the d-pad. Anyone the spell would hit is ringed in
-gold while you aim. Space zaps the way you're facing, and Esc lowers the wand.
-With the wand in hand you can also just tap a villager who's in a straight line
-from you. The spell flies up to eight squares until it hits someone or
-something solid.
+button, or tap yourself) and choose a spell. Then pick a direction: an arrow
+key, a tap on that side of you, or the d-pad. Anyone the spell would hit is
+ringed in gold while you aim. Space zaps the way you're facing, and Esc lowers
+the wand. With the wand in hand you can also just tap a villager who's in a
+straight line from you, which casts the spell you last chose. The spell flies
+up to eight squares until it hits someone or something solid.
 
-Its one spell so far is **petrify**. It turns whoever it hits into a golden
-statue. A statue can't move or talk. Walk into one and you polish it, rub its
-nose for luck, or knock on it to hear it ring. Petrify a statue again and it
-turns back into the villager, who has something to say about it.
+- **Petrify** turns whoever it hits into a golden statue. A statue can't move
+  or talk. Walk into one and you polish it, rub its nose for luck, or knock on
+  it to hear it ring. Petrify a statue again and it turns back into the
+  villager, who has something to say about it.
+- **Genderswap**, after Homeroom's Boy/Girl Gun, turns whoever it hits into the
+  other sex. Their sprite and portrait change: face, build and hairstyle,
+  beards and moustaches gone, and Granny Rose becomes Grandpa Rose. Each game
+  some villagers like it and some hate it, and each says so in their own
+  voice. They greet you accordingly and will tell you about the CHANGE. Liking
+  it earns you friendship (once); hating it costs you. Cast it again to change
+  them back, which pleases the ones who hated it and disappoints the ones who
+  liked it. You can swap a statue too, but it doesn't mind.
 
 ## The village
 
