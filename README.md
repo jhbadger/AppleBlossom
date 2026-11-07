@@ -57,6 +57,7 @@ the tool would do something there.
 | Seeds | go into tilled soil, in their season |
 | Axe, pickaxe, scythe | clear branches and stumps, stones, and weeds (walking into debris uses the right one) |
 | Fishing rod | ask Theo about FISHING; face water and cast |
+| Magic wand | casts petrify straight ahead (see below) |
 
 Watered crops grow a day each night, and rain waters them for you. When a crop
 is ripe, use anything on it to pick it. Some crops (strawberries, tomatoes,
@@ -69,6 +70,22 @@ Put anything sellable in the **shipping bin** and you're paid overnight.
 Grandmother's apple trees fruit in the fall. Wild things to forage turn up in
 the woods, the meadows and on the beach every morning. Otto's **sprinklers**
 water the four squares around them each morning.
+
+## The magic wand
+
+Among Grandmother's tools is a **magic wand**. (Someday it will be the reward
+for a quest; for now you start with it.) Hold it and use it (Space, E, the Use
+button, or tap yourself) to raise it, then pick a direction: an arrow key, a
+tap on that side of you, or the d-pad. Anyone the spell would hit is ringed in
+gold while you aim. Space zaps the way you're facing, and Esc lowers the wand.
+With the wand in hand you can also just tap a villager who's in a straight line
+from you. The spell flies up to eight squares until it hits someone or
+something solid.
+
+Its one spell so far is **petrify**. It turns whoever it hits into a golden
+statue. A statue can't move or talk. Walk into one and you polish it, rub its
+nose for luck, or knock on it to hear it ring. Petrify a statue again and it
+turns back into the villager, who has something to say about it.
 
 ## The village
 
@@ -166,3 +183,7 @@ Zoom in and out from the menu, and make the text bigger or smaller.
 - `~/.appleblossomvillage.json`: the saved game (written when you change
   place, sleep and quit)
 - `~/.cache/appleblossomvillage/`: cached music
+
+## Licence
+
+MIT; see [LICENSE](LICENSE).
