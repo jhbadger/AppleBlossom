@@ -1220,12 +1220,16 @@ for _c in CROPS:
 # None means by tomorrow morning).  "jam" and "pickle" take any fruit or
 # vegetable, and make that fruit's jam or that vegetable pickled.
 MACHINES = {
-    "mayonnaise jar": [("egg", 1, "mayonnaise", 180)],
-    "cheese press": [("milk", 1, "cheese", 360)],
+    "mayonnaise jar": [("egg", 1, "mayonnaise", 180),
+                       ("large egg", 1, "mayonnaise", 180)],
+    "cheese press": [("milk", 1, "cheese", 360),
+                     ("large milk", 1, "cheese", 360)],
     "preserves jar": [("jam", 1, "jam", None), ("pickle", 1, "pickles",
                                                 None)],
-    "loom": [("wool", 1, "cloth", 240), ("wool", 2, "wool scarf", 480)],
+    "loom": [("wool", 1, "cloth", 240), ("fine wool", 1, "cloth", 240),
+             ("wool", 2, "wool scarf", 480)],
     "beehive": [],
+    "silo": [],                 # not a machine, but set down the same way
 }
 HIVE_DAYS = 3                   # a beehive fills every third morning
 
@@ -1253,6 +1257,11 @@ PICKLE_VEG = ("turnip", "potato", "cauliflower", "pea", "corn", "eggplant",
 for _m in MACHINES:
     ITEMS[_m] = (0, 0, "machine")
 ITEMS["fertilizer"] = (5, 0, "material")
+ITEMS.update({"large egg": (95, 20, "animal"),
+              "large milk": (210, 35, "animal"),
+              "fine wool": (320, 0, "animal"), "hay": (10, 0, "material")})
+ITEMS.update({"feather": (15, 0, "forage"), "mouse": (1, 0, "junk"),
+              "old bone": (2, 0, "junk"), "old coin": (350, 0, "junk")})
 ITEMS.update({"mayonnaise": (150, 25, "artisan"),
               "cheese": (300, 50, "artisan"),
               "cloth": (420, 0, "artisan"),
@@ -1492,6 +1501,12 @@ def person_art(look):
                 old = rows[y][x]
                 rows[y][x] = ch if ch != "." else (
                     old if old == "h" else ".")
+    if "scarf" in extras:
+        pal["f"] = look.get("scarfc", "#c04040")
+        for x in range(4, 12):
+            if rows[7][x] in "ckw" or rows[8][x] in "c":
+                rows[7][x] = "f"
+        rows[8][5] = rows[8][10] = "f"
     if "maidcap" in extras:
         for x in range(5, 11):
             rows[1][x] = "a"
@@ -5184,6 +5199,7 @@ ROMANCE = [k for k, v in VILLAGERS.items() if v["romance"]]
 SHOP_STOCK = {
     "store": ["seeds", ("chicken", 800), ("cow", 1500), ("milk pail", 300),
               ("sheep", 1000), ("shears", 300), ("cat", 600), ("dog", 800),
+              ("hay", 40),
               ("cherry sapling", 1000), ("peach sapling", 1200),
               ("orange sapling", 1400), ("apple sapling", 1200),
               ("pomegranate sapling", 1400),
@@ -5202,6 +5218,7 @@ SHOP_STOCK = {
                ("silver ring", 500), ("copper can", 800),
                ("blossom pendant", 2000)],
     "carpentry": [("wood", 50), ("chicken coop", 1500), ("barn", 4000),
+                  ("silo", 1000),
                   ("cabin extension", 3000)],
     "tackle": [("fishing rod", 100), ("fishing lure", 120)],
     "workshop": [("mayonnaise jar", 600), ("preserves jar", 700),
@@ -5215,7 +5232,8 @@ EXTRA_COST = {"sprinkler": {"stone": 5}, "copper can": {"stone": 15},
               "preserves jar": {"wood": 10, "stone": 10},
               "beehive": {"wood": 30, "fiber": 20},
               "cheese press": {"wood": 40, "stone": 20},
-              "loom": {"wood": 60}}
+              "loom": {"wood": 60},
+              "silo": {"wood": 60, "stone": 40}}
 BUNDLES = {"wood": 10}           # bought ten at a time
 
 FESTIVALS = {   # (season, day): name, start, end, where, what you do
@@ -5712,6 +5730,12 @@ BARN_ROOM = 10                  # cows and sheep it holds, together
 SHEEP_MILK_DAYS = 2             # a sheep gives milk every other day
 SHEAR_DAYS = 3                  # and grows a fleece to shear in three
 PET_ROOM = 4                    # cats and dogs you can keep, together
+PET_HEART = 200                 # affection to a heart; five at most
+SILO_HAY = 240                  # hay a silo holds
+FARM_LOVE = {"pet": 30, "fed": 15, "grazed": 25, "hungry": -50,
+             "unpetted": -15}
+DUSK = 18 * 60                  # grazing animals come in
+PET_LOVE = {"pet": 30, "bowl": 15, "maid": 10, "neglect": 20}
 LOO_GRUBBY, LOO_FILTHY = 3, 6   # how much use before an outhouse is so
 PIT_PER_FERT = 3                # visits to fill a sack of fertilizer
 LOO_FLOWERS = ("daffodil", "sweet pea", "crocus", "rose", "sunflower",
@@ -6685,6 +6709,8 @@ each night.  Pick ripe crops by using anything on them.
 Put things in the shipping bin and you're paid overnight.
 Ivy builds chicken coops and Mabel sells hens; each hen
 lays an egg a night.  Walk into a hen to pet or rename her.
+Feed your animals: graze them (the trough opens the doors),
+put hay in the trough, or build a silo; happy ones give more.
 Go to bed before 2 am.
 
 Someone in your way?  Talk to them: SQUEEZE PAST.
@@ -6698,8 +6724,9 @@ then press an arrow (or tap) to zap that way.  Petrify
 turns someone to gold; genderswap turns them into the
 other sex; chickenfy, into a hen; maidify, into a maid who
 lives in your cabin and does the CHORE you give her every
-morning (whom you may KISS twice a day, and ask to WEAR
-a bikini instead of the uniform, or back); treeify, into a
+morning (whom you may KISS twice a day, and ask what to
+WEAR: a uniform in any colour, a bikini, a shawl, a sundress
+or a yukata); treeify, into a
 tree (sometimes a fruit tree) you can water (or chop, if
 you can bear the screaming);
 looify (outdoors, with room for a door), into an outhouse
@@ -6722,7 +6749,8 @@ Mabel sells cows and sheep, the milk pail (cows daily,
 sheep every other day) and shears (a sheep is woolly
 enough to shear every third day). Mabel sells cats (they
 live in your cabin) and dogs (in your farmyard) too; walk
-into one to pet her, once a day. Her fruit tree saplings
+into one to pet her, once a day; fill their water bowls,
+and a devoted pet brings presents. Her fruit tree saplings
 grow up in 28 days and bear fruit in their season.
 
 Nell builds machines: jars for mayonnaise and preserves, a
@@ -7033,6 +7061,7 @@ class Game:
                 self.avg[name] = "#%02x%02x%02x" % tuple(v // 256
                                                         for v in tot)
         self.loo_painted = {}
+        self.maid_painted = {}
         if self.p:
             self.paint_hero()
             self.paint_specials()
@@ -7107,7 +7136,10 @@ class Game:
         key = (who, expr, z, who != "you" and self.swapped(who),
                who != "you" and self.maid(who),
                who != "you" and tuple(self.st.get("bikinis", {}).get(
-                   who) or ()))
+                   who) or ()),
+               who != "you" and tuple(self.st.get("wear", {}).get(who) or
+                                      ()),
+               who != "you" and self.st.get("uniform", {}).get(who))
         img = self.portraits.get(key)
         if img is None:
             look = self.p["look"] if who == "you" else self.look_of(who)
@@ -7368,8 +7400,9 @@ class Game:
         self.p["look"]["bg"] = "#f8e0c0"
         st = self.st = {
             "seed": seed, "day": 0, "minute": WAKE, "weather": "sun",
-            "tomorrow": "sun", "soil": {}, "sprinklers": [], "machines": {}, "bikinis": {},
-            "orchard": {}, "fruitful": {}, "loo_state": {},
+            "tomorrow": "sun", "soil": {}, "sprinklers": [], "machines": {}, "bikinis": {}, "wear": {}, "uniform": {},
+            "orchard": {}, "fruitful": {}, "loo_state": {}, "bowls": {},
+            "hay": 0, "trough": {}, "grazing": {}, "large_eggs": [],
             "fertilized": {},
             "debris": {"%d,%d" % k: v for k, v in farm_debris(
                 self.areas["valley"].grid, seed).items()},
@@ -7450,9 +7483,15 @@ class Game:
         st.setdefault("pets", [])
         st.setdefault("machines", {})
         st.setdefault("bikinis", {})
+        st.setdefault("wear", {})
+        st.setdefault("uniform", {})
         st.setdefault("orchard", {})
         st.setdefault("fruitful", {})
         st.setdefault("loo_state", {})
+        st.setdefault("bowls", {})
+        for k, v in (("hay", 0), ("trough", {}), ("grazing", {}),
+                     ("large_eggs", [])):
+            st.setdefault(k, v)
         st.setdefault("fertilized", {})
         for vid in VILLAGERS:
             st["friends"].setdefault(vid, {
@@ -7717,10 +7756,7 @@ class Game:
             return
         self.st["pos"] = [nx, ny]
         if a.key == "coop" and [nx, ny] in self.st["eggs"]:
-            self.st["eggs"].remove([nx, ny])
-            self.give("egg")
-            self.sound.play("pick")
-            self.say("You pick up a fresh egg. Still warm.", "good")
+            self.pick_egg(nx, ny)
         if a.outdoor:
             self.step_on(nx, ny)
         elif t == "exit":
@@ -7735,6 +7771,12 @@ class Game:
         if i is not None:
             self.walking = None
             self.pet_menu(i)
+            return True
+        hit = self.grazer_at(x, y) if a.outdoor else None
+        if hit:
+            self.walking = None
+            (self.chicken_menu if hit[0] == "chickens" else
+             self.cow_menu)(hit[1])
             return True
         if a.outdoor:
             if (x, y) in self.door_at:
@@ -7797,8 +7839,7 @@ class Game:
                 self.say("A milk churn, scrubbed and shining.", "info")
                 return True
             if t == "trough":
-                self.say("The water trough. Somebody keeps it full.",
-                         "info")
+                self.trough_menu("barn")
                 return True
         if a.key == "coop":
             i = self.chicken_at(x, y)
@@ -7810,8 +7851,7 @@ class Game:
                          "wherever they please anyway.", "info")
                 return True
             if t == "trough":
-                self.say("The feed trough. Ivy fills it from a sack that "
-                         "never seems to run out.", "info")
+                self.trough_menu("coop")
                 return True
         if t == "loohole":
             self.do_business()
@@ -8004,6 +8044,9 @@ class Game:
             return i is not None and self.shear_ready(self.st["cows"][i])
         n = self.npc_at(x, y)
         if n and self.tree(n.vid) and h in ("axe", "watering can"):
+            return True
+        if h == "watering can" and self.bowl_shown(a.key) and \
+                (x, y) == self.bowl_at(a.key) and not self.bowl_full(a.key):
             return True
         if n and (self.leashed(n.vid) or (
                 h == "leash" and self.leashable(n.vid))):
@@ -8270,6 +8313,20 @@ class Game:
         if self.maid(vid):
             if vid in self.st.get("bikinis", {}):
                 return ("s" if gold else "v") + "b_" + vid
+            sig = (tuple(self.st.get("wear", {}).get(vid) or ()),
+                   self.st.get("uniform", {}).get(vid))
+            if sig != ((), None) and hasattr(self, "base"):
+                painted = getattr(self, "maid_painted", None)
+                if painted is None:
+                    painted = self.maid_painted = {}
+                if painted.get(vid) != sig:
+                    px = art_pixels(*person_art(self.look_of(vid)))
+                    self.paint_sprite("vw_" + vid, px)
+                    self.paint_sprite("vw_" + vid + "@1",
+                                      px[1:] + [[None] * 16])
+                    self.paint_sprite("sw_" + vid, golden(px))
+                    painted[vid] = sig
+                return ("s" if gold else "v") + "w_" + vid
             return ("s" if gold else "v") + "m_" + vid
         return ("s" if gold else "v") + ("x" if self.swapped(vid) else
                                          "") + "_" + vid
@@ -8381,7 +8438,8 @@ class Game:
         if self.statue(vid):
             if self.maid(vid):
                 del st["maids"][vid]
-                st["bikinis"].pop(vid, None)
+                for d in ("bikinis", "wear", "uniform"):
+                    st[d].pop(vid, None)
             else:
                 st["maids"][vid] = None
             self.say("The golden statue of %s ripples and shifts shape. "
@@ -8409,7 +8467,8 @@ class Game:
             line = lines[0 if likes else 1]
         else:
             del st["maids"][vid]
-            st["bikinis"].pop(vid, None)
+            for d in ("bikinis", "wear", "uniform"):
+                st[d].pop(vid, None)
             self.say("The apron and cap unravel into ribbons of light, "
                      "and %s is back to normal." % name, "quest")
             if likes:
@@ -9232,21 +9291,101 @@ class Game:
         what she says."""
         return lines[0 if self.likes_change(vid, "maidify") else 1]
 
+    def outfit(self, vid):
+        """What a maid has on: bikini, shawl, sundress, yukata or
+        uniform."""
+        if vid in self.st.get("bikinis", {}):
+            return "bikini"
+        w = self.st.get("wear", {}).get(vid)
+        return w[0] if w else "uniform"
+
+    def outfit_words(self, vid):
+        """Her outfit, as you'd describe it: 'a blue polka-dot bikini'."""
+        kind = self.outfit(vid)
+        if kind == "bikini":
+            c, dots = self.st["bikinis"][vid]
+            words = "%s %sbikini" % (BIKINI_NAMES.get(c, "bright"),
+                                     "polka-dot " if dots else "")
+            return ("an " if words[0] in "aeiou" else "a ") + words
+        if kind == "uniform":
+            colour = self.st.get("uniform", {}).get(vid)
+            names = {v: k for k, v in MAID_UNIFORMS.items()}
+            return "her %smaid's uniform" % (
+                names[colour] + " " if colour in names and
+                colour != MAID_UNIFORMS["black"] else "")
+        c = self.st["wear"][vid][1]
+        words = "%s %s" % (COLOUR_NAMES.get(c, "pretty"), {
+            "shawl": "shawl over her uniform", "sundress": "sundress",
+            "yukata": "yukata"}[kind])
+        return ("an " if words[0] in "aeiou" else "a ") + words
+
     def maid_wear(self, vid):
-        """WEAR: the uniform off and a bikini on (a random colour, or
-        polka dots), or back into the uniform again."""
+        """WEAR: her wardrobe, from the uniform (in any colour) to a
+        bikini."""
+        name = VILLAGERS[vid]["short"]
+        now = self.outfit(vid)
+        items = [("Her uniform" + (" (wearing it)" if now == "uniform"
+                                   else ""),
+                  lambda: self.put_on(vid, "uniform"))]
+        items.append(("A different bikini" if now == "bikini" else
+                       "A bikini", lambda: self.put_on(vid, "bikini")))
+        for kind, (label, _) in OUTFITS.items():
+            items.append(("A different " + label[2:] if now == kind else
+                          label, lambda k=kind: self.put_on(vid, k)))
+        items.append(("A new colour for her uniform",
+                      lambda: self.uniform_menu(vid)))
+        items.append(("Never mind", self.talk_menu))
+        self.open_menu("What should %s wear? (Now: %s.)" % (
+            name, self.outfit_words(vid)), items, self.talk_menu)
+
+    def uniform_menu(self, vid):
+        self.open_menu("What colour should %s's uniform be?" %
+                       VILLAGERS[vid]["short"], [
+                           (cap(n), lambda c=c: self.set_uniform(vid, c))
+                           for n, c in MAID_UNIFORMS.items()] +
+                       [("Never mind", self.talk_menu)], self.talk_menu)
+
+    def set_uniform(self, vid, colour):
+        st = self.st
+        if colour == MAID_UNIFORMS["black"]:
+            st["uniform"].pop(vid, None)
+        else:
+            st["uniform"][vid] = colour
+        st["bikinis"].pop(vid, None)
+        st["wear"].pop(vid, None)
+        names = {v: k for k, v in MAID_UNIFORMS.items()}
+        self.say("%s changes into a %s uniform." % (
+            VILLAGERS[vid]["short"], names[colour]), "info")
+        self.speak(vid, random.choice(UNIFORM_LINES).replace(
+            "{Colour}", cap(names[colour])).replace("{colour}",
+                                                    names[colour]))
+        self.dressed(vid)
+
+    def put_on(self, vid, kind):
+        """Out of one outfit and into another; each maid likes some and
+        not others, and says so."""
         st = self.st
         name = VILLAGERS[vid]["short"]
-        likes = self.likes_change(vid, "bikini")
-        flags = st["flags"]
-        n = self.npcs[vid]
-        if vid in st["bikinis"]:
-            del st["bikinis"][vid]
+        was = self.outfit(vid)
+        if kind == "uniform" and was == "uniform":
+            self.speak(vid, "(surprised)I'm already in my uniform!")
+            self.talk_menu()
+            return
+        st["bikinis"].pop(vid, None)
+        st["wear"].pop(vid, None)
+        season = self.season()
+        if kind == "uniform":
             self.say("%s slips back into her dress, apron and cap." % name,
                      "info")
-            self.speak(vid, random.choice(BIKINI_OFF_LIKE if likes else
-                                          BIKINI_OFF_HATE))
-        else:
+            liked = self.likes_change(vid, "bikini" if was == "bikini" else
+                                      "wear_" + was)
+            self.speak(vid, random.choice(
+                (BIKINI_OFF_LIKE if liked else BIKINI_OFF_HATE)
+                if was == "bikini" else
+                (UNIFORM_BACK_SORRY if liked else UNIFORM_BACK_GLAD)))
+            self.dressed(vid)
+            return
+        if kind == "bikini":
             colour = random.choice(BIKINI_COLOURS)
             dots = None
             if random.random() < 0.4:
@@ -9255,21 +9394,37 @@ class Game:
                 if colour == "#1a1a22":
                     dots = "#ffffff"
             st["bikinis"][vid] = [colour, dots]
-            self.say("%s goes behind the screen and comes back out in %s "
-                     "%sbikini." % (name, an(BIKINI_NAMES[colour]),
-                                    "polka-dot " if dots else ""), "info")
-            self.speak(vid, random.choice(BIKINI_ON_LIKE if likes else
-                                          BIKINI_ON_HATE))
-            if self.season() == 3:
-                self.speak(vid, random.choice(BIKINI_WINTER))
-            if likes and "bikiniliked:" + vid not in flags:
-                flags.append("bikiniliked:" + vid)
-                self.befriend(vid, 40)
-                self.say("(%s likes you more for it.)" % name, "heart")
-            elif not likes:
-                self.befriend(vid, -30, quiet=True)
-                self.say("(%s is embarrassed, but does as she's told.)" %
-                         name, "bad")
+            likes = self.likes_change(vid, "bikini")
+            lines = BIKINI_ON_LIKE if likes else BIKINI_ON_HATE
+            cold = season == 3
+        else:
+            st["wear"][vid] = [kind, random.choice(OUTFITS[kind][1])]
+            likes = self.likes_change(vid, "wear_" + kind)
+            lines = OUTFIT_LINES[kind][0 if likes else 1]
+            cold = kind == "sundress" and season == 3
+        self.say("%s goes behind the screen and comes back out in %s." % (
+            name, self.outfit_words(vid)), "info")
+        self.speak(vid, random.choice(lines))
+        if cold:
+            self.speak(vid, random.choice(BIKINI_WINTER).replace(
+                    "{outfit}", self.outfit(vid)))
+        elif kind == "shawl" and season == 1:
+            self.speak(vid, random.choice(SHAWL_SUMMER))
+        flag = "%sliked:%s" % (kind, vid)
+        if likes and flag not in st["flags"]:
+            st["flags"].append(flag)
+            self.befriend(vid, 40)
+            self.say("(%s likes you more for it.)" % name, "heart")
+        elif not likes:
+            self.befriend(vid, -30, quiet=True)
+            self.say("(%s %s, but does as she's told.)" % (
+                name, "is embarrassed" if kind == "bikini" else
+                "isn't keen"), "bad")
+        self.dressed(vid)
+
+    def dressed(self, vid):
+        """She's changed: her portrait and sprite, and on we talk."""
+        n = self.npcs[vid]
         self.portraits = {}
         self.paint_specials(scale=True)
         self.flash(n.x, n.y, "sparkle")
@@ -9353,12 +9508,17 @@ class Game:
             hens = st["chickens"]
             if not hens:
                 return None
+            big = sum(1 for e in st["eggs"] if e in st["large_eggs"])
             n = len(st["eggs"])
-            st["eggs"] = []
+            st["eggs"], st["large_eggs"] = [], []
             for c in hens:
+                if c.get("petted") != st["day"]:
+                    self.farm_love(c, PET_LOVE["maid"], quiet=True)
                 c["petted"] = st["day"]
-            if n:
-                self.give("egg", n)
+            if n - big:
+                self.give("egg", n - big)
+            if big:
+                self.give("large egg", big)
             return "%s and petted %s" % (
                 "collected %d egg%s for your bag" % (n, "s" if n > 1 else "")
                 if n else "found no eggs", "your hen" if len(hens) == 1
@@ -9377,6 +9537,91 @@ class Game:
                 "%d %s" % (len(cows), "cows" if kinds == {"cow"} else
                            "sheep" if kinds == {"sheep"} else
                            "cows and sheep"), len(cows))
+        if chore == "shear":
+            woolly = [c for c in st["cows"] if self.shear_ready(c)]
+            if not woolly or "shears" not in self.p["tools"]:
+                return None
+            for c in woolly:
+                c["shorn"] = st["day"]
+                c["wool"] = c.get("wool", 0) + 1
+            self.give("wool", len(woolly))
+            return "sheared %s (%d wool for your bag)" % (
+                "your sheep" if len(woolly) == 1 else
+                "%d sheep" % len(woolly), len(woolly))
+        if chore == "pets":
+            pets = st.get("pets", [])
+            if not pets:
+                return None
+            for c in pets:
+                c["petted"] = st["day"]
+                c["love"] = min(5 * PET_HEART, c.get("love", 100) +
+                                PET_LOVE["maid"])
+            return "fed %s and gave %s a fuss" % (
+                pets[0]["name"] if len(pets) == 1 else
+                and_list([c["name"] for c in pets]),
+                "her" if len(pets) == 1 else "them all")
+        if chore == "machines":
+            got, loaded = {}, 0
+            for k, m in st["machines"].items():
+                if self.machine_ready(m):
+                    got[m["out"]] = got.get(m["out"], 0) + 1
+                    self.give(m["out"])
+                    if m["kind"] == "beehive":
+                        m["ready"] = (st["day"] + HIVE_DAYS) * 1440 + 360
+                    else:
+                        m["out"] = None
+                if not m.get("out") and m["kind"] != "beehive":
+                    choices = self.machine_inputs(m["kind"])
+                    if choices:
+                        _, need, n, made, mins = choices[0]
+                        self.take(need, n)
+                        m["out"] = made
+                        m["ready"] = (st["day"] + 1) * 1440 + 360 \
+                            if mins is None else self.now_abs() + mins
+                        loaded += 1
+            if not got and not loaded:
+                return None
+            return "%s%s%s" % (
+                "took %s out of the machines" % and_list(
+                    ["%d %s" % (c, n) for n, c in sorted(got.items())])
+                if got else "", " and " if got and loaded else "",
+                "filled %d machine%s from your bag" % (
+                    loaded, "" if loaded == 1 else "s") if loaded else "")
+        if chore == "loos":
+            loos = [v for v in st["loos"] if not self.statue(v)]
+            if not loos:
+                return None
+            sacks = righted = 0
+            for v in loos:
+                ls = self.loo_state(v)
+                ls["grime"] = 0
+                n = ls["pit"] // PIT_PER_FERT
+                ls["pit"] -= n * PIT_PER_FERT
+                sacks += n
+                if ls["tipped"]:
+                    ls["tipped"] = False
+                    righted += 1
+            if sacks:
+                self.give("fertilizer", sacks)
+            return "scrubbed %s%s%s" % (
+                "the outhouse" if len(loos) == 1 else
+                "all %d outhouses" % len(loos),
+                ", set one back on its feet" if righted else "",
+                " and bagged %d fertilizer for you" % sacks if sacks else "")
+        if chore == "ship":
+            goods = {n: c for n, c in self.p["items"].items()
+                     if c and ITEMS.get(n, (0, 0, ""))[2] in ("crop",
+                                                             "fruit")}
+            if not goods:
+                return None
+            pay = 0
+            for n, c in goods.items():
+                self.p["items"].pop(n)
+                st["shipped"][n] = st["shipped"].get(n, 0) + c
+                pay += c * ITEMS[n][0]
+            return "took %s to the shipping bin (%dg tonight)" % (
+                and_list(["%d %s" % (c, plural(n, c))
+                          for n, c in sorted(goods.items())]), pay)
         if chore == "cook":
             food = random.choice(("pancakes", "bread", "honey cake",
                                   "stew"))
@@ -9591,8 +9836,10 @@ class Game:
                 if a.grid[y][x] == "straw" and (x, y) != a.entry]
 
     def cow_at(self, x, y):
+        out = self.grazing_now("barn")
         for i, c in enumerate(self.st["cows"]):
-            if (c["x"], c["y"]) == (x, y):
+            if (c["x"], c["y"]) == (x, y) and not (out and c.get("ox")
+                                                   is not None):
                 return i
         return None
 
@@ -9647,7 +9894,7 @@ class Game:
     def cow_minute(self):
         a = self.areas["barn"]
         for c in self.st["cows"]:
-            if random.random() > 0.08:
+            if random.random() > 0.08 or self.is_out(c, "barn"):
                 continue
             dx, dy = random.choice(DIRS)
             x, y = c["x"] + dx, c["y"] + dy
@@ -9682,9 +9929,10 @@ class Game:
                       lambda: self.edge_past(i, "cows")))
         items.append(("Leave her be", lambda: None))
         m = c.get("milk", 0)
-        self.open_menu("%s, a %s%s %s (%s; %d pail%s of milk%s)" % (
+        self.open_menu("%s, a %s%s %s %s%s (%s; %d pail%s of milk%s)" % (
             c["name"], "woolly " if self.shear_ready(c) else "",
             c["colour"], "sheep" if sheep else "cow",
+            self.pet_hearts_text(c), " (hungry)" if c.get("hungry") else "",
             "new today" if age == 0 else
             "%d day%s with you" % (age, "s" if age > 1 else ""),
             m, "" if m == 1 else "s", "; %d wool" % c.get("wool", 0)
@@ -9693,7 +9941,9 @@ class Game:
     def pet_cow(self, i):
         c = self.st["cows"][i]
         sheep = c.get("kind") == "sheep"
-        self.flash(c["x"], c["y"], "heart")
+        self.flash(*self.animal_spot(c, "barn"), "heart")
+        if c.get("petted") != self.st["day"]:
+            self.farm_love(c, FARM_LOVE["pet"])
         vid = c.get("vid")
         if c.get("petted") == self.st["day"]:
             self.say("%s has had her fuss for today. She flicks an ear at "
@@ -9737,8 +9987,14 @@ class Game:
             return
         c["milked"] = self.st["day"]
         c["milk"] = c.get("milk", 0) + 1
-        self.give("milk")
+        large = random.random() < self.large_chance(c)
+        self.give("large milk" if large else "milk")
         self.sound.play("pour")
+        if large:
+            self.say("What a pail! %s's so content she gives twice the "
+                     "cream. (+1 large milk)" % c["name"], "heart")
+            self.end_turn(TOOL_COST)
+            return
         vid = c.get("vid")
         if vid and not self.likes_change(vid, "sheepify" if sheep else
                                          "cowify"):
@@ -9774,8 +10030,16 @@ class Game:
             return
         c["shorn"] = self.st["day"]
         c["wool"] = c.get("wool", 0) + 1
-        self.give("wool")
+        fine = random.random() < self.large_chance(c)
+        self.give("fine wool" if fine else "wool")
         self.sound.play("snip")
+        if fine:
+            self.say("The fleece comes away soft as a cloud: %s's so well "
+                     "kept it's the finest wool you've seen. (+1 fine "
+                     "wool)" % c["name"], "heart")
+            self.flash(*self.animal_spot(c, "barn"), "heart")
+            self.end_turn(TOOL_COST)
+            return
         vid = c.get("vid")
         if vid and not self.likes_change(vid, "sheepify"):
             self.say("You shear %s, who bleats indignantly through every "
@@ -9789,7 +10053,7 @@ class Game:
             self.say("Snip, snip, snip: the fleece comes away in one soft "
                      "piece, and %s trots off looking half the size. (+1 "
                      "wool)" % c["name"], "good")
-        self.flash(c["x"], c["y"], "heart")
+        self.flash(*self.animal_spot(c, "barn"), "heart")
         self.end_turn(TOOL_COST)
 
     # ── Pets: cats curled up in your cabin, dogs out in the farmyard ──
@@ -9838,7 +10102,7 @@ class Game:
              "colour": random.choice(CAT_COLOURS if kind == "cat" else
                                      DOG_COLOURS),
              "where": where, "x": x, "y": y, "petted": -1,
-             "day": self.st["day"]}
+             "day": self.st["day"], "love": 100}
         self.st["pets"].append(c)
         if self.area and self.area.key == where:
             self.render()
@@ -9874,9 +10138,10 @@ class Game:
                           lambda: self.start_naming(i, "pets")))
         items.append(("Squeeze past", lambda: self.pet_squeeze(i)))
         items.append(("Leave her be", lambda: None))
-        self.open_menu("%s, your %s %s (%s)" % (
+        self.open_menu("%s, your %s %s (%s; %s)" % (
             c["name"], c["colour"], c["kind"], "new today" if age == 0 else
-            "%d day%s with you" % (age, "s" if age > 1 else "")), items)
+            "%d day%s with you" % (age, "s" if age > 1 else ""),
+            self.pet_hearts_text(c)), items)
 
     def pet_pet(self, i):
         c = self.st["pets"][i]
@@ -9891,6 +10156,8 @@ class Game:
             return
         c["petted"] = self.st["day"]
         self.sound.play("meow" if cat else "bark")
+        self.love_pet(c, PET_LOVE["pet"] + (
+            PET_LOVE["bowl"] if self.bowl_full(c["where"]) else 0))
         vid = c.get("vid")
         if vid:
             self.say(("You stroke %s, who purrs and pushes into your hand. "
@@ -9903,6 +10170,294 @@ class Game:
             self.say(random.choice(CAT_PETS if cat else DOG_PETS) %
                      c["name"], "good")
         self.end_turn(1)
+
+    def pet_hearts(self, c):
+        default = 100 if c.get("kind") in ("cat", "dog") else 300
+        return min(5, c.get("love", default) // PET_HEART)
+
+    def pet_hearts_text(self, c):
+        h = self.pet_hearts(c)
+        return "\u2665" * h + "\u2661" * (5 - h)
+
+    def pick_egg(self, x, y):
+        st = self.st
+        st["eggs"].remove([x, y])
+        large = [x, y] in st["large_eggs"]
+        if large:
+            st["large_eggs"].remove([x, y])
+        self.give("large egg" if large else "egg")
+        self.sound.play("pick")
+        self.say("You pick up a big brown egg, the size of a fist. (+1 "
+                 "large egg)" if large else "You pick up a fresh egg. Still "
+                 "warm.", "good")
+
+    def grazing_now(self, b):
+        """Whether the animals of the coop or barn are out in the pasture
+        right now: let out today, before dusk, in fair weather."""
+        st = self.st
+        return st.get("grazing", {}).get(b) == st["day"] and \
+            st["minute"] < DUSK and self.season() != 3 and \
+            st["weather"] not in ("rain", "storm", "snow")
+
+    def is_out(self, c, b):
+        return c.get("ox") is not None and self.grazing_now(b)
+
+    def animal_spot(self, c, b):
+        return (c["ox"], c["oy"]) if self.is_out(c, b) and \
+            self.area.outdoor else (c["x"], c["y"])
+
+    def pasture(self, b):
+        """The grass in front of the coop or the barn where its animals
+        graze."""
+        dx, dy = door_of(b)
+        a = self.areas["valley"]
+        return [(x, y) for y in range(dy + 1, dy + 7)
+                for x in range(dx - 5, dx + 6)
+                if (x, y) != (dx, dy + 1) and (x, y) not in self.door_at
+                and "%d,%d" % (x, y) not in self.st["soil"]
+                and (x, y) != self.bowl_at("valley")
+                and self.can_stand(x, y, a)]
+
+    def grazer_at(self, x, y):
+        for b, pen in (("coop", "chickens"), ("barn", "cows")):
+            if self.grazing_now(b):
+                for i, c in enumerate(self.st[pen]):
+                    if (c.get("ox"), c.get("oy")) == (x, y):
+                        return pen, i
+        return None
+
+    def graze_minute(self):
+        busy = {(n.x, n.y) for n in self.npcs.values()
+                if n.where == "valley" and not n.hidden}
+        for b, pen in (("coop", "chickens"), ("barn", "cows")):
+            if not self.grazing_now(b):
+                continue
+            ok = set(self.pasture(b))
+            taken = {(c.get("ox"), c.get("oy")) for c in self.st[pen]}
+            for c in self.st[pen]:
+                if c.get("ox") is None or random.random() > 0.12:
+                    continue
+                dx, dy = random.choice(DIRS)
+                x, y = c["ox"] + dx, c["oy"] + dy
+                if (x, y) in ok and (x, y) not in taken and \
+                        (x, y) not in busy and (x, y) != self.pos():
+                    taken.discard((c["ox"], c["oy"]))
+                    c["ox"], c["oy"] = x, y
+                    taken.add((x, y))
+
+    def trough_menu(self, b):
+        """The feed trough in the coop or the barn: hay, and the door to
+        the pasture."""
+        st = self.st
+        pen = "chickens" if b == "coop" else "cows"
+        herd = len(st[pen])
+        inside = st["trough"].get(b, 0)
+        have = self.p["items"].get("hay", 0)
+        items = []
+        if have and inside < herd:
+            items.append(("Put in hay (have %d)" % have,
+                          lambda: self.fill_trough(b)))
+        if self.grazing_now(b):
+            items.append(("Call them back in", lambda: self.call_in(b)))
+        elif herd:
+            items.append(("Let them out to graze", lambda: self.let_out(b)))
+        items.append(("Leave it", lambda: None))
+        self.open_menu("The feed trough: %d hay in it for %d %s%s. %s" % (
+            inside, herd, "hen" if pen == "chickens" else "animal",
+            "" if herd == 1 else "s",
+            "The silo has %d more." % st["hay"] if self.silo_room() else
+            "No silo: what's here is all they get, unless they graze."),
+            items)
+
+    def fill_trough(self, b):
+        st = self.st
+        pen = "chickens" if b == "coop" else "cows"
+        n = min(self.p["items"].get("hay", 0),
+                len(st[pen]) - st["trough"].get(b, 0))
+        if n <= 0:
+            return
+        self.take("hay", n)
+        st["trough"][b] = st["trough"].get(b, 0) + n
+        self.sound.play("pick")
+        self.say("You fork %d hay into the trough." % n, "good")
+        self.end_turn(2)
+
+    def let_out(self, b):
+        """Open the doors: the animals spend the day in the pasture,
+        happier for it, and come in by themselves at dusk."""
+        st = self.st
+        why = ("Nothing grazes in the snow. They'll need hay this winter."
+               if self.season() == 3 else
+               "Not in this weather. They'd rather stay in the dry."
+               if st["weather"] in ("rain", "storm", "snow") else
+               "It's nearly dusk. Let them out in the morning."
+               if st["minute"] >= DUSK - 60 else None)
+        if why:
+            self.say(why, "info")
+            self.render()
+            return
+        pen = "chickens" if b == "coop" else "cows"
+        spots = self.pasture(b)
+        random.shuffle(spots)
+        for c, (x, y) in zip(st[pen], spots):
+            c["ox"], c["oy"] = x, y
+        st["grazing"][b] = st["day"]
+        self.sound.play("door")
+        self.say("You prop the %s doors open, and out they %s into the "
+                 "sunshine. They'll be in by themselves at dusk." % (
+                     b, "trot, clucking," if pen == "chickens" else
+                     "amble, one by one,"), "good")
+        self.end_turn(2)
+
+    def call_in(self, b):
+        st = self.st
+        st["grazing"].pop(b, None)
+        for c in st["chickens" if b == "coop" else "cows"]:
+            c.pop("ox", None)
+            c.pop("oy", None)
+        self.say("You call them in, and in they come.", "info")
+        self.end_turn(2)
+
+    def farm_love(self, c, n, quiet=False):
+        """A farm animal's happiness, up or down; a word when it grows a
+        heart."""
+        before = self.pet_hearts(c)
+        c["love"] = max(0, min(5 * PET_HEART, c.get("love", 300) + n))
+        if not quiet and self.pet_hearts(c) > before:
+            self.say("%s is happier than ever. (%s)" % (
+                c["name"], self.pet_hearts_text(c)), "heart")
+
+    def large_chance(self, c):
+        """How likely a happy animal is to give something special."""
+        return max(0, self.pet_hearts(c) - 2) * 0.2
+
+    def feed_animals(self):
+        """Overnight: who grazed, who ate hay from the trough or the silo,
+        who went hungry, and who was petted; happiness to match."""
+        st = self.st
+        hungry = 0
+        for b, pen in (("coop", "chickens"), ("barn", "cows")):
+            grazed = st["grazing"].get(b) == st["day"]
+            for c in st[pen]:
+                love = 0
+                if grazed and c.get("ox") is not None:
+                    love += FARM_LOVE["grazed"]
+                    ate = True
+                elif st["trough"].get(b, 0) > 0:
+                    st["trough"][b] -= 1
+                    ate = True
+                elif st["hay"] > 0:
+                    st["hay"] -= 1
+                    ate = True
+                else:
+                    ate = False
+                    hungry += 1
+                c["hungry"] = not ate
+                love += FARM_LOVE["fed"] if ate else FARM_LOVE["hungry"]
+                if c.get("petted") != st["day"]:
+                    love += FARM_LOVE["unpetted"]
+                self.farm_love(c, love, quiet=True)
+                c.pop("ox", None)
+                c.pop("oy", None)
+        if hungry:
+            self.say("%d of your animals went hungry overnight. Put hay in "
+                     "the trough, keep the silo stocked, or let them out to "
+                     "graze." % hungry, "bad")
+
+    def love_pet(self, c, n):
+        """More (or less) affection; a word when she gains a heart."""
+        before = self.pet_hearts(c)
+        c["love"] = max(0, min(5 * PET_HEART, c.get("love", 100) + n))
+        if self.pet_hearts(c) > before:
+            self.say("%s adores you a little more. (%s)" % (
+                c["name"], self.pet_hearts_text(c)), "heart")
+
+    def bowl_at(self, area):
+        """Where the pets' water bowl sits: by the cabin door inside for
+        the cats, and out in the farmyard for the dogs."""
+        if area == "cabin":
+            return (4, 5)
+        if area == "valley":
+            dx, dy = door_of("cabin")
+            return (dx - 1, dy + 1)
+        return None
+
+    def bowl_shown(self, area):
+        return any(c["where"] == area for c in self.st.get("pets", ()))
+
+    def bowl_full(self, area):
+        return self.st.get("bowls", {}).get(area) == self.st["day"]
+
+    def fill_bowl(self, area):
+        p = self.p
+        if self.bowl_full(area):
+            self.say("The water bowl's already full.", "info")
+            self.render()
+            return
+        if p["water"] <= 0:
+            self.say("The can's empty. Fill it at the well or any water.",
+                     "bad")
+            return
+        p["water"] -= 1
+        self.st["bowls"][area] = self.st["day"]
+        self.sound.play("water")
+        self.say("You fill the %s' water bowl. Fresh water makes a fuss go "
+                 "further today." % ("cats" if area == "cabin" else "dogs"),
+                 "good")
+        self.end_turn(1)
+
+    def pet_mornings(self):
+        """Overnight: pets you didn't pet sulk a little; pets who adore
+        you leave you something."""
+        st = self.st
+        for c in st.get("pets", ()):
+            if c.get("petted") != st["day"] - 1:
+                c["love"] = max(0, c.get("love", 100) - PET_LOVE["neglect"])
+                c["unpetted"] = c.get("unpetted", 0) + 1
+                if c["unpetted"] == 3:
+                    self.say("%s is sulking. Nobody's petted her in days." %
+                             c["name"], "bad")
+            else:
+                c["unpetted"] = 0
+            h = self.pet_hearts(c)
+            if h >= 2 and random.random() < h * 0.08:
+                self.pet_gift(c)
+
+    def pet_gift(self, c):
+        """A present from a devoted pet: a cat leaves it by your bed, a
+        dog digs it up in the farmyard."""
+        season = self.season()
+        if c["kind"] == "cat":
+            r = random.random()
+            if r < 0.35:
+                item = "feather"
+            elif r < 0.6:
+                item = random.choice(FISH["river"][season][:2])
+            elif r < 0.85:
+                item = "mouse"
+            else:
+                item = random.choice([f[0] for f in FORAGE[season]])
+            self.give(item)
+            self.say(random.choice(CAT_GIFTS).replace(
+                "{who}", c["name"]).replace("{it}", an(item)), "heart")
+            return
+        r = random.random()
+        if r < 0.3:
+            item = "old bone"
+        elif r < 0.65:
+            item = random.choice([f[0] for f in FORAGE[season]])
+        elif r < 0.9:
+            gold = random.randint(4, 20) * 10
+            self.p["gold"] += gold
+            self.say("%s digs up a little leather purse in the farmyard and "
+                     "drops it at your feet. There's %dg inside!" % (
+                         c["name"], gold), "gold")
+            return
+        else:
+            item = random.choice(("old coin", "silver ring"))
+        self.give(item)
+        self.say(random.choice(DOG_GIFTS).replace(
+            "{who}", c["name"]).replace("{it}", an(item)), "heart")
 
     def pet_squeeze(self, i):
         """Swap squares with a pet in your way (never into a doorway)."""
@@ -9962,7 +10517,7 @@ class Game:
         st["pets"].append({"name": name, "kind": kind,
                            "colour": self.beast_colour(vid, kind),
                            "where": where, "x": x, "y": y, "petted": -1,
-                           "day": st["day"], "vid": vid})
+                           "day": st["day"], "vid": vid, "love": 400})
         n.where, n.x, n.y, n.hidden = where, x, y, True
         n.goal, n.path, n.visit = None, [], None
         self.sound.play("meow" if kind == "cat" else "bark")
@@ -10133,9 +10688,14 @@ class Game:
         look = VILLAGERS[vid]["look"]
         if self.maid(vid):
             b = self.st.get("bikinis", {}).get(vid)
+            colour = self.st.get("uniform", {}).get(vid)
+            base = uniform_look(look, colour) if colour else maid_look(look)
             if b:
-                return bikini_look(maid_look(look), *b)
-            return maid_look(look)
+                return bikini_look(base, *b)
+            w = self.st.get("wear", {}).get(vid)
+            if w:
+                return outfit_look(base, *w)
+            return base
         return swap_look(look) if self.swapped(vid) else look
 
     def display_name(self, vid):
@@ -10247,8 +10807,10 @@ class Game:
                 if a.grid[y][x] == "straw"]
 
     def chicken_at(self, x, y):
+        out = self.grazing_now("coop")
         for i, c in enumerate(self.st["chickens"]):
-            if (c["x"], c["y"]) == (x, y):
+            if (c["x"], c["y"]) == (x, y) and not (out and c.get("ox")
+                                                   is not None):
                 return i
         return None
 
@@ -10274,7 +10836,7 @@ class Game:
     def chicken_minute(self):
         a = self.areas["coop"]
         for i, c in enumerate(self.st["chickens"]):
-            if random.random() > 0.2:
+            if random.random() > 0.2 or self.is_out(c, "coop"):
                 continue
             dx, dy = random.choice(DIRS)
             x, y = c["x"] + dx, c["y"] + dy
@@ -10285,8 +10847,10 @@ class Game:
     def chicken_menu(self, i):
         c = self.st["chickens"][i]
         age = self.st["day"] - c.get("day", 0)
-        self.open_menu("%s, a %s hen (%s; %d egg%s laid)" % (
-            c["name"], c["colour"], "new today" if age == 0 else
+        self.open_menu("%s, a %s hen %s%s (%s; %d egg%s laid)" % (
+            c["name"], c["colour"], self.pet_hearts_text(c),
+            " (hungry)" if c.get("hungry") else "",
+            "new today" if age == 0 else
             "%d day%s with you" % (age, "s" if age > 1 else ""),
             c.get("eggs", 0), "" if c.get("eggs", 0) == 1 else "s"), [
             ("Pet %s" % c["name"], lambda: self.pet_chicken(i))] + (
@@ -10298,6 +10862,20 @@ class Game:
     def edge_past(self, i, pen):
         """Swap squares with a hen or cow standing in your way."""
         c = self.st[pen][i]
+        if self.area.outdoor and c.get("ox") is not None:
+            here = self.pos()
+            if here in self.pasture("coop" if pen == "chickens" else
+                                    "barn"):
+                c["ox"], c["oy"], self.st["pos"] = here[0], here[1], [
+                    c["ox"], c["oy"]]
+                self.say("%s steps aside, chewing, and you get by." %
+                         c["name"], "info")
+                self.end_turn(WALK_COST)
+            else:
+                self.say("There's no room to get round %s." % c["name"],
+                         "info")
+                self.render()
+            return
         squares = self.coop_squares() if pen == "chickens" else \
             self.barn_squares()
         here = self.pos()
@@ -10322,10 +10900,7 @@ class Game:
                 "%s flaps aside with a squawk and you slip past.")) %
                 c["name"], "info")
             if [x, y] in self.st["eggs"]:
-                self.st["eggs"].remove([x, y])
-                self.give("egg")
-                self.sound.play("pick")
-                self.say("You pick up a fresh egg. Still warm.", "good")
+                self.pick_egg(x, y)
         else:
             self.say(random.choice((
                 "You put a shoulder to %s and lean. Eventually, grudgingly, "
@@ -10336,7 +10911,9 @@ class Game:
 
     def pet_chicken(self, i):
         c = self.st["chickens"][i]
-        self.flash(c["x"], c["y"], "heart")
+        self.flash(*self.animal_spot(c, "coop"), "heart")
+        if c.get("petted") != self.st["day"]:
+            self.farm_love(c, FARM_LOVE["pet"])
         if c.get("petted") == self.st["day"]:
             self.say("%s has had her fuss for today, and lets you know "
                      "it." % c["name"], "info")
@@ -10579,9 +11156,44 @@ class Game:
                     have[need]), need, n, made, mins))
         return out
 
+    def silo_room(self):
+        return SILO_HAY * sum(1 for m in self.st.get("machines", {}).values()
+                              if m["kind"] == "silo")
+
+    def silo_menu(self, k):
+        st = self.st
+        have = self.p["items"].get("hay", 0)
+        room = self.silo_room()
+        items = []
+        if have and st["hay"] < room:
+            items.append(("Put in your hay (%d)" % have,
+                          lambda: self.fill_silo()))
+        if room - SILO_HAY >= st["hay"]:
+            items.append(("Pick it up", lambda: self.pick_up_machine(k)))
+        items.append(("Leave it", lambda: None))
+        self.open_menu("The silo: %d hay of %d. It feeds animals that "
+                       "didn't graze, every night." % (st["hay"], room),
+                       items)
+
+    def fill_silo(self):
+        st = self.st
+        n = min(self.p["items"].get("hay", 0), self.silo_room() - st["hay"])
+        if n <= 0:
+            return
+        self.take("hay", n)
+        st["hay"] += n
+        self.sound.play("pick")
+        self.say("You fork %d hay into the silo. (%d of %d)" % (
+            n, st["hay"], self.silo_room()), "good")
+        self.end_turn(2)
+
     def machine_menu(self, k):
         m = self.st["machines"].get(k)
         if not m:
+            return
+        if m["kind"] == "silo":
+            self.walking = None
+            self.silo_menu(k)
             return
         kind = m["kind"]
         self.walking = None
@@ -10710,6 +11322,10 @@ class Game:
             return
         if n and self.tree(n.vid) and h in ("watering can", "axe"):
             self.tend_tree(n, h)
+            return
+        if h == "watering can" and not n and self.bowl_shown(a.key) and \
+                (x, y) == self.bowl_at(a.key):
+            self.fill_bowl(a.key)
             return
         if not a.outdoor:
             n = self.npc_at(x, y)
@@ -10909,8 +11525,17 @@ class Game:
         self.sound.play({"weed": "pick", "stone": "chop",
                          "branch": "chop", "stump": "chop"}[kind])
         self.flash(x, y, "puff")
-        self.say("You clear the %s%s. (+%d %s)" % (
-            kind, " with the " + need if auto else "", n, item), "info")
+        hay = ""
+        if kind == "weed" and random.random() < 0.5:
+            if self.st["hay"] < self.silo_room():
+                self.st["hay"] += 1
+                hay = ", and 1 hay into the silo"
+            else:
+                self.give("hay")
+                hay = ", and 1 hay"
+        self.say("You clear the %s%s. (+%d %s%s)" % (
+            kind, " with the " + need if auto else "", n, item, hay),
+            "info")
         self.end_turn(TOOL_COST + (3 if kind == "stump" else 0))
 
     # ── Crops ──
@@ -11155,12 +11780,18 @@ class Game:
                 "gold")
             st["shipped"] = {}
         # the hens lay
+        self.feed_animals()
+        n = 0
         for c in st["chickens"]:
+            if c.get("hungry"):
+                continue
             spot = self.free_coop_square(eggs_too=True)
             if spot and len(st["eggs"]) < 2 * COOP_ROOM:
                 st["eggs"].append(list(spot))
+                if random.random() < self.large_chance(c):
+                    st["large_eggs"].append(list(spot))
                 c["eggs"] = c.get("eggs", 0) + 1
-        n = len(st["chickens"])
+                n += 1
         if n:
             self.say("%s laid %s overnight." % (
                 "Your hen" if n == 1 else "Your %d hens" % n,
@@ -11197,6 +11828,7 @@ class Game:
         if st["weather"] in ("rain", "storm"):
             for s in st["soil"].values():
                 s[0] = 1
+            st.setdefault("bowls", {})["valley"] = st["day"]
         for k in st["sprinklers"]:
             x, y = map(int, k.split(","))
             for dx, dy in DIRS:
@@ -11216,6 +11848,7 @@ class Game:
             if valley.grid[y][x] == "grass" and k not in st["soil"] and \
                     k not in st["debris"] and k not in st["sprinklers"] and \
                     k not in st["machines"] and k not in st["orchard"] and \
+                    (x, y) != self.bowl_at("valley") and \
                     (x, y) != self.pos() and season != 3:
                 st["debris"][k] = "weed"
         for t in list(st["orchard"].values()) + list(
@@ -11398,6 +12031,8 @@ class Game:
             self.cow_minute()
         if visible:
             self.pet_minute(here)
+            if here == "valley":
+                self.graze_minute()
         taken = {(n.where, n.x, n.y) for n in self.npcs.values()}
         for vid, n in self.npcs.items():
             if self.talk and self.talk.get("v") == vid or self.rooted(vid) \
@@ -11630,9 +12265,13 @@ class Game:
             if birthday:
                 self.speak(vid, "(happy)It's my birthday today! Did you "
                                 "remember?")
-            elif self.maid(vid) and vid in self.st["bikinis"] and \
-                    self.season() == 3:
-                self.speak(vid, random.choice(BIKINI_WINTER))
+            elif self.maid(vid) and self.season() == 3 and \
+                    self.outfit(vid) in ("bikini", "sundress"):
+                self.speak(vid, random.choice(BIKINI_WINTER).replace(
+                    "{outfit}", self.outfit(vid)))
+            elif self.maid(vid) and self.season() == 1 and \
+                    self.outfit(vid) == "shawl":
+                self.speak(vid, random.choice(SHAWL_SUMMER))
             elif self.maid(vid) and f["status"] == "married":
                 self.speak(vid, random.choice(self.maid_romance(
                     vid, MAID_WIFE_GREET)))
@@ -12261,7 +12900,7 @@ class Game:
             if extra:
                 label += " + " + ", ".join("%d %s" % (c, n)
                                            for n, c in extra.items())
-            if name.endswith(" seeds"):
+            if name.endswith(" seeds") or name == "hay":
                 rows.append((label, lambda n=name, pr=price:
                              self.how_many(vid, n, pr)))
             else:
@@ -12512,10 +13151,12 @@ class Game:
             name = v["short"]
             b = st.get("bikinis", {}).get(vid)
             if b:
-                look = ("*%s comes up the aisle in %s %sbikini and a long "
-                        "lace veil. Agnes Whitlock has to sit down." % (
-                            name, an(BIKINI_NAMES.get(b[0], "bright")),
-                            "polka-dot " if b[1] else ""))
+                look = ("*%s comes up the aisle in %s and a long lace "
+                        "veil. Agnes Whitlock has to sit down." % (
+                            name, self.outfit_words(vid)))
+            elif self.outfit(vid) != "uniform":
+                look = ("*%s comes up the aisle in %s, with a veil, and "
+                        "looks lovely." % (name, self.outfit_words(vid)))
                 if self.season() == 3:
                     look += " Snow settles on %s's bare shoulders; she " \
                             "is trying very hard not to shiver." % name
@@ -12541,8 +13182,8 @@ class Game:
             return
         v = VILLAGERS[vid]["short"]
         if self.maid(vid):
-            v += (", still in her bikini," if vid in self.st.get(
-                "bikinis", {}) else ", apron and all,")
+            v += (", apron and all," if self.outfit(vid) == "uniform" else
+                  ", in %s," % self.outfit_words(vid))
         r = random.random()
         if r < 0.4 and self.st["soil"] and self.st["weather"] == "sun":
             for s in self.st["soil"].values():
@@ -12611,6 +13252,7 @@ class Game:
             self.say("Today's your wedding day! Go to the square between "
                      "ten and three.", "heart")
         self.spouse_morning()
+        self.pet_mornings()             # before the maids give today's fuss
         self.maid_morning()
 
     def new_request(self):
@@ -13097,14 +13739,24 @@ class Game:
                   if n.where == a.key and not n.hidden}
         if a.key == "coop":
             for hen in st["chickens"]:
-                people[(hen["x"], hen["y"])] = "hen_" + hen["colour"]
+                if not self.is_out(hen, "coop"):
+                    people[(hen["x"], hen["y"])] = "hen_" + hen["colour"]
         if a.key == "barn":
             for cow in st["cows"]:
-                people[(cow["x"], cow["y"])] = self.barn_tile(cow)
+                if not self.is_out(cow, "barn"):
+                    people[(cow["x"], cow["y"])] = self.barn_tile(cow)
+        if a.outdoor:
+            for b, pen in (("coop", "chickens"), ("barn", "cows")):
+                for beast in st[pen] if self.grazing_now(b) else ():
+                    if beast.get("ox") is not None:
+                        people[(beast["ox"], beast["oy"])] = (
+                            "hen_" + beast["colour"] if pen == "chickens"
+                            else self.barn_tile(beast))
         for pet in st.get("pets", ()):
             if pet["where"] == a.key:
                 people[(pet["x"], pet["y"])] = "%s_%s" % (pet["kind"],
                                                          pet["colour"])
+        bowl = self.bowl_at(a.key) if self.bowl_shown(a.key) else None
         lit = {}
         if lvl and a.outdoor:
             for lx, ly in self.lamps + [(px, py)]:
@@ -13146,6 +13798,12 @@ class Game:
                         mid = "egg"
                     if a.key == "loo":
                         mid = self.loo_inside().get((x, y), mid)
+                    if a.key in ("coop", "barn") and t == "trough" and \
+                            st["trough"].get(a.key):
+                        mid = "haypile"
+                    if bowl == (x, y) and not mid:
+                        mid = "bowl_full" if self.bowl_full(a.key) else \
+                            "bowl"
                     top = people.get((x, y))
                     if (x, y) == (px, py):
                         top = "you"
@@ -13532,8 +14190,9 @@ class Game:
         pets = self.st.get("pets", [])
         if pets:
             lines += [""] + wrap("Your pets: " + ", ".join(
-                "%s the %s%s" % (c["name"], c["kind"], " \u2665" if
-                                 c.get("petted") == self.st["day"] else "")
+                "%s the %s %s%s" % (c["name"], c["kind"],
+                                    self.pet_hearts_text(c), " (petted)" if
+                                    c.get("petted") == self.st["day"] else "")
                 for c in pets) + ".", 64)
         for kind, label in (("cow", "Your cows: "), ("sheep",
                                                      "Your sheep: ")):
@@ -13927,6 +14586,9 @@ MACHINE_SOLD = {   # Nell, selling you a machine
     "loom": "(happy)One fleece makes a bolt of cloth. Two make a scarf, if "
             "you've the patience. I never have.",
 }
+MACHINE_SOLD["silo"] = ("(happy)One silo! Set it down near the barn. Cut "
+                        "weeds with the scythe and half the time you'll get "
+                        "hay for it, and it feeds your animals for you.")
 MACHINE_PLACED = {
     "mayonnaise jar": "You set down the mayonnaise jar. It needs an egg.",
     "preserves jar": "You set down the preserves jar. It takes a fruit or a "
@@ -13935,12 +14597,15 @@ MACHINE_PLACED = {
                "around, and seem to approve.",
     "cheese press": "You set down the cheese press. It needs milk.",
     "loom": "You set up the loom. It needs wool.",
+    "silo": "You set down the silo. It'll hold %d hay, and feed your "
+            "animals from it every night." % SILO_HAY,
 }
 MACHINE_TAKES = {"mayonnaise jar": "an egg",
                  "preserves jar": "a fruit (for jam) or a vegetable (to "
                                   "pickle)",
                  "beehive": "nothing", "cheese press": "milk",
-                 "loom": "wool (one for cloth, two for a scarf)"}
+                 "loom": "wool (one for cloth, two for a scarf)",
+                 "silo": "hay"}
 GENERIC_NEWS = [
     "Mabel's cat has gone missing again. She'll turn up. She always does.",
     "Otto challenged Ivy to arm-wrestle again. Again.",
@@ -14278,6 +14943,56 @@ def maid_look(look):
                collar="#f4f0e8", shoes="#1a1a22", rosy=True)
     new.pop("lips", None)
     new.pop("beardc", None)
+    return new
+
+
+MAID_UNIFORMS = {"black": "#2a2838", "navy": "#2e4486", "wine": "#6a2238",
+                 "forest green": "#2a4a34", "lavender": "#8a78c0",
+                 "pink": "#e08aa8"}
+OUTFITS = {   # what else a maid might WEAR: menu, and the colours it comes in
+    "shawl": ("A winter shawl", ("#b04444", "#4a6aa8", "#c8a040",
+                                 "#6a8a4a", "#f0ece4")),
+    "sundress": ("A sundress", ("#f4d060", "#f0a0b8", "#a8d8f0",
+                                "#b8e0a0", "#f8f4ec")),
+    "yukata": ("A yukata", ("#2a3a7a", "#c04868", "#3a8a8a", "#7a4aa0",
+                            "#f0a8b8")),
+}
+COLOUR_NAMES = {"#b04444": "red", "#4a6aa8": "blue", "#c8a040": "mustard",
+                "#6a8a4a": "moss green", "#f0ece4": "cream",
+                "#f4d060": "yellow", "#f0a0b8": "pink",
+                "#a8d8f0": "sky blue", "#b8e0a0": "mint",
+                "#f8f4ec": "white", "#2a3a7a": "indigo",
+                "#c04868": "rose", "#3a8a8a": "teal", "#7a4aa0": "purple",
+                "#f0a8b8": "blossom pink"}
+
+
+def uniform_look(look, colour):
+    """A maid's uniform, in another colour than black."""
+    new = maid_look(look)
+    new.update(shirt=colour, pants=colour, trim=colour)
+    return new
+
+
+def outfit_look(look, kind, colour):
+    """A maid out of uniform: a shawl over it, a sundress and straw hat,
+    or a yukata with an obi."""
+    new = dict(look)
+    if kind == "shawl":
+        new["extras"] = tuple(look.get("extras", ())) + ("scarf",)
+        new["scarfc"] = colour
+        return new
+    new["extras"] = tuple(e for e in look.get("extras", ())
+                          if e not in ("apron", "maidcap", "bow"))
+    skin = SKIN[look.get("skin", 1) % len(SKIN)]
+    if kind == "sundress":
+        new["extras"] += ("hat",)
+        new.update(shirt=colour, pants=colour, trim=shade(colour, 0.85),
+                   collar=skin, hat="#e8c870", hatc="#e8c870",
+                   shoes="#c89060")
+    else:                                               # a yukata
+        obi = "#e8b030" if colour not in ("#f0a8b8",) else "#c04868"
+        new.update(shirt=colour, pants=colour, trim=obi, collar="#f4f0e8",
+                   shoes="#a07040")
     return new
 
 
@@ -14918,6 +15633,14 @@ MAID_CHORES = {   # what you can tell a maid to do: menu, and in her words
     "water": ("Water the crops", "water the crops"),
     "eggs": ("Collect the eggs", "collect the eggs and see to the hens"),
     "milk": ("Milk the animals", "milk the cows and sheep"),
+    "shear": ("Shear the sheep", "shear whichever sheep are woolly"),
+    "pets": ("Mind the pets", "feed the pets and give them a fuss"),
+    "machines": ("Tend the machines", "empty the machines and fill them "
+                 "up again"),
+    "loos": ("See to the outhouses", "scrub out the outhouses and empty "
+             "the pits"),
+    "ship": ("Ship the harvest", "take the crops and fruit to the "
+             "shipping bin"),
     "cook": ("Cook breakfast", "cook you breakfast"),
     "rest": ("Just rest", "rest. Just rest. If you say so"),
 }
@@ -15108,6 +15831,36 @@ MAID_WIFE_GREET = (
     ["(happy)Welcome home, {name}. I swept. Of course I swept.",
      "(blush)You're home. Good. The apron's less annoying when you're "
      "here."])
+OUTFIT_LINES = {   # kind -> (she likes it, she doesn't)
+    "shawl": (["(happy)Oh, it's lovely and warm! Like a hug that stays.",
+               "(blush)Hand-knitted, too. I feel very well looked after."],
+              ["(cross)It itches. I'll wear it. It itches.",
+               "(sad)A shawl. Over the apron. Over the dress. Layers of "
+               "duty."]),
+    "sundress": (["(laugh)A sundress! I feel like it's the first day of "
+                  "summer!",
+                  "(blush)And a straw hat! I might go and sit in a "
+                  "meadow. After the dishes."],
+                 ["(cross)I'll get it dirty in about a minute, you know.",
+                  "(blush)It's very... floaty. I'm not used to floaty."]),
+    "yukata": (["(happy)It's beautiful. I feel like I'm going to a summer "
+                "festival.",
+                "(blush)The obi took twenty minutes to tie. Worth it."],
+               ["(cross)I can only take tiny steps in this. Tiny. Steps.",
+                "(sad)Lovely, I'm sure. How am I meant to scrub a floor in "
+                "it?"]),
+}
+UNIFORM_BACK_SORRY = ["(sad)Back in the uniform? Oh. I was getting used "
+                      "to that.",
+                      "Very well. I'll fold it up nicely for next time."]
+UNIFORM_BACK_GLAD = ["(happy)Oh, good. The uniform at least has pockets.",
+                     "(happy)Thank you. I feel more myself. My maid self."]
+UNIFORM_LINES = ["(happy){Colour}! Very smart. I'll keep it pressed.",
+                 "Mm. {Colour}. It'll hide the dust, at least.",
+                 "(blush)A {colour} uniform. Do I look the part?"]
+SHAWL_SUMMER = ["(cross)It's sweltering. I'm in a woollen shawl. In "
+                "summer.",
+                "(sad)I've had to wring out the shawl twice today."]
 BIKINI_NAMES = {"#e83a5a": "red", "#f08a2a": "orange", "#f4d020": "yellow",
                 "#3ac06a": "green", "#2a9ad8": "blue", "#8a4ad8": "purple",
                 "#f070b0": "pink", "#1a1a22": "black", "#40d0d0": "turquoise"}
@@ -15131,10 +15884,10 @@ BIKINI_OFF_HATE = [
     "(blush)Much better. I felt like a scarecrow with no clothes on.",
     "(happy)Thank you. A maid should be properly dressed."]
 BIKINI_WINTER = [
-    "(surprised)Brr! Awfully chilly for a bikini this time of year.",
-    "(sad)It's snowing outside. I'm in a bikini. Just noting it.",
+    "(surprised)Brr! Awfully chilly for a {outfit} this time of year.",
+    "(sad)It's snowing outside. I'm in a {outfit}. Just noting it.",
     "(cross)My teeth are chattering. You can hear them, can't you?",
-    "(surprised)Could I at least have a scarf? Over the bikini? No?"]
+    "(surprised)Could I at least have a scarf? Over the {outfit}? No?"]
 MAID_GREET_LIKE = ["(happy)Welcome home! Shall I put the kettle on?",
                    "(happy)Good day! Is there anything you'd like done?",
                    "(laugh)At your service!"]
@@ -15827,6 +16580,18 @@ DOG_PETS = ["You ruffle %s's ears. Her whole back end wags.",
             "%s flops over for a belly rub, tongue lolling.",
             "%s brings you a stick, very proud of it.",
             "You scratch %s behind the ear and her leg thumps the ground."]
+CAT_GIFTS = ["You find a present from {who} by your bed: {it}. She looks "
+             "very proud.",
+             "{who} has left {it} on your pillow. It's the thought that "
+             "counts.",
+             "{who} drops {it} at your feet and sits back, waiting to be "
+             "told how clever she is."]
+DOG_GIFTS = ["{who} has been digging in the farmyard, and brings you {it}, "
+             "tail going like mad.",
+             "{who} comes bounding up, muddy to the elbows, with {it} in "
+             "her mouth.",
+             "{who} proudly lays {it} at your feet. Where did she find "
+             "that?"]
 MEOW_HAPPY = ["The cat that is {who} purrs and winds round your ankles.",
               "{who} the cat gives a small, polite mew.",
               "{who} blinks at you slowly. That's cat for 'I love you.'",
@@ -16055,6 +16820,45 @@ def all_tiles(season=0):
             tiles[name + "@1"] = px[1:] + [[None] * 16]   # a bob
     return tiles
 
+
+ART["haypile"] = ({"h": "#e8c860", "H": "#b89438", "s": "#f4dc88"}, (
+    "................", "................", "................",
+    "................", "................", "....s..h.s......",
+    "...hshhHhshh....", "..hHhhshHhhHh...", "..HhhHhhhhsHH...",
+    "...HHhHHhHHh....", "................", "................",
+    "................", "................", "................",
+    "................"))
+ART["m_silo"] = ({"r": "#b04040", "R": "#8a2e30", "w": "#d8d0c0",
+                 "W": "#a8a090", "d": "#5a3a24", "g": "#8a8a90"}, (
+    "......gggg......", ".....gggggg.....", "....gggggggg....",
+    "....rrrrrrrr....", "....rRrrrrRr....", "....rrrrrrrr....",
+    "....wwwwwwww....", "....rrrrrrrr....", "....rRrrrrRr....",
+    "....rrrrrrrr....", "....wwwwwwww....", "....rrrddrrr....",
+    "....rRrddrRr....", "....rrrddrrr....", "....RRRRRRRR....",
+    "................"))
+ART["bowl"] = ({"b": "#c04848", "B": "#8a2a30", "w": "#e8e0d8"}, (
+    "................", "................", "................",
+    "................", "................", "................",
+    "................", "................", "................",
+    "................",
+    "....wbbbbbbw....",
+    "...bbBBBBBBbb...",
+    "...bBBBBBBBBb...",
+    "....bbbbbbbb....",
+    ".....bbbbbb.....",
+    "................"))
+ART["bowl_full"] = ({"b": "#c04848", "B": "#8a2a30", "w": "#e8e0d8",
+                    "a": "#5aa0e0", "A": "#a8d8f8"}, (
+    "................", "................", "................",
+    "................", "................", "................",
+    "................", "................", "................",
+    "................",
+    "....wbbbbbbw....",
+    "...bbaAaaaabb...",
+    "...baaaaAaaab...",
+    "....bbbbbbbb....",
+    ".....bbbbbb.....",
+    "................"))
 
 # Inside an outhouse: what you've put up, and what you'd rather not have
 ART["flies"] = ({"f": "#1a1a1a", "w": "#c8d8e8"}, (
@@ -16322,6 +17126,12 @@ def selftest():
             if need not in ("jam", "pickle") and (
                     need not in ITEMS or made not in ITEMS):
                 problems.append("machine %s: %s -> %s" % (m, need, made))
+    for kind in OUTFITS:
+        if kind not in OUTFIT_LINES or not all(OUTFIT_LINES[kind]):
+            problems.append("outfit %s lacks lines" % kind)
+        for c in OUTFITS[kind][1]:
+            if c not in COLOUR_NAMES:
+                problems.append("outfit colour %s unnamed" % c)
     for q, right, wrong in RIDDLES:
         if right in wrong or len(wrong) != 2:
             problems.append("riddle %s" % q)

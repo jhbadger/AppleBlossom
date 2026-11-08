@@ -133,6 +133,32 @@ peaches 110g, oranges 100g, pomegranates 140g), is good to eat, and makes
 jam in the preserves jar. The axe will chop a tree down, if you're sure,
 for wood. Trees stay put through every season, snow and all.
 
+### Happy, well-fed animals
+
+Every hen, cow and sheep has **happiness**, up to five hearts, shown when
+you walk into her. Petting her each day raises it, and so does being fed;
+a day without a fuss lowers it a little, and going **hungry** lowers it a
+lot (and a hungry hen doesn't lay). The happier she is, the more often
+she gives something special: a **large egg** (95g), **large milk** (210g)
+or **fine wool** (320g), all of which the machines take as well.
+
+Animals need feeding every night, one of three ways:
+
+- **Grazing:** walk into the feed trough in the coop or the barn and
+  choose *Let them out to graze*. On a fine day (not in rain or snow, and
+  never in winter) the animals wander out to the pasture in front of the
+  building, where you can pet, milk and shear them, and they come back in
+  by themselves at dusk. A day out is a full meal and a happy one.
+- **The trough:** put **hay** in it from your bag, one each.
+- **The silo:** Ivy builds one for 1,000g, 60 wood and 40 stone; set it
+  down like a machine. It holds 240 hay and feeds every animal that didn't
+  graze or find hay in the trough, every night, by itself. Walk into it to
+  fork in your hay.
+
+Hay comes from cutting weeds with the scythe (half the time; straight
+into the silo if there's room) or from Mabel at 40g. Winter is when you'll
+need it most.
+
 ### Cats and dogs
 
 Mabel sells **cats** (600g) and **dogs** (800g), up to four pets in all.
@@ -140,8 +166,21 @@ Each comes with a name (Whiskers, Marmalade, Smudge… or Rex, Scout,
 Bramble…) and a coat: black, ginger, grey, white or tabby for a cat; brown,
 black, golden or white for a dog, who wears a red collar. Cats wander
 your cabin; dogs wander the farmyard in front of it. Walk into one to pet
-her (once a day), give her a new name, or squeeze past. The Friends list
-shows your pets. Villagers turned into cats and dogs can become pets too:
+her (once a day), give her a new name, or squeeze past.
+
+Every pet has **affection**, up to five hearts, shown when you walk into
+her and in the Friends list. Each day you pet her it grows; each day you
+don't, it shrinks, and after a few days she sulks. A maid told to mind
+the pets gives them a smaller fuss each morning. Keep their **water
+bowl** full for a bigger boost: the cats' bowl is inside the cabin door,
+the dogs' out in the farmyard by the mailbox. Fill it with the watering
+can (rain fills the dogs' for you); it's empty again each morning.
+
+A pet with two hearts or more brings you **presents** some mornings, more
+often the more she adores you. A cat leaves something by your bed: a
+feather, a fish, a forage find, or a mouse she's very proud of. A dog digs
+in the farmyard: an old bone, something to forage, a purse of coins, and
+now and then an old coin worth a good deal or a lost silver ring. Villagers turned into cats and dogs can become pets too:
 see the magic wand.
 
 ### Machines
@@ -256,18 +295,27 @@ up to eight squares until it hits someone or something solid.
   | Water the crops | waters every crop (not needed when it rains) |
   | Collect the eggs | gathers the coop's eggs and pets every hen |
   | Milk the animals | milks every cow and sheep in your barn that has milk to give |
+  | Shear the sheep | shears every woolly sheep (if you've the shears) |
+  | Mind the pets | feeds your cats and dogs and gives them their daily fuss |
+  | Tend the machines | takes out whatever's ready and fills the empty machines from your bag |
+  | See to the outhouses | scrubs them clean, empties the pits into fertilizer for you, and rights any the pranksters tipped |
+  | Ship the harvest | takes the crops and fruit in your bag to the shipping bin |
   | Cook breakfast | leaves you pancakes, bread, honey cake or stew |
   | Just rest | nothing at all |
 
   You can also **KISS** your maid, twice a day. Each kiss counts as a gift
-  she likes, on top of the usual two gifts a week. Ask her to **WEAR**
-  something else and she changes out of the uniform into a bikini, in a
-  random colour (sometimes polka dot), on her sprite and her portrait
-  alike; ask again and she's back in her dress, apron and cap. Some maids
-  love it (the first time earns friendship); others find it far too
-  revealing (it costs a little each time), but they wear it anyway. In
-  winter she'll mention that it's awfully chilly for a bikini, and greet
-  you with chattering teeth until you let her change. A maid you could
+  she likes, on top of the usual two gifts a week. Ask her what to
+  **WEAR** and her wardrobe opens: her uniform (in black, navy, wine,
+  forest green, lavender or pink), a bikini (a random colour, sometimes
+  polka dot), a woollen shawl over the uniform, a sundress and straw hat,
+  or a yukata with an obi. Each new outfit comes in a colour of its own,
+  and shows on her sprite and her portrait alike. Every maid likes some
+  outfits and not others (dealt each game): one she likes earns
+  friendship the first time; one she doesn't costs a little each time,
+  and she wears it anyway, saying what she thinks. In winter, a maid in a
+  bikini or a sundress will mention that it's awfully chilly, and greet
+  you with chattering teeth until you let her change; in summer, a shawl
+  is sweltering. A maid you could
   have courted anyway still can: she'll take the bouquet and the pendant
   with a word about the uniform, walk up the aisle in it (or in her
   bikini, to the village's astonishment), and after the wedding stay your
@@ -355,11 +403,11 @@ up to eight squares until it hits someone or something solid.
 
 | Place | Who | What's there |
 | --- | --- | --- |
-| Pike's General Store | Mabel Pike | seeds for the season, fruit tree saplings, hens, cows, sheep, cats and dogs, a milk pail, shears, a leash, gifts, the Blossom Bouquet |
+| Pike's General Store | Mabel Pike | seeds for the season, fruit tree saplings, hay, hens, cows, sheep, cats and dogs, a milk pail, shears, a leash, gifts, the Blossom Bouquet |
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
 | Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, the copper watering can, fine gifts, the Blossom Pendant |
-| Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, the barn, and the cabin extension |
+| Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, the barn, a silo, and the cabin extension |
 | The dock | Theo Fairweather | fishing rods and lures, 10 till 3 |
 | The Library | Juniper Marsh | books, and Pip's schoolroom |
 | Mayor's House | Mayor Edmund Pell | festivals, history |
