@@ -59,6 +59,8 @@ the tool would do something there.
 | Axe, on a tree | three swings fell it, for 8 wood and a stump to clear (6 more); it grows back after a season |
 | Fishing rod | ask Theo about FISHING; face water and cast |
 | Magic wand | casts a spell straight ahead (see below) |
+| Leash | from Mabel's: leads a chickenfied or cowified villager, and lets her go again (see below) |
+| Milk pail | from Mabel's: milks a cow in your barn, once a day each |
 
 Watered crops grow a day each night, and rain waters them for you. When a crop
 is ripe, use anything on it to pick it. Some crops (strawberries, tomatoes,
@@ -87,6 +89,19 @@ the coop while you're there.
   name. Type the name in the bar under the map and press Return; Esc keeps
   the old one. The Friends list (F) shows your hens and which you've petted
   today.
+
+### Cows
+
+Ivy will also build you a **barn** up by your fields for 4,000g, 150 wood
+and 50 stone. Once it's up, Mabel sells **cows** at 1,500g each, up to six,
+and a **milk pail** (300g, and you keep it). Each cow comes with a name
+(Buttercup, Clover, Bessie, Custard, and others) and a coat (spotted, brown,
+black or ginger), and wanders the barn while you're there.
+
+- **Milk:** with the pail in hand, use it on a cow, or walk into her and
+  choose Milk, once a day each. Milk sells for 125g and gives 25 energy.
+- **Your cows:** walk into a cow to pet her (once a day), rename her or
+  milk her. The Friends list shows your cows.
 
 ## The magic wand
 
@@ -121,8 +136,28 @@ up to eight squares until it hits someone or something solid.
   chicken (dealt each game, separately from genderswap). As with genderswap,
   liking it earns you friendship (once) and hating it costs you. Cast it again
   to turn them back, and they'll tell you all about it. Genderswap bounces off
-  a chicken; petrify makes a golden hen. (Someday you'll be able to catch a
-  chickenfied villager and keep her in your coop.)
+  a chicken; petrify makes a golden hen.
+
+  Mabel sells a **leash** (250g, and you keep it). Use it on a chickenfied
+  villager and she follows at your heels wherever you go, instead of
+  keeping to her day. Use any tool on her, the leash included, and you let
+  her go. Lead her into your coop and she becomes one of your hens: she
+  lays an egg each night and can be petted (a villager who likes being a
+  chicken takes that as a liked gift), though she keeps her own name. Other
+  spells fizzle in the straw; chickenfy her there and she's herself again,
+  and off she goes back to her usual routine. The leash holds one hen at a
+  time, and a villager-hen takes up a place in the coop like any other.
+- **Cowify** turns whoever it hits into a cow like the ones Mabel sells, in
+  a coat that suits their hair, and like a chickenfied villager she goes
+  on with her day. Walk into her and she moos happily or angrily, depending
+  on whether this villager likes being a cow (dealt each game), with
+  friendship to match. Put the **leash** on her and she plods after you;
+  lead her into your **barn** and she's one of your cows: pet her (a
+  villager who likes being a cow takes it as a liked gift) and milk her
+  once a day. She won't fit through the coop door. Cowify her again, in the
+  barn or out, and she's herself, off back to her routine. Other spells
+  bounce off a cow's hide (petrify makes a golden cow), cowify won't take
+  on a statue, hen, maid, tree or outhouse, and Pip is too young for it.
 - **Maidify** turns whoever it hits into a maid: a young woman in a black
   dress, a white apron and a frilled cap, whoever they were before. She
   moves into your cabin and stops keeping shop. Ask her about her **CHORE**
@@ -134,6 +169,7 @@ up to eight squares until it hits someone or something solid.
   | Clear the fields | clears up to a dozen weeds, stones and branches, and bags what they drop |
   | Water the crops | waters every crop (not needed when it rains) |
   | Collect the eggs | gathers the coop's eggs and pets every hen |
+  | Milk the cows | milks every cow in your barn that hasn't been milked |
   | Cook breakfast | leaves you pancakes, bread, honey cake or stew |
   | Just rest | nothing at all |
 
@@ -182,11 +218,11 @@ up to eight squares until it hits someone or something solid.
 
 | Place | Who | What's there |
 | --- | --- | --- |
-| Pike's General Store | Mabel Pike | seeds for the season, hens, gifts, the Blossom Bouquet |
+| Pike's General Store | Mabel Pike | seeds for the season, hens, cows, a milk pail, a leash, gifts, the Blossom Bouquet |
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
 | Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, the copper watering can, fine gifts, the Blossom Pendant |
-| Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, and the cabin extension |
+| Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, the barn, and the cabin extension |
 | The dock | Theo Fairweather | fishing rods and lures, 10 till 3 |
 | The Library | Juniper Marsh | books, and Pip's schoolroom |
 | Mayor's House | Mayor Edmund Pell | festivals, history |
