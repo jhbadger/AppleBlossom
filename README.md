@@ -148,7 +148,10 @@ Animals need feeding every night, one of three ways:
   choose *Let them out to graze*. On a fine day (not in rain or snow, and
   never in winter) the animals wander out to the pasture in front of the
   building, where you can pet, milk and shear them, and they come back in
-  by themselves at dusk. A day out is a full meal and a happy one.
+  by themselves at dusk. A day out is a full meal and a happy one. Grazing
+  animals leave the odd **cow pat** or hen dropping behind them: click it
+  (or face it and press Space) from the next square to scoop it up for
+  **fertilizer**, and watch where you step, or it's *squelch*.
 - **The trough:** put **hay** in it from your bag, one each.
 - **The silo:** Ivy builds one for 1,000g, 60 wood and 40 stone; set it
   down like a machine. It holds 240 hay and feeds every animal that didn't

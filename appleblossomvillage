@@ -5735,6 +5735,7 @@ SILO_HAY = 240                  # hay a silo holds
 FARM_LOVE = {"pet": 30, "fed": 15, "grazed": 25, "hungry": -50,
              "unpetted": -15}
 DUSK = 18 * 60                  # grazing animals come in
+DROPPINGS = 16                  # at most this many lying in the pastures
 PET_LOVE = {"pet": 30, "bowl": 15, "maid": 10, "neglect": 20}
 LOO_GRUBBY, LOO_FILTHY = 3, 6   # how much use before an outhouse is so
 PIT_PER_FERT = 3                # visits to fill a sack of fertilizer
@@ -7403,6 +7404,7 @@ class Game:
             "tomorrow": "sun", "soil": {}, "sprinklers": [], "machines": {}, "bikinis": {}, "wear": {}, "uniform": {},
             "orchard": {}, "fruitful": {}, "loo_state": {}, "bowls": {},
             "hay": 0, "trough": {}, "grazing": {}, "large_eggs": [],
+            "droppings": {},
             "fertilized": {},
             "debris": {"%d,%d" % k: v for k, v in farm_debris(
                 self.areas["valley"].grid, seed).items()},
@@ -7490,7 +7492,7 @@ class Game:
         st.setdefault("loo_state", {})
         st.setdefault("bowls", {})
         for k, v in (("hay", 0), ("trough", {}), ("grazing", {}),
-                     ("large_eggs", [])):
+                     ("large_eggs", []), ("droppings", {})):
             st.setdefault(k, v)
         st.setdefault("fertilized", {})
         for vid in VILLAGERS:
@@ -7899,6 +7901,10 @@ class Game:
 
     def step_on(self, x, y):
         k = "%d,%d" % (x, y)
+        if k in self.st.get("droppings", ()):
+            self.walking = None
+            self.say(random.choice(STEP_IN[self.st["droppings"][k]]),
+                     "bad")
         item = self.st["forage"].pop(k, None)
         if item:
             self.give(item)
@@ -8050,6 +8056,9 @@ class Game:
             return True
         if n and (self.leashed(n.vid) or (
                 h == "leash" and self.leashable(n.vid))):
+            return True
+        if a.outdoor and "%d,%d" % (x, y) in self.st.get("droppings", ()) \
+                and not n:
             return True
         if not a.outdoor or not a.inside(x, y) or n:
             return False
@@ -10241,9 +10250,29 @@ class Game:
                 x, y = c["ox"] + dx, c["oy"] + dy
                 if (x, y) in ok and (x, y) not in taken and \
                         (x, y) not in busy and (x, y) != self.pos():
-                    taken.discard((c["ox"], c["oy"]))
+                    left = (c["ox"], c["oy"])
+                    taken.discard(left)
                     c["ox"], c["oy"] = x, y
                     taken.add((x, y))
+                    self.maybe_drop(left, "hen" if pen == "chickens"
+                                    else "pat")
+
+    def maybe_drop(self, at, kind):
+        """Now and then, a grazing animal leaves something behind."""
+        st = self.st
+        k = "%d,%d" % at
+        if random.random() < (0.02 if kind == "pat" else 0.012) and \
+                len(st["droppings"]) < DROPPINGS and \
+                k not in st["droppings"] and not self.thing_at(*at):
+            st["droppings"][k] = kind
+
+    def scoop(self, k):
+        """Scoop up a dropping from the next square: fertilizer."""
+        kind = self.st["droppings"].pop(k)
+        self.give("fertilizer")
+        self.sound.play("pick")
+        self.say(random.choice(SCOOPS[kind]) + " (+1 fertilizer)", "good")
+        self.end_turn(1)
 
     def trough_menu(self, b):
         """The feed trough in the coop or the barn: hay, and the door to
@@ -11340,6 +11369,9 @@ class Game:
         if n:
             self.start_talk(n)
             return
+        if k in self.st["droppings"]:
+            self.scoop(k)
+            return
         t = self.tile_at(x, y)
         th = self.thing_at(x, y)
         if th and th[0] == "crop" and self.ripe(th[1]):
@@ -11849,6 +11881,7 @@ class Game:
                     k not in st["debris"] and k not in st["sprinklers"] and \
                     k not in st["machines"] and k not in st["orchard"] and \
                     (x, y) != self.bowl_at("valley") and \
+                    k not in st["droppings"] and \
                     (x, y) != self.pos() and season != 3:
                 st["debris"][k] = "weed"
         for t in list(st["orchard"].values()) + list(
@@ -13607,6 +13640,11 @@ class Game:
             self.use_tool()
         elif abs(dx) + abs(dy) == 1:
             self.face(dx, dy)
+            k = "%d,%d" % (tx, ty)
+            if self.area.outdoor and k in self.st["droppings"] and \
+                    self.npc_at(tx, ty) is None and self.ready():
+                self.scoop(k)       # whatever you're holding
+                return
             if self.tool_applies(tx, ty) and self.ready():
                 self.use_tool_at(tx, ty)
             else:
@@ -13801,6 +13839,8 @@ class Game:
                     if a.key in ("coop", "barn") and t == "trough" and \
                             st["trough"].get(a.key):
                         mid = "haypile"
+                    if a.outdoor and not mid and k in st["droppings"]:
+                        mid = "drop_" + st["droppings"][k]
                     if bowl == (x, y) and not mid:
                         mid = "bowl_full" if self.bowl_full(a.key) else \
                             "bowl"
@@ -16580,6 +16620,22 @@ DOG_PETS = ["You ruffle %s's ears. Her whole back end wags.",
             "%s flops over for a belly rub, tongue lolling.",
             "%s brings you a stick, very proud of it.",
             "You scratch %s behind the ear and her leg thumps the ground."]
+SCOOPS = {
+    "pat": ["You scoop up the cow pat with the edge of a spade. Lovely.",
+            "You shovel up the pat, holding your breath. The fields will "
+            "thank you.",
+            "Into the sack it goes. Somebody has to."],
+    "hen": ["You scrape up the hen's leavings. Small, but it all helps.",
+            "You scoop up a little pile of hen droppings. Very fertile, "
+            "apparently.",
+            "Chicken droppings, into the sack. Good for the soil."]}
+STEP_IN = {
+    "pat": ["Squelch. You've stepped right in a cow pat. Yuck!",
+            "Ugh! That's going to need scraping off your boot.",
+            "Yuck. Fresh, too. Still warm, even."],
+    "hen": ["Yuck! Something squishes under your boot. Chickens.",
+            "Ugh. You've trodden in what the hens left behind.",
+            "Squish. You don't look down. You know."]}
 CAT_GIFTS = ["You find a present from {who} by your bed: {it}. She looks "
              "very proud.",
              "{who} has left {it} on your pillow. It's the thought that "
@@ -16821,6 +16877,27 @@ def all_tiles(season=0):
     return tiles
 
 
+ART["drop_pat"] = ({"b": "#5a3e22", "B": "#3e2a16", "h": "#7a5632"}, (
+    "................", "................", "................",
+    "................", "................", "................",
+    "................", "................", "................",
+    "................",
+    "......hbbh......",
+    "....bbhbbBbb....",
+    "...bBbbbhbbBb...",
+    "....BBbBBbBB....",
+    "................", "................"))
+ART["drop_hen"] = ({"b": "#5a4a2e", "w": "#f4f0e6", "B": "#3a2e1a"}, (
+    "................", "................", "................",
+    "................", "................", "................",
+    "................", "................", "................",
+    "................",
+    ".....ww.........",
+    "....bBwb...ww...",
+    "....bBBb..bBwb..",
+    ".....bb...bBBb..",
+    "...........bb...",
+    "................"))
 ART["haypile"] = ({"h": "#e8c860", "H": "#b89438", "s": "#f4dc88"}, (
     "................", "................", "................",
     "................", "................", "....s..h.s......",
