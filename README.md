@@ -225,7 +225,19 @@ up to eight squares until it hits someone or something solid.
   | Just rest | nothing at all |
 
   You can also **KISS** your maid, twice a day. Each kiss counts as a gift
-  she likes, on top of the usual two gifts a week. Maids who'll be outdoors
+  she likes, on top of the usual two gifts a week. Ask her to **WEAR**
+  something else and she changes out of the uniform into a bikini, in a
+  random colour (sometimes polka dot), on her sprite and her portrait
+  alike; ask again and she's back in her dress, apron and cap. Some maids
+  love it (the first time earns friendship); others find it far too
+  revealing (it costs a little each time), but they wear it anyway. In
+  winter she'll mention that it's awfully chilly for a bikini, and greet
+  you with chattering teeth until you let her change. A maid you could
+  have courted anyway still can: she'll take the bouquet and the pendant
+  with a word about the uniform, walk up the aisle in it (or in her
+  bikini, to the village's astonishment), and after the wedding stay your
+  maid as well as your spouse, with her own greetings and things to say,
+  fond or rueful depending on whether she likes being a maid. Maids who'll be outdoors
   spend early mornings in the farmyard. As with
   the other spells, each game some villagers love being a maid and some hate
   it, and it costs or earns you friendship the same way. Either way, a maid

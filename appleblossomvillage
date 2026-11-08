@@ -1405,6 +1405,18 @@ def style_hair(rows, style, sex):
                 rows[y][x] = "."
 
 
+BIKINI_ROWS = (   # rows 7 to 13 of a woman's sprite, in a two-piece
+    ".....kkkkkk.....",
+    "....kZzkkzZk....",
+    "....kkkkkkkk....",
+    ".....kkkkkk.....",
+    "....zzZzzZzz....",
+    "....kkk..kkk....",
+    ".....kk..kk.....")
+BIKINI_COLOURS = ("#e83a5a", "#f08a2a", "#f4d020", "#3ac06a", "#2a9ad8",
+                  "#8a4ad8", "#f070b0", "#1a1a22", "#40d0d0")
+
+
 def person_art(look):
     """A person's tile: (palette, rows), from how they look."""
     sex = look.get("body", "M")
@@ -1438,6 +1450,14 @@ def person_art(look):
             for x in range(6, 10):
                 if rows[y][x] in "ctpw":
                     rows[y][x] = "a"
+    if "bikini" in extras and sex == "F":
+        pal["z"] = look.get("bikini", "#e83a5a")
+        pal["Z"] = look.get("dots") or pal["z"]
+        for y, line in enumerate(BIKINI_ROWS, 7):
+            for x, ch in enumerate(line):
+                old = rows[y][x]
+                rows[y][x] = ch if ch != "." else (
+                    old if old == "h" else ".")
     if "maidcap" in extras:
         for x in range(5, 11):
             rows[1][x] = "a"
@@ -1548,6 +1568,21 @@ def portrait(look, expr="neutral"):
             g[y][mirror(round(cx - 3 - (y - 24) * 0.5))] = collar
         prect(g, 12, 24, 12, 25, collar)
         prect(g, 19, 24, 19, 25, collar)
+    if "bikini" in extras:
+        bc = look.get("bikini", "#e83a5a")
+        for y in range(24, 29):                     # the straps
+            x = round(cx - 5.5 - (y - 24) * 0.25)
+            g[y][x] = bc
+            g[y][mirror(x)] = bc
+        for side in (-1, 1):                        # and the top
+            pdisc(g, cx + side * 3.6, 31.2, 3.4, 2.6, bc)
+        for y in range(29, PW):
+            g[y][15] = g[y][16] = skd
+        if look.get("dots"):
+            for x, y in ((11, 30), (13, 31), (14, 29), (18, 30), (20, 31),
+                         (17, 31), (12, 31), (19, 29)):
+                if g[y][x] == bc:
+                    g[y][x] = look["dots"]
     if "apron" in extras:
         prect(g, 11, 27, 20, 31, "#f4f0e8")
         prect(g, 11, 26, 11, 27, "#f4f0e8")
@@ -6593,7 +6628,8 @@ then press an arrow (or tap) to zap that way.  Petrify
 turns someone to gold; genderswap turns them into the
 other sex; chickenfy, into a hen; maidify, into a maid who
 lives in your cabin and does the CHORE you give her every
-morning (and whom you may KISS twice a day); treeify, into a
+morning (whom you may KISS twice a day, and ask to WEAR
+a bikini instead of the uniform, or back); treeify, into a
 tree you can water (or chop, if you can bear the screaming);
 looify (outdoors, with room for a door), into an outhouse
 you can use; cowify, into a cow; sheepify, into a sheep.
@@ -6918,6 +6954,7 @@ class Game:
                                                         for v in tot)
         if self.p:
             self.paint_hero()
+            self.paint_bikinis()
         self.scale_images()
 
     def paint_hero(self):
@@ -6931,6 +6968,36 @@ class Game:
                         img.put(c, to=(x, y, x + 1, y + 1))
             self.base[n] = img
         SPRITES.add("you")
+
+    def paint_bikinis(self, scale=False):
+        """Each maid in a bikini gets her own sprite, in her colour."""
+        for vid, b in self.st.get("bikinis", {}).items():
+            px = art_pixels(*person_art(self.look_of(vid)))
+            for n, frame in (("vb_" + vid, px),
+                             ("vb_" + vid + "@1", px[1:] + [[None] * 16]),
+                             ("sb_" + vid, golden(px))):
+                # into the same image if she has one already: the map
+                # still shows it, and a new one would leave it pointing at
+                # nothing
+                img = self.base.get(n)
+                if img is None:
+                    img = self.base[n] = tk.PhotoImage(width=16, height=16)
+                img.blank()
+                for y, row in enumerate(frame):
+                    for x, c in enumerate(row):
+                        if c:
+                            img.put(c, to=(x, y, x + 1, y + 1))
+                SPRITES.add(n.split("@")[0])
+                if scale:
+                    big = self.img.get(n)
+                    if big is None:
+                        self.img[n] = img.zoom(self.scale)
+                    else:
+                        big.blank()
+                        big.tk.call(big.name, "copy", img.name, "-zoom",
+                                    self.scale, self.scale)
+                    if n.endswith("@1"):
+                        self.animated.add(n[:-2])
 
     def scale_images(self):
         s = self.scale
@@ -6948,7 +7015,9 @@ class Game:
         """A portrait as a Tk image, zoomed z times; who is a villager's
         id, or "you"."""
         key = (who, expr, z, who != "you" and self.swapped(who),
-               who != "you" and self.maid(who))
+               who != "you" and self.maid(who),
+               who != "you" and tuple(self.st.get("bikinis", {}).get(
+                   who) or ()))
         img = self.portraits.get(key)
         if img is None:
             look = self.p["look"] if who == "you" else self.look_of(who)
@@ -7209,7 +7278,7 @@ class Game:
         self.p["look"]["bg"] = "#f8e0c0"
         st = self.st = {
             "seed": seed, "day": 0, "minute": WAKE, "weather": "sun",
-            "tomorrow": "sun", "soil": {}, "sprinklers": [], "machines": {},
+            "tomorrow": "sun", "soil": {}, "sprinklers": [], "machines": {}, "bikinis": {},
             "debris": {"%d,%d" % k: v for k, v in farm_debris(
                 self.areas["valley"].grid, seed).items()},
             "forage": {}, "apples": {}, "shipped": {}, "mail": [],
@@ -7285,6 +7354,7 @@ class Game:
         st.setdefault("cowified", [])
         st.setdefault("sheepified", [])
         st.setdefault("machines", {})
+        st.setdefault("bikinis", {})
         for vid in VILLAGERS:
             st["friends"].setdefault(vid, {
                 "pts": 0, "talked": -1, "week": 0, "gift_day": -1,
@@ -8040,6 +8110,8 @@ class Game:
             return ("ssheep_" if gold else "sheepf_") + \
                 self.sheep_colour(vid)
         if self.maid(vid):
+            if vid in self.st.get("bikinis", {}):
+                return ("s" if gold else "v") + "b_" + vid
             return ("s" if gold else "v") + "m_" + vid
         return ("s" if gold else "v") + ("x" if self.swapped(vid) else
                                          "") + "_" + vid
@@ -8151,6 +8223,7 @@ class Game:
         if self.statue(vid):
             if self.maid(vid):
                 del st["maids"][vid]
+                st["bikinis"].pop(vid, None)
             else:
                 st["maids"][vid] = None
             self.say("The golden statue of %s ripples and shifts shape. "
@@ -8178,6 +8251,7 @@ class Game:
             line = lines[0 if likes else 1]
         else:
             del st["maids"][vid]
+            st["bikinis"].pop(vid, None)
             self.say("The apron and cap unravel into ribbons of light, "
                      "and %s is back to normal." % name, "quest")
             if likes:
@@ -8728,6 +8802,56 @@ class Game:
         self.check_scene(vid)
         if not self.scene:
             self.talk_menu()
+
+    def maid_romance(self, vid, lines):
+        """A maid's word on love: whether she likes being a maid colours
+        what she says."""
+        return lines[0 if self.likes_change(vid, "maidify") else 1]
+
+    def maid_wear(self, vid):
+        """WEAR: the uniform off and a bikini on (a random colour, or
+        polka dots), or back into the uniform again."""
+        st = self.st
+        name = VILLAGERS[vid]["short"]
+        likes = self.likes_change(vid, "bikini")
+        flags = st["flags"]
+        n = self.npcs[vid]
+        if vid in st["bikinis"]:
+            del st["bikinis"][vid]
+            self.say("%s slips back into her dress, apron and cap." % name,
+                     "info")
+            self.speak(vid, random.choice(BIKINI_OFF_LIKE if likes else
+                                          BIKINI_OFF_HATE))
+        else:
+            colour = random.choice(BIKINI_COLOURS)
+            dots = None
+            if random.random() < 0.4:
+                dots = "#1a1a22" if colour in ("#f4d020", "#40d0d0") else \
+                    "#ffffff"
+                if colour == "#1a1a22":
+                    dots = "#ffffff"
+            st["bikinis"][vid] = [colour, dots]
+            self.say("%s goes behind the screen and comes back out in %s "
+                     "%sbikini." % (name, an(BIKINI_NAMES[colour]),
+                                    "polka-dot " if dots else ""), "info")
+            self.speak(vid, random.choice(BIKINI_ON_LIKE if likes else
+                                          BIKINI_ON_HATE))
+            if self.season() == 3:
+                self.speak(vid, random.choice(BIKINI_WINTER))
+            if likes and "bikiniliked:" + vid not in flags:
+                flags.append("bikiniliked:" + vid)
+                self.befriend(vid, 40)
+                self.say("(%s likes you more for it.)" % name, "heart")
+            elif not likes:
+                self.befriend(vid, -30, quiet=True)
+                self.say("(%s is embarrassed, but does as she's told.)" %
+                         name, "bad")
+        self.portraits = {}
+        self.paint_bikinis(scale=True)
+        self.flash(n.x, n.y, "sparkle")
+        self.pass_time(1)
+        self.render()
+        self.talk_menu()
 
     def maid_morning(self):
         """Every maid does what she was told, before you're up."""
@@ -9354,6 +9478,9 @@ class Game:
     def look_of(self, vid):
         look = VILLAGERS[vid]["look"]
         if self.maid(vid):
+            b = self.st.get("bikinis", {}).get(vid)
+            if b:
+                return bikini_look(maid_look(look), *b)
             return maid_look(look)
         return swap_look(look) if self.swapped(vid) else look
 
@@ -10661,6 +10788,12 @@ class Game:
             if birthday:
                 self.speak(vid, "(happy)It's my birthday today! Did you "
                                 "remember?")
+            elif self.maid(vid) and vid in self.st["bikinis"] and \
+                    self.season() == 3:
+                self.speak(vid, random.choice(BIKINI_WINTER))
+            elif self.maid(vid) and f["status"] == "married":
+                self.speak(vid, random.choice(self.maid_romance(
+                    vid, MAID_WIFE_GREET)))
             elif self.maid(vid):
                 self.speak(vid, random.choice(
                     MAID_GREET_LIKE if self.likes_change(vid, "maidify")
@@ -10709,6 +10842,7 @@ class Game:
         if self.maid(vid):
             words.insert(0, "CHORE")
             words.insert(1, "KISS")
+            words.insert(2, "WEAR")
         if self.swapped(vid) or self.maid(vid):
             words.append("CHANGE")
         words += ["NAME", "JOB", "NEWS", "ABOUT...", "SQUEEZE PAST"]
@@ -10793,6 +10927,10 @@ class Game:
             return
         if self.maid(vid) and w[:4] in ("kiss", "smoo", "peck"):
             self.kiss_maid(vid)
+            return
+        if self.maid(vid) and w[:4] in ("wear", "dres", "biki", "outf",
+                                        "cost", "clot", "unif"):
+            self.maid_wear(vid)
             return
         if w == "chat":
             self.chat(vid)
@@ -10904,8 +11042,12 @@ class Game:
             pool += [v["rain"]] * 3
         if f["status"] in ("dating", "engaged") and v.get("dating"):
             pool += v["dating"]
+            if self.maid(vid):
+                pool += self.maid_romance(vid, MAID_COURTING)
         if f["status"] == "married":
             pool = v["spouse"] + [v["season"][self.season()]]
+            if self.maid(vid):
+                pool += self.maid_romance(vid, MAID_WIFE) * 2
         if vid == self.st.get("secret") and self.season() == 3 and \
                 self.dom() < 24:
             pool.append("(happy)I wonder who my secret friend is this year!")
@@ -11113,6 +11255,9 @@ class Game:
         f["status"] = "dating"
         self.sound.play("quest")
         self.speak(vid, ACCEPT[vid])
+        if self.maid(vid):
+            self.speak(vid, random.choice(self.maid_romance(
+                vid, MAID_ACCEPT)))
         self.say("You and %s are going steady!" % v["short"], "heart")
         self.flash(self.npcs[vid].x, self.npcs[vid].y, "heart")
 
@@ -11141,6 +11286,9 @@ class Game:
         self.st["wedding"] = self.st["day"] + 3
         self.sound.play("quest")
         self.speak(vid, PROPOSAL[vid])
+        if self.maid(vid):
+            self.speak(vid, random.choice(self.maid_romance(
+                vid, MAID_PROPOSAL)))
         self.say("You're engaged to %s! The wedding will be in three days, "
                  "in the square, at ten in the morning." % v["short"],
                  "heart")
@@ -11504,7 +11652,23 @@ class Game:
                  VOWS[vid],
                  "*Everyone cheers. Pip throws far too much confetti.",
                  "(happy)Let's go home, {name}. Our home."]
-
+        if self.maid(vid):
+            name = v["short"]
+            b = st.get("bikinis", {}).get(vid)
+            if b:
+                look = ("*%s comes up the aisle in %s %sbikini and a long "
+                        "lace veil. Agnes Whitlock has to sit down." % (
+                            name, an(BIKINI_NAMES.get(b[0], "bright")),
+                            "polka-dot " if b[1] else ""))
+                if self.season() == 3:
+                    look += " Snow settles on %s's bare shoulders; she " \
+                            "is trying very hard not to shiver." % name
+            else:
+                look = ("*%s comes up the aisle in her maid's dress, the "
+                        "frilled cap traded for a veil, the apron starched "
+                        "and pressed for the day." % name)
+            steps.insert(2, look)
+            steps[-1] = random.choice(self.maid_romance(vid, MAID_VOWS))
         def after():
             st["friends"][vid]["status"] = "married"
             st["spouse"] = vid
@@ -11520,6 +11684,9 @@ class Game:
         if not vid or random.random() < 0.4:
             return
         v = VILLAGERS[vid]["short"]
+        if self.maid(vid):
+            v += (", still in her bikini," if vid in self.st.get(
+                "bikinis", {}) else ", apron and all,")
         r = random.random()
         if r < 0.4 and self.st["soil"] and self.st["weather"] == "sun":
             for s in self.st["soil"].values():
@@ -13121,6 +13288,19 @@ def maid_look(look):
     return new
 
 
+def bikini_look(look, colour, dots):
+    """A maid out of her uniform and into a two-piece."""
+    new = dict(look)
+    new["extras"] = tuple(e for e in look.get("extras", ())
+                          if e not in ("apron", "maidcap", "bow"))
+    new["extras"] += ("bikini",)
+    skin = SKIN[look.get("skin", 1) % len(SKIN)]
+    new.update(shirt=skin, pants=skin, trim=skin, shoes="#c89060",
+               bikini=colour, dots=dots)
+    new.pop("collar", None)
+    return new
+
+
 SWAP_LINES = {   # liked it, hated it, glad to be back, sorry to be back
     "marisol": ("(laugh)Look at these arms! I could knead for a week! Oh, "
                 "I like this.",
@@ -13775,6 +13955,80 @@ MAID_LINES = {   # liked it, hated it, glad to be back, sorry to be back
                 "the inn down.",
                 "(sad)Oh. I'd left a pie in your oven."),
 }
+# Love, in uniform: (she likes being a maid, she doesn't)
+MAID_ACCEPT = (
+    ["(blush)A maid and her sweetheart. Like something out of a novel. "
+     "I'll iron the bouquet ribbon.",
+     "(happy)I'll still scrub the floors, you know. I'll just smile more "
+     "doing it."],
+    ["(blush)I didn't think I could like anyone while wearing this apron. "
+     "...Turns out I can.",
+     "(sad)Courted in a uniform. It's not how I imagined it. But I'm glad "
+     "it's you."])
+MAID_PROPOSAL = (
+    ["(laugh)Your maid AND your wife! I'll keep house forever, and gladly!",
+     "(happy){name}'s wife and housekeeper. I like the sound of it."],
+    ["(blush)Will I still have to wear the apron when we're married? "
+     "...Don't answer that. Yes. Yes, I'll marry you.",
+     "(happy)Maybe one day you'll change me back. But I'd say yes either "
+     "way."])
+MAID_VOWS = (
+    ["(happy)Home, {name}. I've already dusted it. Twice.",
+     "(laugh)Let's go home. Somebody has to put the kettle on, and it's "
+     "going to be me. Happily."],
+    ["(blush)Let's go home, {name}. Our home. Even if I'm still the one "
+     "who sweeps it.",
+     "(happy)Married in a maid's dress. Gran would faint. Let's go home."])
+MAID_COURTING = (
+    ["(blush)I folded your shirts into little hearts. Don't look.",
+     "(happy)I polish your boots extra shiny now. That's how you know."],
+    ["(blush)I still don't love the frills. But I love seeing you come "
+     "home.",
+     "(sad)Sometimes I forget I'm a maid, when I'm with you. That's nice."])
+MAID_WIFE = (
+    ["(happy)The house is spotless, the kettle's on, and my spouse is home. "
+     "Perfect day.",
+     "(laugh)I told Mabel I'm the luckiest maid in the valley. She said I'm "
+     "the ONLY maid in the valley.",
+     "(blush)I still curtsey when you come in. Habit. Nice habit."],
+    ["(sad)I do love you. I'd just love you a little more in trousers.",
+     "(cross)A wife shouldn't have to call her own spouse 'sir.' ...I "
+     "don't, but still.",
+     "(blush)I keep house because I have to. I'd keep it for you anyway, "
+     "you know."])
+MAID_WIFE_GREET = (
+    ["(happy)Welcome home, love! Supper's on, and I've done the windows.",
+     "(blush)There you are! I saved you the warmest chair."],
+    ["(happy)Welcome home, {name}. I swept. Of course I swept.",
+     "(blush)You're home. Good. The apron's less annoying when you're "
+     "here."])
+BIKINI_NAMES = {"#e83a5a": "red", "#f08a2a": "orange", "#f4d020": "yellow",
+                "#3ac06a": "green", "#2a9ad8": "blue", "#8a4ad8": "purple",
+                "#f070b0": "pink", "#1a1a22": "black", "#40d0d0": "turquoise"}
+BIKINI_ON_LIKE = [
+    "(laugh)Ooh! Now THIS is a uniform I can work in! Shall I dust the "
+    "porch?",
+    "(blush)Oh my. Well... I do look rather nice in it, don't I?",
+    "(happy)So much cooler than all those petticoats! Thank you!",
+    "(laugh)I'll do the windows in this. The whole village can watch."]
+BIKINI_ON_HATE = [
+    "(blush)This is... this is very revealing. I'll do it. But don't stare.",
+    "(cross)A bikini. To scrub floors. ...Yes. As you wish.",
+    "(blush)I'm not leaving the cabin in this. Not even to feed the hens.",
+    "(sad)There's barely anything to it. I'll manage. I always do."]
+BIKINI_OFF_LIKE = [
+    "(sad)Back in the frills? Oh. I was just getting a tan.",
+    "(happy)Very well. The apron does have more pockets, I suppose.",
+    "Uniform again? As you like. I'll keep the bikini in the drawer."]
+BIKINI_OFF_HATE = [
+    "(happy)Oh, thank goodness. Sleeves! I've missed sleeves!",
+    "(blush)Much better. I felt like a scarecrow with no clothes on.",
+    "(happy)Thank you. A maid should be properly dressed."]
+BIKINI_WINTER = [
+    "(surprised)Brr! Awfully chilly for a bikini this time of year.",
+    "(sad)It's snowing outside. I'm in a bikini. Just noting it.",
+    "(cross)My teeth are chattering. You can hear them, can't you?",
+    "(surprised)Could I at least have a scarf? Over the bikini? No?"]
 MAID_GREET_LIKE = ["(happy)Welcome home! Shall I put the kettle on?",
                    "(happy)Good day! Is there anything you'd like done?",
                    "(laugh)At your service!"]
@@ -14616,6 +14870,10 @@ def selftest():
                         "cow", "milk pail", "sheep", "shears",
                         "fishing rod", "sprinkler"):
                 problems.append("shop %s sells unknown %s" % (kind, entry))
+    for t in (MAID_ACCEPT, MAID_PROPOSAL, MAID_VOWS, MAID_COURTING,
+              MAID_WIFE, MAID_WIFE_GREET):
+        if len(t) != 2 or not all(t):
+            problems.append("maid romance lines")
     for m, recipes in MACHINES.items():
         if "m_" + m.replace(" ", "_") not in ART or m not in MACHINE_SOLD \
                 or m not in MACHINE_PLACED or m not in MACHINE_TAKES:
