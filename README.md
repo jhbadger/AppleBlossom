@@ -5,8 +5,8 @@
 Your grandmother Lily has left you her farm at the edge of Apple Blossom
 Village. It has stood empty for years: the fields are full of weeds, stones
 and fallen branches, but her tools are still good and the shipping bin by the
-door still works. Clear the land, grow crops, and get to know the twelve
-people of the village. Six of them might come to love you.
+door still works. Clear the land, grow crops, and get to know the fourteen
+people of the village. Eight of them might come to love you.
 
 It's one executable script on the tilerpgs engine: a map of squares, people
 you talk to by keyword, shops, and tiles, portraits and music all drawn in
@@ -191,6 +191,8 @@ up to eight squares until it hits someone or something solid.
 | The Library | Juniper Marsh | books, and Pip's schoolroom |
 | Mayor's House | Mayor Edmund Pell | festivals, history |
 | Rose's Cottage | Granny Rose Applewood | your grandmother's cousin, and pie |
+| Amy's Cottage | Amy Hartwell | the beekeeper, who sets the Gazette crossword |
+| Rusty's Studio | Rusty Quinn | the seamstress and costume-maker, who puts on the play at the inn |
 
 Everyone keeps a daily schedule. They open their shops, take lunch by the
 fountain, fish, read on benches, visit each other, gather at the inn in the
@@ -228,7 +230,7 @@ you whether they do. Family use their own names: Wren calls Bernard "Dad."
   often with a choice to make. Rowan's wooden fox, Felix's dying lavender,
   Mabel's thieving cat, Pip's treasure hunt, and more.
 
-**Romance.** Rowan, Felix, Theo, Juniper, Wren and Ivy can become more than
+**Romance.** Rowan, Felix, Theo, Juniper, Wren, Ivy, Amy and Rusty can become more than
 friends, whoever your farmer is. Each has four heart scenes leading up to a
 confession at eight hearts.
 

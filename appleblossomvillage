@@ -6,9 +6,9 @@ Standard library only.  The engine is the one the tilerpgs share (one hero,
 a map of squares, people to talk to by keyword, shops, tiles and music drawn
 in code), turned to farming: you've inherited your grandmother's overgrown
 farm at the edge of Apple Blossom Village.  Clear it, till it, plant it,
-water it, ship what you grow, and get to know the twelve people of the
+water it, ship what you grow, and get to know the fourteen people of the
 village, who have opinions about everything, birthdays, favourite things,
-and stories they tell only to friends.  Six of them might come to love you.
+and stories they tell only to friends.  Eight of them might come to love you.
 
 Time
   A step is a minute, a swing of a tool three.  Days run from six in the
@@ -29,7 +29,8 @@ People
   NAME, JOB, NEWS and GIFT, and words in CAPITALS are worth asking about.
   Talking every day and giving gifts they like earns hearts.  At some
   heart levels a friend will share a moment with you.  The bachelors and
-  bachelorettes (Rowan, Felix, Theo, Juniper, Wren and Ivy) will accept a
+  bachelorettes (Rowan, Felix, Theo, Juniper, Wren, Ivy, Amy and
+  Rusty) will accept a
   Blossom Bouquet at eight hearts, and a Blossom Pendant at ten.
 
 Touch and mouse
@@ -1305,8 +1306,8 @@ HAIR_COLOURS = {"black": "#1e1a1a", "brown": "#5a3a1e",
                 "red": "#d0502a", "blonde": "#e8c870", "ash": "#c8c0b0",
                 "white": "#eeeeee", "grey": "#9a9a9a", "pink": "#f090b8",
                 "blue": "#4a6ad0", "green": "#4a9a5a"}
-HAIRSTYLES = ("short", "messy", "spiky", "bob", "long", "ponytail", "bun",
-              "braid", "curly", "pigtails", "bald")
+HAIRSTYLES = ("short", "messy", "spiky", "bob", "long", "bangs",
+              "ponytail", "bun", "braid", "curly", "pigtails", "bald")
 EYE_COLOURS = {"brown": "#5a3a1e", "blue": "#3a6ac0", "green": "#3a8a4a",
                "grey": "#6a7080", "hazel": "#8a6a2a", "violet": "#7a4ab0",
                "amber": "#c08020"}
@@ -1324,8 +1325,13 @@ def style_hair(rows, style, sex):
                 if rows[y][x] == "h":
                     rows[y][x] = "k" if y < 3 else rows[y][x]
         return
-    if style in ("long", "braid", "curly") and sex != "C":
+    if style in ("long", "braid", "curly", "bangs") and sex != "C":
         put([(y, x) for y in range(4, 10) for x in (3, 12)])
+    if style == "bangs":
+        y = 4 if sex != "C" else 6
+        for x in range(16):
+            if rows[y][x] == "k":
+                rows[y][x] = "h"
     if style == "curly":
         put(((0, 6), (0, 9), (1, 4), (1, 11), (2, 3), (2, 12)))
     if style == "spiky":
@@ -1366,6 +1372,9 @@ def person_art(look):
             if rows[6][x] == "k":
                 rows[6][x] = "b"
         rows[5][5] = rows[5][10] = "b"
+    if "hairbow" in extras:
+        pal["q"] = look.get("clipc", "#90dcc8")
+        rows[3][4] = rows[4][3] = "q"
     if "glasses" in extras:
         for y, x in ((5, 5), (5, 10), (5, 7), (5, 8)):
             if rows[y][x] == "k":
@@ -1446,9 +1455,9 @@ def portrait(look, expr="neutral"):
     frx, fry = (7.5, 9) if not child else (8.0, 8)
 
     # long hair falls behind the shoulders
-    if style in ("long", "curly", "braid", "bob", "pigtails"):
+    if style in ("long", "curly", "braid", "bob", "pigtails", "bangs"):
         bottom = {"long": 29, "curly": 26, "braid": 22, "bob": 21,
-                  "pigtails": 20}[style]
+                  "pigtails": 20, "bangs": 29}[style]
         pdisc(g, cx, fy - 1, frx + 3, fry + 2, hd)
         prect(g, round(cx - frx - 3), fy, round(cx + frx + 3), bottom, hd)
         if style == "curly":
@@ -1573,6 +1582,17 @@ def portrait(look, expr="neutral"):
                  for i in range(eye_w)]
         for (x, y) in b:
             g[y][x] = hd if style != "bald" else shade(skin, 0.6)
+    if "liner" in extras:
+        for side in (0, 1):
+            x0 = lx if side == 0 else mirror(lx + eye_w - 1)
+            top = ey - 2
+            out = x0 - 1 if side == 0 else x0 + eye_w
+            wing = x0 - 2 if side == 0 else x0 + eye_w + 1
+            for i in range(-1 if side == 0 else 0,
+                           eye_w + (0 if side == 0 else 1)):
+                g[top - 1][x0 + i] = "#141010"
+            g[top - 1][out] = g[top - 2][wing] = "#141010"
+            g[top][out] = "#141010"
     if "glasses" in extras:
         gc = look.get("glassc", "#3a3040")
         for side in (0, 1):
@@ -1586,6 +1606,9 @@ def portrait(look, expr="neutral"):
     g[ny][15] = skd
     g[ny + 1][15] = skdd
     g[ny + 1][16] = skd
+    if "nosering" in extras:
+        g[ny + 2][15] = g[ny + 2][16] = "#d4d4dc"
+        g[ny + 2][14] = g[ny + 2][17] = "#9a9aa8"
     my = fy + 6 if not child else fy + 5
     lips = look.get("lips", shade(skin, 0.62) if not fem else "#c05060")
     if expr == "neutral":
@@ -1666,7 +1689,7 @@ def portrait(look, expr="neutral"):
             for y in range(line, fy + 1):          # sideburns
                 g[y][round(cx - frx)] = hair
                 g[y][mirror(round(cx - frx))] = hair
-        if style in ("long", "curly", "braid", "bob", "pigtails"):
+        if style in ("long", "curly", "braid", "bob", "pigtails", "bangs"):
             for y in range(line, fy + 6):          # hair framing the face
                 for x in (round(cx - frx) - 1, round(cx - frx),
                           round(cx - frx) + 1):
@@ -1674,7 +1697,14 @@ def portrait(look, expr="neutral"):
                         g[y][x] = hair
                         g[y][mirror(x)] = hair
         # bangs
-        if style in ("bob", "pigtails", "braid"):
+        if style == "bangs":                       # heavy, to the brows
+            prect(g, 8, line, 23, line + 1, hair)
+            for x in range(9, 23):
+                if x % 3 != 1:
+                    g[line + 2][x] = hair
+            for x in range(10, 22, 4):
+                g[line + 1][x] = hd
+        elif style in ("bob", "pigtails", "braid"):
             prect(g, 9, line, 22, line + 1, hair)
             for x in range(9, 23, 3):
                 g[line + 2][x] = hair
@@ -1716,6 +1746,13 @@ def portrait(look, expr="neutral"):
         g[fy2][fx] = "#f0e040"
     if "headband" in extras:
         prect(g, 9, top + 3, 22, top + 3, look.get("bandc", "#e04080"))
+    if "hairbow" in extras:
+        cc = look.get("clipc", "#90dcc8")
+        bx, by = 7, top + 4
+        prect(g, bx - 3, by - 1, bx - 1, by + 1, cc)
+        prect(g, bx + 1, by - 1, bx + 3, by + 1, cc)
+        g[by][bx] = shade(cc, 0.7)
+        g[by - 1][bx - 3] = g[by + 1][bx + 3] = shade(cc, 1.15)
     if "maidcap" in extras:
         lace, lace_d = "#fbf8f2", "#d8d0c8"
         prect(g, 8, top + 1, 23, top + 2, lace)
@@ -2298,6 +2335,7 @@ VILLAGERS = {
                       "asks questions until I run out of answers.",
         },
         "opinions": {
+            "amy": "(happy)Amy and I swap books. She writes notes in the margins. Mostly corrections.",
             "pip": "(happy)Pip is the brightest child I've ever taught. "
                    "And the muddiest.",
             "felix": "Felix and I swap books. He reads everything I give "
@@ -2457,6 +2495,7 @@ VILLAGERS = {
                     "It's a work in progress.",
         },
         "opinions": {
+            "rusty": "(laugh)Rusty's the BEST! She makes my stage costumes! She says I'm 'a natural!'",
             "bernard": "(happy)Dad's the best. He'll embarrass you within "
                        "five minutes. Guaranteed.",
             "theo": "(laugh)Theo? He's a goof. A good goof.",
@@ -2787,6 +2826,7 @@ VILLAGERS = {
                       "way.",
         },
         "opinions": {
+            "rusty": "(happy)Miss Quinn designs my festival sashes! Very fine work. Excellent colour choices.",
             "rose": "(happy)Rose Applewood is the heart of this village. "
                     "She was my first crush. Don't tell Margaret. ...Oh.",
             "mabel": "Mabel would sell the fountain if I let her. I don't "
@@ -3036,6 +3076,8 @@ VILLAGERS = {
             "prices": "My prices are fair. Ask anyone. Don't ask Theo.",
         },
         "opinions": {
+            "amy": "(happy)Amy's honey sells faster than anything in the store. Quiet girl. Lovely bees.",
+            "rusty": "Rusty did my curtains. Very... bold. I've had three customers faint.",
             "theo": "That boy owes me a fortune and makes me laugh every "
                     "time he comes in. Infuriating.",
             "edmund": "The Mayor? All speeches, no budget. Sweet man, "
@@ -3426,6 +3468,336 @@ VILLAGERS = {
                              (2400, "inn.5")]},
         "shop": ("inn.1", "inn"),
     },
+    "amy": {
+        "name": "Amy Hartwell", "short": "Amy", "romance": True,
+        "job": "the valley's BEEKEEPER. I also set the CROSSWORD in the "
+               "Valley Gazette. Both involve a lot of quiet buzzing",
+        "look": {"face": "F", "body": "F", "skin": 1, "hair": "#221a18",
+                 "style": "bangs", "eyes": "#3a2a1e", "shirt": "#5ab4aa",
+                 "collar": "#2a2424", "pants": "#3a4050", "bg": "#b4c6e0",
+                 "extras": ("glasses", "hairbow"), "glassc": "#6a6266",
+                 "clipc": "#90dcc8"},
+        "birthday": (2, 14), "home": "amy", "rest": 0,
+        "loves": ["honey cake", "sunflower", "tea"],
+        "likes": ["blueberry", "book of poems", "sweet pea", "pancakes",
+                  "kind:forage"],
+        "dislikes": ["coffee", "eel"],
+        "hates": ["holly", "energy tonic"],
+        "intro": "Oh. Hello. Amy Hartwell. I keep the bees on the north "
+                 "meadow. You're the new farmer. Rusty said you'd be taller. "
+                 "Rusty says a lot of things.",
+        "greet": [["Hello.", "Oh. It's you. Hello."],
+                  ["(happy)Hello, {name}.", "Good. You're here. Hello."],
+                  ["(happy){name}. I was hoping I'd see you today.",
+                   "(happy)Hello. I saved you a jar of honey. Don't make a "
+                   "fuss."],
+                  ["(happy){name}! ...I'm allowed to be pleased to see "
+                   "you. It's in the rules."]],
+        "chat": [["The bees are busy. They're always busy. I find that "
+                  "restful.",
+                  "Seven across: 'Farmer's new arrival, five letters.' I'm "
+                  "still working on it.",
+                  "Rusty dragged me to the inn last night. I sat in the "
+                  "corner and judged everybody. Quietly."],
+                 ["(happy)Bees can recognise faces, you know. Mine have "
+                  "decided you're acceptable.",
+                  "Somebody did my crossword in an old almanac and got "
+                  "every single answer wrong. In pen. I have suspicions.",
+                  "(happy)Rusty gave me this hair clip. Said I needed "
+                  "'one fun thing.' I've worn it every day since. Don't "
+                  "tell her."],
+                 ["(sad)I'm not good with people. Bees are easy. You "
+                  "give them flowers and they give you honey. People "
+                  "want conversation.",
+                  "(happy)I put a clue about you in this week's crossword. "
+                  "Fourteen down. It's a compliment. Probably.",
+                  "When the hives swarm, I stand in the middle of them. "
+                  "It's like being inside a song."],
+                 ["(happy)You're one of my favourite people. It's a short "
+                  "list. Rusty, you, and the queen bee."]],
+        "season": ["(happy)Spring. The bees wake up grumpy and hungry. "
+                   "Like me.",
+                   "Summer. Sunflowers, clover, very busy bees. Very sticky "
+                   "me.",
+                   "Fall. The honey's in. I'll be jarring for a week.",
+                   "Winter. The bees huddle round the queen to keep warm. I "
+                   "huddle round a teapot."],
+        "rain": "Rain. The bees stay in, so I stay in. We do crosswords. "
+                "Well, I do.",
+        "topics": {
+            "beekeeper": "My grandmother kept bees. I used to sit by the "
+                         "hives for hours. They hum when they're happy. "
+                         "So do I, apparently. Rusty told me.",
+            "crossword": "I've set the Gazette crossword for six years. "
+                         "Nobody's finished one yet. That's the point.",
+            "bees": "(happy)Forty thousand in each hive, give or take. I "
+                    "know a few by sight. That one with the bent wing is "
+                    "called Admiral.",
+            "honey": "Clover honey in spring, wildflower in summer, "
+                     "sunflower in fall. Each one tastes like the meadow "
+                     "that month.",
+            "rusty": "(happy)Rusty is loud and dramatic and drags me to "
+                     "things. She's my best friend. Don't tell her I said "
+                     "'best.'",
+        },
+        "opinions": {
+            "rusty": "(happy)My best friend. Loud. Wonderful. Exhausting. "
+                     "In that order.",
+            "juniper": "(happy)Juniper solves my crosswords. Well, half of "
+                       "one. That's a record.",
+            "edmund": "The mayor wants a crossword about civic pride. I "
+                      "gave him one with 'gasbag' in it.",
+            "mabel": "Mabel sells my honey and tells everyone what I'm "
+                     "doing. I'd rather she just sold the honey.",
+            "pip": "(laugh)Pip asked if bees have names. I said yes. He's "
+                   "named all of them Gerald.",
+        },
+        "gift": {"love": "(happy)Oh. Oh, that's perfect. I... thank you. "
+                         "Really.",
+                 "like": "(happy)That's thoughtful. Thank you.",
+                 "neutral": "Thank you. I'll find a use for it.",
+                 "dislike": "Oh. Hm. Rusty might like it.",
+                 "hate": "(cross)No. Absolutely not. Take it back."},
+        "unknown": "I don't know. If it were a crossword clue, I'd know.",
+        "scenes": {
+            2: ["*Amy is standing very still in the meadow, bees crawling "
+                "over her gloves.",
+                "Don't move. They're just curious. Here. Hold out your "
+                "hand.",
+                ("?", "A bee lands on your finger.",
+                 [("It tickles!", 40,
+                   "(laugh)It does. That's how you know it likes you. They "
+                   "don't tickle people they dislike."),
+                  ("Can we go now, please?", 20,
+                   "(happy)Slowly. Walk backwards. ...You did very well. "
+                   "Rusty screamed and ran into the river.")])],
+            4: ["*Amy is at her kitchen table, a crossword grid covered in "
+                "crossings-out.",
+                "(sad)The Gazette wants me to stop. Says the puzzles are "
+                "too hard. Nobody finishes them.",
+                ("?", "She looks down at the grid.",
+                 [("Make one people can finish.", 30,
+                   "Hm. I suppose. ...One easy one a week. And one "
+                   "impossible one, for me."),
+                  ("I'll finish one. I promise.", 50,
+                   "(happy)You'd do that? ...All right. I'll leave one "
+                   "clue you'll know. Just one. For you.")]),
+                "(happy)Thank you, {name}. Don't tell Rusty I was upset. "
+                "She'll make it a whole production."],
+            6: ["*Amy is by the hives at dusk, veil off, watching the last "
+                "bees come home.",
+                "I finished this week's crossword. Look.",
+                "*Every answer in the grid is something about you. Your "
+                "farm. Your name. The colour of your coat.",
+                "(blush)I couldn't think of anything else. That's a problem, "
+                "for a crossword setter.",
+                ("?", "She won't quite look at you.",
+                 [("Then don't stop.", 60,
+                   "(blush)...All right. I won't."),
+                  ("What's one across?", 40,
+                   "(blush)Four letters. Starts with L. ...Work it out "
+                   "yourself.")])],
+            8: ["*Amy is waiting at the edge of the meadow with a jar of "
+                "honey tied with a teal ribbon, like her clip.",
+                "(blush)I've been trying to say this for weeks. I wrote it "
+                "as a clue. It didn't fit in the grid.",
+                "So I'll just say it. I like you, {name}. More than the "
+                "bees. Don't tell the bees.",
+                "(happy)...There. Done. I'm going to stand very still now "
+                "until you say something."],
+        },
+        "date": ["*You and Amy sit in the clover by her hives as the sun "
+                 "goes down.",
+                 "(happy)Listen. That hum is them settling in for the night. "
+                 "Every one of them home.",
+                 "(blush)I like this. You, here. The quiet doesn't feel "
+                 "lonely with you in it."],
+        "dating": ["(blush)I put your name in this week's crossword. Rusty "
+                   "solved it in four minutes and screamed.",
+                   "(happy)The bees like you. I like you more. Those are the "
+                   "official rankings."],
+        "spouse": ["(happy)Morning. Honey's on the table, tea's in the pot. "
+                   "I'm in a good mood. Don't make it weird.",
+                   "(blush)I set a crossword about us. Every answer is a day "
+                   "I've been happy.",
+                   "The bees are in the orchard today. So am I, if you need "
+                   "me."],
+        "sched": {"day": [(600, "amy.1"), (800, "out.flowerbed"),
+                          (1200, "amy.2"), (1300, "out.bench1"),
+                          (1500, "library.2"), (1800, "inn.8"),
+                          (2030, "amy.1")],
+                  "rest_s": [(600, "amy.1"), (1000, "out.woods"),
+                             (1400, "amy.3"), (1700, "rusty.3"),
+                             (2100, "amy.1")],
+                  "rain_s": [(600, "amy.1"), (1000, "amy.2"),
+                             (1500, "library.2"), (1800, "amy.3"),
+                             (2100, "amy.1")]},
+        "shop": None,
+    },
+    "rusty": {
+        "name": "Rusty Quinn", "short": "Rusty", "romance": True,
+        "job": "the village SEAMSTRESS. Costumes, mostly. And alterations, "
+               "when I'm desperate. I also put on the PLAY at the inn",
+        "look": {"face": "F", "body": "F", "skin": 0, "hair": "#e4641c",
+                 "style": "long", "eyes": "#7a9878", "shirt": "#2a2228",
+                 "pants": "#2a2228", "bg": "#f4c4d8", "lips": "#6a1e2c",
+                 "extras": ("liner", "nosering")},
+        "birthday": (1, 12), "home": "rusty", "rest": 1,
+        "loves": ["rose", "chocolate", "strawberry"],
+        "likes": ["wool scarf", "sheet music", "coral", "wild grape",
+                  "apple pie"],
+        "dislikes": ["turnip", "fiber"],
+        "hates": ["herring", "salad"],
+        "intro": "(surprised)Oh, thank goodness, a new face! Rusty Quinn. "
+                 "Seamstress, costume queen, local menace. You're going to "
+                 "need a better hat. We'll talk.",
+        "greet": [["(happy)Well, hello there!", "Oh! It's the farmer!"],
+                  ["(laugh){name}! Darling!", "(happy)There you are!"],
+                  ["(laugh){name}! Sit, sit, tell me everything!",
+                   "(happy)My favourite farmer! Don't tell the others."],
+                  ["(laugh){name}! My dearest! My muse! My mud-covered "
+                   "darling!"]],
+        "chat": [["Ugh, Edmund wants a new sash for the festival. Purple. "
+                  "AGAIN. The man has one colour.",
+                  "(happy)I dyed my hair this colour. It's called 'Sunset "
+                  "Riot.' It's number seven. I've tried them all.",
+                  "Amy says I'm 'a lot.' I say I'm exactly enough."],
+                 ["(laugh)I once sewed an entire dragon costume in two "
+                  "days. For Pip. He wore it for a month. To school.",
+                  "(cross)Somebody keeps borrowing my good scissors. If I "
+                  "find out it's Ivy, there will be a scene.",
+                  "(happy)Amy's wearing the clip I gave her! Every single "
+                  "day! She thinks I haven't noticed. I've noticed."],
+                 ["(sad)I left the city theatre to come here. Everybody "
+                  "said I'd be bored. I'm not bored. I'm... home.",
+                  "(happy)I'm making you something. No, you can't see it. "
+                  "Yes, it has sequins. No, you don't get a say.",
+                  "Do you know how long winged liner takes in the morning? "
+                  "Neither do I. I've never been on time for anything."],
+                 ["(happy)You're family now, {name}. Which means I get to "
+                  "criticise your clothes forever. Lucky you."]],
+        "season": ["(happy)Spring! Blossom season! Everyone wants flowers "
+                   "sewn on everything!",
+                   "Summer. Too hot for black. I wear black anyway. "
+                   "Suffering is fashion.",
+                   "(happy)Fall! The colours! It's like the whole valley "
+                   "dyed its hair to match mine!",
+                   "(laugh)Winter! Scarves! Capes! Dramatic coats! My "
+                   "season, frankly."],
+        "rain": "(happy)Rain! Perfect sewing weather. And moody walking "
+                "weather. Very theatrical.",
+        "topics": {
+            "seamstress": "Costumes are my first love. Alterations are "
+                          "how I pay for my first love.",
+            "play": "(laugh)Every spring at the inn! Wren sings, Bernard "
+                    "forgets his lines, the mayor insists on a cameo. It's "
+                    "chaos. It's glorious.",
+            "hair": "(happy)Natural colour? Mousy brown. Never again. "
+                    "Life's too short to be mousy.",
+            "amy": "(happy)Amy's my best friend. She'll pretend she's not. "
+                   "She makes me tea when I cry and tells me I'm being "
+                   "ridiculous. Both are acts of love.",
+            "theatre": "(sad)Six years in the city. Lots of costumes, lots "
+                       "of applause. Nobody knew my name. Here everybody "
+                       "knows my name. Too well, honestly.",
+        },
+        "opinions": {
+            "amy": "(happy)Amy! My grumpy little honeybee. I adore her. "
+                   "Don't tell her.",
+            "wren": "(laugh)Wren's the star of every play. She's also the "
+                    "loudest. We get on beautifully.",
+            "edmund": "(cross)Purple. Sash. Again. The man needs an "
+                      "intervention.",
+            "ivy": "Ivy builds my sets. Beautifully. She also steals my "
+                   "scissors. I have no proof. Yet.",
+            "felix": "(happy)Felix needs a better coat. I've told him. "
+                     "He says it's 'practical.' I've never been so "
+                     "insulted.",
+        },
+        "gift": {"love": "(laugh)Oh, you DARLING! I'm going to cry! I'm not "
+                         "going to cry. I'm crying a little.",
+                 "like": "(happy)Ooh, how lovely! Thank you, darling!",
+                 "neutral": "Oh! Well. Thank you!",
+                 "dislike": "(surprised)Oh. Hm. That's... a choice.",
+                 "hate": "(cross)Absolutely not. Take it away. I can SMELL "
+                         "it."},
+        "unknown": "No idea, darling. Ask Amy, she knows everything.",
+        "scenes": {
+            2: ["*Rusty is outside her studio, pinning a costume onto a "
+                "very patient dressmaker's dummy.",
+                "(happy)Oh, perfect timing! Stand there. Arms out. I need "
+                "to check a hem.",
+                ("?", "She circles you with a mouthful of pins.",
+                 [("Is this a dragon costume?", 40,
+                   "(laugh)It's a PHOENIX costume. For the play. You'd make "
+                   "a wonderful phoenix. Hold still."),
+                  ("Do I have to?", 20,
+                   "(cross)Yes. Art requires sacrifice. Your sacrifice. "
+                   "Hold still.")])],
+            4: ["*Rusty is sitting on the step of her studio, makeup "
+                "smudged, a letter in her hand.",
+                "(sad)The city theatre wrote. They want me back. Head of "
+                "costume. It's everything I used to want.",
+                ("?", "She stares at the letter.",
+                 [("Do you want to go?", 40,
+                   "(sad)...No. I don't think I do. I think I just wanted "
+                   "them to ask. Isn't that silly?"),
+                  ("We'd miss you terribly.", 50,
+                   "(happy)Would you? ...Oh, stop it, you'll ruin my liner. "
+                   "Again.")]),
+                "(laugh)Don't tell Amy I cried. She'll make me tea and "
+                "look at me. The LOOK."],
+            6: ["*Rusty's studio, late. She's sewing something small and "
+                "green, and whips it behind her back when you come in.",
+                "(blush)It's NOT for you. ...It's a little bit for you.",
+                "*It's a waistcoat, embroidered all over with tiny apple "
+                "blossoms.",
+                "I've made a thousand costumes for people pretending to be "
+                "someone else. This is the first thing I've made for "
+                "someone being exactly who they are.",
+                ("?", "She fusses with a loose thread.",
+                 [("I love it.", 60,
+                   "(blush)Oh, stop. Stop it. ...Say it again."),
+                  ("You made this for me?", 40,
+                   "(happy)Of course I did, darling. Who else would I make "
+                   "it for?")])],
+            8: ["*Rusty finds you in the square. No liner, no lipstick, hair "
+                "tied back plain.",
+                "(sad)I took it all off. The paint, the drama. I wanted you "
+                "to see me with nothing in the way.",
+                "(blush)I'm mad about you, {name}. Ridiculously. "
+                "Theatrically. And for once in my life I don't know my "
+                "lines.",
+                "(laugh)...Say something, before I put the liner back on and "
+                "pretend this never happened."],
+        },
+        "date": ["*You and Rusty slip into the empty inn after closing, and "
+                 "she lights the stage lamps.",
+                 "(laugh)Stand there. Centre stage. Now bow. ...Brava, "
+                 "darling. Brava.",
+                 "(blush)I've had a thousand audiences. You're the only one "
+                 "I ever wanted to impress."],
+        "dating": ["(laugh)Amy says I've been humming. I do NOT hum. I emit "
+                   "joyful noises.",
+                   "(blush)I've redone my whole wardrobe in colours that go "
+                   "with yours. Don't let it go to your head."],
+        "spouse": ["(happy)Morning, darling! I mended your shirt. And "
+                   "improved it. You're welcome.",
+                   "(laugh)I put flowers on the table and sequins on the "
+                   "curtains. Don't panic.",
+                   "(blush)Coming home to you is my favourite entrance."],
+        "sched": {"day": [(600, "rusty.2"), (900, "rusty.1"),
+                          (1200, "out.fountain_w"), (1330, "rusty.1"),
+                          (1700, "out.square_n"), (1900, "inn.a"),
+                          (2300, "rusty.2")],
+                  "rest_s": [(600, "rusty.2"), (1000, "out.beach"),
+                             (1300, "amy.3"), (1600, "out.flowerbed"),
+                             (1900, "inn.a"), (2300, "rusty.2")],
+                  "rain_s": [(600, "rusty.2"), (900, "rusty.1"),
+                             (1700, "rusty.3"), (1900, "inn.a"),
+                             (2300, "rusty.2")]},
+        "shop": None,
+    },
 }
 
 ROMANCE = [k for k, v in VILLAGERS.items() if v["romance"]]
@@ -3492,6 +3864,8 @@ BUILDINGS = {
     "juniper": (66, 42, 6, 5, "pink", "white", "Juniper's Cottage"),
     "shack": (86, 43, 6, 5, "blue", "wood", "Theo's Shack"),
     "coop": (25, 21, 5, 4, "red", "wood", "your chicken coop"),
+    "amy": (55, 9, 7, 5, "thatch", "wood", "Amy's Cottage"),
+    "rusty": (76, 42, 7, 5, "purple", "white", "Rusty's Studio"),
 }
 ON_ORDER = {"coop"}             # buildings that stand only once you've
                                 # paid for them
@@ -3514,9 +3888,11 @@ OUT_SPOTS = {
 }
 FEST_SPOTS = {
     "square": [(71, 23), (74, 23), (77, 23), (80, 23), (71, 27), (79, 27),
-               (72, 29), (78, 29), (74, 29), (76, 29), (70, 25), (80, 25)],
+               (72, 29), (78, 29), (74, 29), (76, 29), (70, 25), (80, 25),
+               (69, 27), (81, 27)],
     "beach": [(50, 53), (53, 54), (56, 53), (59, 54), (62, 53), (65, 54),
-              (68, 53), (71, 54), (74, 53), (77, 54), (84, 53), (87, 54)],
+              (68, 53), (71, 54), (74, 53), (77, 54), (84, 53), (87, 54),
+              (90, 53), (47, 54)],
 }
 
 
@@ -3822,6 +4198,22 @@ ROOMS = {
         "W......PNW",
         "WWWWxWWWWW")),
 }
+ROOMS["amy"] = ("boards", "W", (
+    "WWwWWWWWwWW",
+    "WSS.P..O.BW",
+    "W..2....1.W",
+    "W.TT..3...W",
+    "W.hh......W",
+    "WP..rrr..PW",
+    "WWWWWxWWWWW"))
+ROOMS["rusty"] = ("floor", "W", (
+    "WWwWWWWWwWW",
+    "WEcc.P..B.W",
+    "W..1....2.W",
+    "W....3....W",
+    "WTT...rr..W",
+    "Whh.P.rr.PW",
+    "WWWWWxWWWWW"))
 ROOMS["coop"] = ("straw", "l", (
     "llwllwll",
     "lnnnnnnl",
@@ -5424,6 +5816,10 @@ class Game:
         st.setdefault("trees", [])
         st.setdefault("loos", [])
         st.setdefault("felled", {})
+        for vid in VILLAGERS:
+            st["friends"].setdefault(vid, {
+                "pts": 0, "talked": -1, "week": 0, "gift_day": -1,
+                "met": False, "scenes": [], "status": None, "dated": -1})
         st.setdefault("loo_in", None)
         if "magic wand" not in self.p["tools"]:
             self.p["tools"].append("magic wand")     # older saves
@@ -6831,7 +7227,8 @@ class Game:
         return {"#1e1a1a": "black", "#4a4040": "black",
                 "#5a3a1e": "brown", "#8a4a22": "brown", "#a83a1e": "brown",
                 "#d0502a": "brown", "#e8c870": "speckled",
-                "#9a9a9a": "speckled", "#eeeeee": "white"}.get(hair,
+                "#9a9a9a": "speckled", "#eeeeee": "white",
+                "#e4641c": "brown", "#221a18": "black"}.get(hair,
                                                               "white")
 
     def look_of(self, vid):
@@ -9989,6 +10386,9 @@ ACCEPT = {
     "wren": "(laugh)YES! Oh my gosh! YES! Dad! DAD! ...He's not here. "
             "I'll tell him later. YES!",
     "ivy": "(blush)...Took you long enough. Yes. Obviously yes.",
+    "amy": "(blush)...Yes. Three letters: yes. I mean yes. I mean... yes.",
+    "rusty": "(laugh)YES! Oh, darling, yes! I'm going to faint! Catch me! "
+             "...You didn't catch me. Still yes!",
 }
 PROPOSAL = {
     "rowan": "(blush)...Yes. I'll make the rings. Iron and gold. They'll "
@@ -10001,6 +10401,10 @@ PROPOSAL = {
     "wren": "(laugh)YES! I'm writing a song! It's called YES!",
     "ivy": "(blush)...Yes. I'll build us a house. Well, a bigger one. "
            "You know what I mean.",
+    "amy": "(blush)Yes. I've never been sure of anything without checking "
+           "it twice. I'm sure of this.",
+    "rusty": "(blush)Yes. YES! I'm making the dress myself. And yours. Don't "
+             "argue.",
 }
 VOWS = {
     "rowan": "(blush)I'm not good with words. So: I'll make you things. "
@@ -10016,6 +10420,11 @@ VOWS = {
             "come home to you every night. Every single night.",
     "ivy": "(blush)I built a lot of things in my life. This is the one I'm "
            "proudest of. I'm yours, {name}.",
+    "amy": "(blush)I'm not good with people. But you aren't people. You're "
+           "you. I'll love you quietly and completely, every single day.",
+    "rusty": "(blush)I've spent my whole life on a stage. With you I don't "
+             "have to perform. Every act, every encore, every quiet night. "
+             "All of it. All of me.",
 }
 SCENE_GIFTS = {("rose", 2): "apple pie", ("rose", 5): "wool scarf"}
 
@@ -10043,7 +10452,8 @@ def golden(px):
 
 STYLE_TO_F = {"short": "bob", "messy": "long", "spiky": "ponytail",
               "curly": "curly", "bald": "bun"}
-STYLE_TO_M = {"long": "messy", "bob": "short", "ponytail": "short",
+STYLE_TO_M = {"long": "messy", "bangs": "messy", "bob": "short",
+              "ponytail": "short",
               "pigtails": "spiky", "bun": "short", "braid": "messy",
               "curly": "curly"}
 
@@ -10171,6 +10581,17 @@ def maid_look(look):
 
 
 SWAP_LINES = {   # liked it, hated it, glad to be back, sorry to be back
+    "amy": ("(surprised)...Huh. I look like my uncle. The bees won't mind. "
+            "I think I don't mind either.",
+            "(cross)Change me back. The bees are confused and so am I.",
+            "Thank you. The bees will be relieved. So am I.",
+            "(sad)Oh. I'd just learned to whistle properly."),
+    "rusty": ("(laugh)OH! Look at this JAWLINE! I'm going to need a whole "
+              "new wardrobe! Darling, you've given me a project!",
+              "(cross)My liner doesn't SIT right on this face! Fix it! Fix "
+              "it now!",
+              "(happy)Thank goodness. I had a costume half done for HIM.",
+              "(sad)Already? I'd only just designed him a cape."),
     "rowan": ("(blush)...Huh. I look like my mother. ...I don't hate it. "
               "Don't tell Otto I don't hate it.",
               "(cross)Change me back. Now. I can't swing a hammer like "
@@ -10262,6 +10683,10 @@ TREE_SCREAMS = [
     "{who} screams again, the whole trunk shuddering. Leaves rain down "
     "on you. \"STOP! PLEASE!\""]
 TREE_CHOPPED = {   # chopped out of being a tree
+    "amy": "(cross)You chopped me down. The bees saw. I don't want to talk "
+           "to you. I may never want to talk to you.",
+    "rusty": "(cross)You chopped me DOWN! With an AXE! I am covered in "
+             "SAWDUST and I'm going to tell EVERYONE!",
     "rowan": "(cross)You took an axe to me. An axe, {name}. I'm going to go "
              "and sit somewhere far away from you for a very long time.",
     "felix": "(cross)I am covered in sawdust and I can feel every ring. "
@@ -10287,6 +10712,13 @@ TREE_CHOPPED = {   # chopped out of being a tree
                "would you do that to me?",
 }
 TREE_BACK = {   # uprooted: sorry to be walking again, glad of it
+    "amy": ("(happy)The bees visited me every day. I had blossoms. I was "
+            "useful and nobody talked to me. Bliss.",
+            "(cross)I couldn't read. I couldn't write. I couldn't even "
+            "frown properly. Don't do that again."),
+    "rusty": ("(laugh)I was a gorgeous tree! Autumn leaves to MATCH MY "
+              "HAIR! Iconic!",
+              "(cross)Birds nested in my HAIR. My actual hair, {name}."),
     "rowan": ("(sad)...It was so quiet. Just wind and sun. Nobody wanting "
               "anything from me. Can I go back?",
               "(cross)A woodpecker, {name}. A WOODPECKER. Do you know what "
@@ -10430,6 +10862,14 @@ LOO_OUT = ["{who} comes out of the outhouse, whistling.",
            "The outhouse door creaks, and out comes {who}, very "
            "casually."]
 LOO_BACK = {   # turned back: sorry about it, glad of it
+    "amy": ("(happy)Everybody brought something to read. I listened to "
+            "people solve my crossword. Out loud. Badly. It was wonderful.",
+            "(cross)Rusty came in. Rusty TALKED the whole time. I'm going "
+            "to need some quiet."),
+    "rusty": ("(laugh)The ACOUSTICS! Everyone who came in sounded "
+              "wonderful! Well. Some of them.",
+              "(cross)An outhouse, {name}. A purple-doored outhouse. I'll "
+              "never live it down."),
     "rowan": ("(blush)...People needed me. Every one of them, and nobody "
               "wanted to chat. Honestly? I liked it.",
               "(cross)Don't. Don't even look at me. I'm going to go and "
@@ -10483,6 +10923,18 @@ MAID_CHORES = {   # what you can tell a maid to do: menu, and in her words
     "rest": ("Just rest", "rest. Just rest. If you say so"),
 }
 MAID_LINES = {   # liked it, hated it, glad to be back, sorry to be back
+    "amy": ("(blush)A tidy house, a quiet routine, nobody asking me to "
+            "chat. ...This is fine. This is very fine.",
+            "(cross)I have bees to tend. And now an apron. I'll do it. I'll "
+            "just do it quietly and resentfully.",
+            "(happy)Thank you. The bees missed me. I missed the bees.",
+            "(sad)Oh. I'd only just alphabetised your spices."),
+    "rusty": ("(laugh)The FRILLS! Darling, the frills! Somebody fetch me "
+              "a mirror! I'm a VISION!",
+              "(cross)Black and white? Every day? With NO accessories? "
+              "...Fine. What needs doing, and quickly.",
+              "(happy)Free! I'm going to wear every colour I own at once!",
+              "(sad)Already? I'd just embroidered your tea towels."),
     "rowan": ("(blush)...It's a very practical apron. Lots of pockets. "
               "I'll sweep your floors. Don't make it weird.",
               "(cross)A FRILLY CAP. Fine. Fine! What needs cleaning? I'll "
@@ -10616,6 +11068,12 @@ CLUCK_ANGRY = ["The chicken that is {who} clucks angrily at you.",
                "rude.",
                "{who} clucks angrily and turns her back on you."]
 CHICKEN_BACK = {   # turned back: sorry to be human again, glad of it
+    "amy": ("(happy)Hens are calm. Nobody expected a crossword from me. I "
+            "could get used to it.",
+            "(cross)The bees chased me. My own bees. I'm going to sit down."),
+    "rusty": ("(laugh)I was a GORGEOUS hen! The feathers! The drama! Do it "
+              "again for the play!",
+              "(cross)No liner. No lipstick. Just beak. Never again."),
     "rowan": ("(sad)...Being a hen was quiet. Nobody expected me to say "
               "anything. I miss it already.",
               "(cross)I laid an egg. I am never talking about this. Ever."),
@@ -10739,6 +11197,10 @@ STATUE_PHRASES = [
     "You straighten the statue's golden collar.",
 ]
 UNSTATUE = {
+    "amy": "(surprised)...I was gold. The bees thought I was a flower. "
+           "That's actually quite flattering.",
+    "rusty": "(surprised)Gold! I was GOLD! Darling, was I shiny? Tell me I "
+             "was shiny.",
     "rowan": "(surprised)...Was I gold? I was gold. My arms are stiff. "
              "Don't do that again. ...Was I shiny, at least?",
     "felix": "(surprised)My pulse! I had no pulse! Fascinating. Also "
@@ -10869,6 +11331,15 @@ def selftest():
     grid, labels = make_valley(1)
     if len(grid) != VH or any(len(r) != VW for r in grid):
         problems.append("valley size")
+    for key, (x0, y0, w, h, *_) in BUILDINGS.items():
+        if key in ON_ORDER:
+            continue
+        for y in range(y0, y0 + h):
+            for x in range(x0, x0 + w):
+                if not grid[y][x].startswith(("wall_", "win_", "roof_",
+                                              "eave_", "door_", "chimney")):
+                    problems.append("%s is built over at %d,%d" % (key, x,
+                                                                  y))
     rooms = {}
     for key in EXTRA_ROOMS:
         g, spots, entry, ex = make_room(key)
