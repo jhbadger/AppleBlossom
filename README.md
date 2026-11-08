@@ -154,9 +154,10 @@ Animals need feeding every night, one of three ways:
   **fertilizer**, and watch where you step, or it's *squelch*.
 - **The trough:** put **hay** in it from your bag, one each.
 - **The silo:** Ivy builds one for 1,000g, 60 wood and 40 stone; set it
-  down like a machine. It holds 240 hay and feeds every animal that didn't
-  graze or find hay in the trough, every night, by itself. Walk into it to
-  fork in your hay.
+  down like a machine. It holds 240 hay and keeps the troughs in the coop
+  and the barn topped up by itself (one hay per animal, every morning and
+  whenever you look), so nobody that didn't graze goes hungry while it
+  lasts. Walk into it to fork in your hay.
 
 Hay comes from cutting weeds with the scythe (half the time; straight
 into the silo if there's room) or from Mabel at 40g. Winter is when you'll

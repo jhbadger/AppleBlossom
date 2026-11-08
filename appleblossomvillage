@@ -10306,10 +10306,21 @@ class Game:
         self.say(random.choice(SCOOPS[kind]) + " (+1 fertilizer)", "good")
         self.end_turn(1)
 
+    def top_up_troughs(self):
+        """The silo keeps the troughs filled: one hay for every animal."""
+        st = self.st
+        for b, pen in (("coop", "chickens"), ("barn", "cows")):
+            need = len(st[pen]) - st["trough"].get(b, 0)
+            n = min(max(0, need), st["hay"])
+            if n:
+                st["hay"] -= n
+                st["trough"][b] = st["trough"].get(b, 0) + n
+
     def trough_menu(self, b):
         """The feed trough in the coop or the barn: hay, and the door to
         the pasture."""
         st = self.st
+        self.top_up_troughs()
         pen = "chickens" if b == "coop" else "cows"
         herd = len(st[pen])
         inside = st["trough"].get(b, 0)
@@ -10326,7 +10337,8 @@ class Game:
         self.open_menu("The feed trough: %d hay in it for %d %s%s. %s" % (
             inside, herd, "hen" if pen == "chickens" else "animal",
             "" if herd == 1 else "s",
-            "The silo has %d more." % st["hay"] if self.silo_room() else
+            "The silo keeps it topped up (%d hay left in it)." % st["hay"]
+            if self.silo_room() else
             "No silo: what's here is all they get, unless they graze."),
             items)
 
@@ -10404,11 +10416,9 @@ class Game:
                 if grazed and c.get("ox") is not None:
                     love += FARM_LOVE["grazed"]
                     ate = True
-                elif st["trough"].get(b, 0) > 0:
+                elif st["trough"].get(b, 0) > 0 or (
+                        self.top_up_troughs() or st["trough"].get(b, 0)):
                     st["trough"][b] -= 1
-                    ate = True
-                elif st["hay"] > 0:
-                    st["hay"] -= 1
                     ate = True
                 else:
                     ate = False
@@ -10420,6 +10430,7 @@ class Game:
                 self.farm_love(c, love, quiet=True)
                 c.pop("ox", None)
                 c.pop("oy", None)
+        self.top_up_troughs()                   # ready for tomorrow
         if hungry:
             self.say("%d of your animals went hungry overnight. Put hay in "
                      "the trough, keep the silo stocked, or let them out to "
@@ -11243,6 +11254,7 @@ class Game:
             return
         self.take("hay", n)
         st["hay"] += n
+        self.top_up_troughs()
         self.sound.play("pick")
         self.say("You fork %d hay into the silo. (%d of %d)" % (
             n, st["hay"], self.silo_room()), "good")
