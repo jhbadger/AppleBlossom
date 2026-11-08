@@ -56,8 +56,9 @@ the tool would do something there.
 | Watering can | waters soil; fill it at the well, the pond, the river or the lake |
 | Seeds | go into tilled soil, in their season |
 | Axe, pickaxe, scythe | clear branches and stumps, stones, and weeds (walking into debris uses the right one) |
+| Axe, on a tree | three swings fell it, for 8 wood and a stump to clear (6 more); it grows back after a season |
 | Fishing rod | ask Theo about FISHING; face water and cast |
-| Magic wand | casts petrify straight ahead (see below) |
+| Magic wand | casts a spell straight ahead (see below) |
 
 Watered crops grow a day each night, and rain waters them for you. When a crop
 is ripe, use anything on it to pick it. Some crops (strawberries, tomatoes,
@@ -122,6 +123,60 @@ up to eight squares until it hits someone or something solid.
   to turn them back, and they'll tell you all about it. Genderswap bounces off
   a chicken; petrify makes a golden hen. (Someday you'll be able to catch a
   chickenfied villager and keep her in your coop.)
+- **Maidify** turns whoever it hits into a maid: a young woman in a black
+  dress, a white apron and a frilled cap, whoever they were before. She
+  moves into your cabin and stops keeping shop. Ask her about her **CHORE**
+  and she'll do it every morning before you wake:
+
+  | Chore | What she does |
+  | --- | --- |
+  | Pick ripe crops | picks everything ripe and puts it in your bag |
+  | Clear the fields | clears up to a dozen weeds, stones and branches, and bags what they drop |
+  | Water the crops | waters every crop (not needed when it rains) |
+  | Collect the eggs | gathers the coop's eggs and pets every hen |
+  | Cook breakfast | leaves you pancakes, bread, honey cake or stew |
+  | Just rest | nothing at all |
+
+  You can also **KISS** your maid, twice a day. Each kiss counts as a gift
+  she likes, on top of the usual two gifts a week. Maids who'll be outdoors
+  spend early mornings in the farmyard. As with
+  the other spells, each game some villagers love being a maid and some hate
+  it, and it costs or earns you friendship the same way. Either way, a maid
+  does exactly what she's told: she just hums or grumbles while she does it.
+  Cast it again to set her free. Genderswap and chickenfy glance off a
+  maid's apron, maidify bounces off a hen, and Pip's too young for it. The
+  Friends list shows each maid's chore.
+- **Treeify** turns whoever it hits into a young tree, rooted to the spot,
+  with their face peering out of the trunk and a hint of their hair colour
+  in the leaves. The tree changes with the seasons: blossom in spring, fruit
+  the colour of their shirt in summer, red and gold in fall, snow in winter.
+  It stays put, day and night, until you change it back. Walk into it and it
+  rustles happily or creaks crossly, depending on whether this villager
+  likes being a tree (dealt each game); walk into it again to push through
+  the branches. **Water** a tree once a day: one that likes it takes it as a
+  gift it likes, one that doesn't shakes the water off at you. You *can*
+  take the axe to one: it screams at every swing, and on the third it falls,
+  you get the wood, and the villager tumbles out of the trunk, whole but
+  shaking and covered in sawdust. That costs a great deal of friendship,
+  liked being a tree or not. (Nobody can bring themselves to chop Pip.)
+  Friendship goes up or down as with the
+  other spells. Cast it again to uproot them and hear about it. Other spells
+  sink into the bark without effect, and treeify won't take on a statue, a
+  hen or a maid.
+- **Looify** turns whoever it hits into an outhouse: a little plank privy
+  with a moon on the door, painted the colour of their shirt. It works only
+  out of doors, and only where there's clear ground in front for the door to
+  open; anywhere else it fizzles. The outhouse stays put until you change it
+  back. Walk into it from the front and you go inside, where there's a bench
+  with two holes and an old almanac. Walk into a hole and you do your
+  business, sometimes to a comment from the walls. Walk into the side and
+  you just knock. Villagers passing near an outhouse now and then pop in for
+  a few minutes and come out again; if you're inside, they rattle the door
+  and hurry off, and if they're inside, you'll hear "Occupied!" As ever,
+  some villagers like being an outhouse and some don't, with friendship to
+  match. Cast it again to turn them back (anyone inside tumbles out). Other
+  spells splinter against the door, looify won't take on a statue, hen,
+  maid or tree, and Pip laughs too hard for it to land.
 
 ## The village
 
@@ -155,6 +210,14 @@ ABOUT... asks what they think of the others, and PAST asks them to step aside
 so you can squeeze by, if they're standing in a doorway. Words in CAPITALS are worth
 asking about. Each villager has their own topics, opinions, secrets and
 sense of humour.
+
+The village notices what your wand gets up to. When you CHAT, people
+sometimes bring up somebody you've changed: the golden statue of Otto, the
+hen that used to be Theo, Juniper keeping house at your farm, the tree
+that's Wren, the outhouse that's Bernard. They wonder whether that person
+likes their new life, and drop a hint they've picked up (singing from your
+cabin, a branch that shook at them, a door rattling by itself) that tells
+you whether they do. Family use their own names: Wren calls Bernard "Dad."
 
 **Friendship** is counted in hearts, up to ten:
 

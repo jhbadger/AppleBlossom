@@ -628,6 +628,19 @@ def draw_terrain(name, frame=0, season=0):
             disc(g, 7.5, 8, 4.5, "#c8a050")
             disc(g, 7.5, 8, 3, "#a88038")
         return g
+    if name in ("loohole", "loobench"):
+        g = planks(rng, "#a07446", "#86603a")
+        rect(g, 0, 3, 15, 13, "#c49460")
+        rect(g, 0, 3, 15, 4, "#d8aa74")
+        rect(g, 0, 13, 15, 14, "#6a4626")
+        if name == "loohole":
+            disc(g, 7.5, 8.5, 3.6, "#5a3a20")
+            disc(g, 7.5, 8.5, 2.6, "#140c06")
+        else:
+            rect(g, 4, 6, 11, 10, "#e8e0c8")     # an old almanac
+            rect(g, 4, 6, 11, 6, "#b84a3a")
+            rect(g, 5, 8, 10, 8, "#a8a090")
+        return g
     if name == "trough":
         g = draw_terrain("straw", frame, s)
         rect(g, 1, 5, 14, 11, "#7a5030")
@@ -1216,7 +1229,13 @@ SPELLS = {   # the wand's spells: what each one does, for the menu
     "petrify": "turns someone to gold, and back",
     "genderswap": "turns someone into the other sex, and back",
     "chickenfy": "turns someone into a chicken, and back",
+    "maidify": "turns someone into your maid, and back",
+    "treeify": "turns someone into a tree, and back",
+    "looify": "turns someone into an outhouse, and back (outdoors only)",
 }
+CHOPPABLE = {"tree": 8, "pine": 8}   # trees you can fell, and their wood
+CHOPS = 3                       # swings to fell one
+REGROW_DAYS = 28                # a felled tree grows back after a season
 DEBRIS = {   # debris -> the tool that clears it, what it drops
     "weed": ("scythe", ("fiber", 1)),
     "stone": ("pickaxe", ("stone", 2)),
@@ -1356,6 +1375,10 @@ def person_art(look):
             for x in range(6, 10):
                 if rows[y][x] in "ctpw":
                     rows[y][x] = "a"
+    if "maidcap" in extras:
+        for x in range(5, 11):
+            rows[1][x] = "a"
+        rows[0][6] = rows[0][9] = "a"
     if "hat" in extras:
         for x in range(4, 12):
             rows[1][x] = "x"
@@ -1693,6 +1716,21 @@ def portrait(look, expr="neutral"):
         g[fy2][fx] = "#f0e040"
     if "headband" in extras:
         prect(g, 9, top + 3, 22, top + 3, look.get("bandc", "#e04080"))
+    if "maidcap" in extras:
+        lace, lace_d = "#fbf8f2", "#d8d0c8"
+        prect(g, 8, top + 1, 23, top + 2, lace)
+        for x in range(8, 24, 2):
+            g[top][x] = lace
+            g[top + 3][x + 1] = lace_d
+        prect(g, 8, top + 3, 23, top + 3, lace_d)
+        for x in range(9, 23, 4):
+            g[top + 1][x + 1] = lace_d
+    if "bow" in extras:
+        bc = look.get("bowc", "#c03050")
+        prect(g, 13, 25, 14, 26, bc)
+        prect(g, 17, 25, 18, 26, bc)
+        g[25][15] = g[25][16] = shade(bc, 0.75)
+        g[26][15] = g[26][16] = shade(bc, 0.75)
     return g
 
 # ── The people of Apple Blossom Village ─────────────────────────────────────
@@ -3472,7 +3510,7 @@ OUT_SPOTS = {
     "riverbank2": (47, 15), "bridge": (45, 26), "woods": (60, 5),
     "woods2": (88, 6), "carpentry_yard": (79, 6), "dock": (80, 55),
     "dock_end": (81, 61), "beach": (66, 54), "beach2": (92, 55),
-    "stargaze": (70, 56), "farm_gate": (42, 27),
+    "stargaze": (70, 56), "farm_gate": (42, 27), "farmyard": (14, 26),
 }
 FEST_SPOTS = {
     "square": [(71, 23), (74, 23), (77, 23), (80, 23), (71, 27), (79, 27),
@@ -3687,10 +3725,10 @@ ROOMS = {
     "cabin": ("logfloor", "l", (
         "llwllllwlll",
         "lO..P...DDl",
-        "l.......1.l",
-        "l.TT......l",
+        "l..2....1.l",
+        "l.TT..3.5.l",
         "l.hh...rr.l",
-        "l......rr.l",
+        "l4.....rr.l",
         "lllllxlllll")),
     "store": ("floor", "W", (
         "WWwWWWWWwWWWW",
@@ -3792,7 +3830,14 @@ ROOMS["coop"] = ("straw", "l", (
     "l......l",
     "lllxllll"))
 COOP_ROOM = 8                   # chickens it holds
-ROOM_TILES = {"n": "nest", "q": "trough", "W": "wall", "w": "iwin", "l": "logwall", "L": "toolrack",
+EXTRA_ROOMS = {   # rooms that aren't buildings in the valley
+    "loo": ("boards", "l", (     # inside whichever outhouse you're in
+        "lllll",
+        "lHjHl",
+        "l...l",
+        "llxll")),
+}
+ROOM_TILES = {"H": "loohole", "j": "loobench", "n": "nest", "q": "trough", "W": "wall", "w": "iwin", "l": "logwall", "L": "toolrack",
               "x": "exit", "B": "bed", "D": "bed2", "T": "table",
               "h": "chair", "C": "counter", "S": "shelf", "G": "goods",
               "K": "seeds", "O": "stove", "F": "fireplace", "X": "forge",
@@ -3804,7 +3849,7 @@ SPOT_CHARS = "123456789a"
 
 def make_room(key):
     """A room's grid, its spots, where you come in and the way out."""
-    floor, wall, rows = ROOMS[key]
+    floor, wall, rows = ROOMS[key] if key in ROOMS else EXTRA_ROOMS[key]
     grid, spots, exit_ = [], {}, None
     for y, row in enumerate(rows):
         line = []
@@ -3858,6 +3903,8 @@ class Villager:
         self.goal = None            # (area, x, y) they're heading for
         self.path = []
         self.stuck = 0
+        self.visit = None           # off to (or in) an outhouse
+        self.hidden = False         # inside one, out of sight
 
 
 def blank(w, h, tile):
@@ -4270,6 +4317,83 @@ class Sound:
             env = gain * (0.0001 / gain) ** (k / n)
             buf[start + k] += y * env
 
+    @staticmethod
+    def pour(buf, dur=1.5, gain=0.32):
+        """Water poured into water: a hiss of bubbly, gurgling noise, with
+        little plinks that rise in pitch as it fills."""
+        rng = random.Random(7)
+        n = int(dur * RATE)
+        buf.extend([0.0] * max(0, n - len(buf)))
+        lo = hi = x_prev = 0.0
+        a_lo = 1 / (1 + RATE / (2 * math.pi * 2600))    # low-pass
+        rc = 1 / (2 * math.pi * 500)
+        a_hi = rc / (rc + 1 / RATE)                      # high-pass
+        gurgle, target = 0.5, 0.5
+        for k in range(n):
+            t = k / RATE
+            if k % 1200 == 0:
+                target = rng.uniform(0.25, 1.0)
+            gurgle += (target - gurgle) * 0.002
+            x = rng.uniform(-1, 1)
+            lo += a_lo * (x - lo)
+            hi = a_hi * (hi + lo - x_prev)
+            x_prev = lo
+            env = min(1.0, t / 0.08) * min(1.0, (dur - t) / 0.25)
+            buf[k] += hi * gain * gurgle * env * 2.2
+        t = 0.05
+        while t < dur - 0.2:
+            f = 500 + 700 * (t / dur) + rng.uniform(-60, 60)
+            start, m = int(t * RATE), int(0.035 * RATE)
+            for k in range(m):
+                e = math.sin(math.pi * k / m)
+                ph = 2 * math.pi * (f + 900 * k / m) * k / RATE  # a chirp
+                buf[start + k] += math.sin(ph) * e * gain * 0.35
+            t += rng.uniform(0.04, 0.11)
+
+    @staticmethod
+    def raspberry(buf, dur=0.8, gain=0.34):
+        """Blowing a raspberry: a buzzing, flapping lip-trill that wobbles
+        in pitch, with breath through it."""
+        rng = random.Random(11)
+        n = int(dur * RATE)
+        buf.extend([0.0] * max(0, n - len(buf)))
+        ph, f0, lo = 0.0, 105.0, 0.0
+        a_lo = 1 / (1 + RATE / (2 * math.pi * 1400))
+        for k in range(n):
+            t = k / RATE
+            f = f0 + 22 * math.sin(2 * math.pi * 5.5 * t) - 25 * t / dur
+            ph += f * (1 + rng.uniform(-0.06, 0.06)) / RATE
+            if ph >= 1.0:
+                ph -= 1.0
+            buzz = 1.0 if ph < 0.22 else -0.28        # a narrow pulse
+            flap = 0.55 + 0.45 * math.sin(2 * math.pi * 31 * t) ** 2
+            lo += a_lo * (rng.uniform(-1, 1) - lo)
+            env = min(1.0, t / 0.03) * min(1.0, (dur - t) / 0.12)
+            buf[k] += (buzz * 0.9 + lo * 1.0) * flap * env * gain
+
+    @staticmethod
+    def scream(buf, dur=1.1, gain=0.3):
+        """A tree screaming: a shrill, wavering wail that climbs and then
+        falls away, raw with breath."""
+        rng = random.Random(5)
+        n = int(dur * RATE)
+        buf.extend([0.0] * max(0, n - len(buf)))
+        ph, lo = 0.0, 0.0
+        a_lo = 1 / (1 + RATE / (2 * math.pi * 3000))
+        for k in range(n):
+            t = k / RATE
+            u = t / dur
+            f = 620 + 520 * math.sin(math.pi * min(1.0, u * 1.4)) - 250 * u
+            f += 38 * math.sin(2 * math.pi * 7.5 * t)        # the waver
+            ph += f / RATE
+            v = (math.sin(2 * math.pi * ph) + 0.55 *
+                 math.sin(4 * math.pi * ph) + 0.35 *
+                 math.sin(6 * math.pi * ph) + 0.2 *
+                 math.sin(10 * math.pi * ph))
+            lo += a_lo * (rng.uniform(-1, 1) - lo)
+            env = min(1.0, t / 0.04) * min(1.0, (dur - t) / 0.3)
+            buf[k] += (v * 0.5 + lo * 0.9) * env * gain
+
     def write(self, name, buf, path=None):
         path = path or os.path.join(self.dir, name + ".wav")
         pcm = array.array("h", (int(max(-1.0, min(1.0, v)) * 32000)
@@ -4392,6 +4516,15 @@ class Sound:
             tone(b, i * 0.07, f, 0.15, "triangle", 0.15)
         noise(b, 0, 0.05, 800, 0.15)
         self.write("ship", b)
+        b = []
+        self.pour(b)
+        self.write("pour", b)
+        b = []
+        self.raspberry(b)
+        self.write("raspberry", b)
+        b = []
+        self.scream(b)
+        self.write("scream", b)
         self.synthesize_music()
 
     def synthesize_music(self):
@@ -4621,8 +4754,15 @@ Blossom Pendant at 10 asks them to marry you.
 Grandmother's magic wand: hold it, use it, choose a spell,
 then press an arrow (or tap) to zap that way.  Petrify
 turns someone to gold; genderswap turns them into the
-other sex; chickenfy, into a hen.  Cast the same spell
-again to undo it.
+other sex; chickenfy, into a hen; maidify, into a maid who
+lives in your cabin and does the CHORE you give her every
+morning (and whom you may KISS twice a day); treeify, into a
+tree you can water (or chop, if you can bear the screaming);
+looify (outdoors, with room for a door), into an outhouse
+you can use.  Cast the same spell again to undo it.
+
+The axe fells trees (three swings) for wood; they grow
+back in a season.
 
 Tap a square to walk there, next to you to step or use
 your tool there, yourself to use it ahead.
@@ -4891,6 +5031,7 @@ class Game:
             sprite = name.split("@")[0] in SPRITES
             for lvl, k in enumerate(SHADES):
                 if lvl and name.startswith(("v_", "s_", "vx_", "sx_",
+                                            "vm_", "sm_", "tv_", "lh_",
                                             "shen_",
                                             "hen_")):
                     continue
@@ -4951,7 +5092,8 @@ class Game:
     def portrait_image(self, who, expr, z):
         """A portrait as a Tk image, zoomed z times; who is a villager's
         id, or "you"."""
-        key = (who, expr, z, who != "you" and self.swapped(who))
+        key = (who, expr, z, who != "you" and self.swapped(who),
+               who != "you" and self.maid(who))
         img = self.portraits.get(key)
         if img is None:
             look = self.p["look"] if who == "you" else self.look_of(who)
@@ -5176,6 +5318,11 @@ class Game:
             a = Area(key, g, BUILDINGS[key][6])
             a.spots, a.entry, a.exit = spots, entry, ex
             self.areas[key] = a
+        for key in EXTRA_ROOMS:
+            g, spots, entry, ex = make_room(key)
+            a = Area(key, g, "the outhouse")
+            a.spots, a.entry, a.exit = spots, entry, ex
+            self.areas[key] = a
         self.forage_zones = forage_spots(grid)
         self.lamps = [(x, y) for y in range(VH) for x in range(VW)
                       if grid[y][x] in ("lamp", "fountain")]
@@ -5217,7 +5364,9 @@ class Game:
                         for vid in VILLAGERS},
             "spouse": None, "wedding": None, "request": None, "flags": [],
             "statues": [], "swapped": [], "chickens": [], "eggs": [],
-            "chickenfied": [],
+            "chickenfied": [], "maids": {}, "trees": [], "loos": [],
+            "felled": {},
+            "loo_in": None,
             "topics": [], "secret": None, "stats": {"shipped": 0,
                                                     "harvested": 0,
                                                     "fish": 0, "earned": 0},
@@ -5271,14 +5420,24 @@ class Game:
         st.setdefault("chickens", [])
         st.setdefault("eggs", [])
         st.setdefault("chickenfied", [])
+        st.setdefault("maids", {})
+        st.setdefault("trees", [])
+        st.setdefault("loos", [])
+        st.setdefault("felled", {})
+        st.setdefault("loo_in", None)
         if "magic wand" not in self.p["tools"]:
             self.p["tools"].append("magic wand")     # older saves
         self.build_world(st["seed"], self.p["built"])
+        self.apply_felled()
         for vid, (area, x, y) in st["npcs"].items():
             n = self.npcs.get(vid)
             if n and area in self.areas:
                 n.where, n.x, n.y = area, x, y
         self.area = self.areas[st["area"]]
+        if self.area.key == "loo" and st["loo_in"] not in st["loos"]:
+            self.area = self.areas["valley"]
+            st["pos"] = list(door_of("cabin"))
+            st["pos"][1] += 1
         self.load_images()
         for vid, n in self.npcs.items():
             if n.where is None:
@@ -5451,7 +5610,7 @@ class Game:
     def npc_at(self, x, y, area=None):
         a = (area or self.area).key
         for n in self.npcs.values():
-            if n.where == a and n.x == x and n.y == y:
+            if n.where == a and n.x == x and n.y == y and not n.hidden:
                 return n
         return None
 
@@ -5572,6 +5731,12 @@ class Game:
                 self.say("The feed trough. Ivy fills it from a sack that "
                          "never seems to run out.", "info")
                 return True
+        if t == "loohole":
+            self.do_business()
+            return True
+        if t == "loobench":
+            self.say(random.choice(LOO_ALMANAC), "info")
+            return True
         if t == "bed2" and a.key == "cabin":
             self.bed_menu()
             return True
@@ -5646,6 +5811,24 @@ class Game:
     def leave_room(self):
         key = self.area.key
         self.area = self.areas["valley"]
+        if key == "loo" and self.st["loo_in"] not in self.st["loos"]:
+            key = "cabin"           # (an outhouse that's gone: home)
+        if key == "loo":
+            vid, self.st["loo_in"] = self.st["loo_in"], None
+            x, y = self.loo_door(vid)
+            taken = {(n.where, n.x, n.y) for n in self.npcs.values()}
+            if ("valley", x, y) in taken:
+                x, y = self.free_spot("valley", x, y, taken)
+            self.st["pos"] = [x, y]
+            self.say("You step out of the outhouse that is %s, feeling a "
+                     "good deal lighter." % VILLAGERS[vid]["short"], "info")
+            self.face(0, 1)
+            self.sound.play("door")
+            self.walking = None
+            self.layout()
+            self.end_turn(WALK_COST)
+            self.save()
+            return
         dx, dy = door_of(key)
         self.st["pos"] = [dx, dy + 1]
         self.face(0, 1)
@@ -5715,10 +5898,15 @@ class Game:
         if h == "magic wand":
             return self.wand_target(x - self.pos()[0],
                                     y - self.pos()[1]) is not None
-        if not a.outdoor or not a.inside(x, y) or self.npc_at(x, y):
+        n = self.npc_at(x, y)
+        if n and self.tree(n.vid) and h in ("axe", "watering can"):
+            return True
+        if not a.outdoor or not a.inside(x, y) or n:
             return False
         t = self.tile_at(x, y)
         th = self.thing_at(x, y)
+        if h == "axe" and t in CHOPPABLE:
+            return True
         if th and th[0] == "crop" and self.ripe(th[1]):
             return True
         if th and th[0] == "forage":
@@ -5750,6 +5938,16 @@ class Game:
 
     def statue(self, vid):
         return vid in self.st["statues"]
+
+    def tree(self, vid):
+        return vid in self.st.setdefault("trees", [])
+
+    def loo(self, vid):
+        return vid in self.st.setdefault("loos", [])
+
+    def rooted(self, vid):
+        """Statues, trees and outhouses stay where they are."""
+        return self.statue(vid) or self.tree(vid) or self.loo(vid)
 
     def wand_target(self, dx, dy):
         """The first person a spell cast that way would hit, or None.
@@ -5821,6 +6019,32 @@ class Game:
         name = VILLAGERS[vid]["short"]
         self.flash(n.x, n.y, "sparkle")
         spell = self.p.get("spell")
+        if spell == "looify":
+            self.looify(n)
+            return
+        if self.loo(vid):
+            self.say("The spell splinters harmlessly against the outhouse "
+                     "door. It takes more than that to undo an outhouse.",
+                     "info")
+            self.end_turn(TOOL_COST)
+            return
+        if spell == "treeify":
+            self.treeify(n)
+            return
+        if self.tree(vid):
+            self.say("The spell sinks into %s's bark and is gone. Trees "
+                     "don't hold with that sort of magic." % name, "info")
+            self.end_turn(TOOL_COST)
+            return
+        if spell == "maidify":
+            self.maidify(n)
+            return
+        if spell in ("genderswap", "chickenfy") and self.maid(vid):
+            self.say("The spell glances off %s's starched apron. A maid "
+                     "stays a maid until the spell that made her is "
+                     "undone." % name, "info")
+            self.end_turn(TOOL_COST)
+            return
         if spell == "genderswap":
             if self.chicken(vid) and not self.statue(vid):
                 self.say("The spell bounces off the chicken's feathers. "
@@ -5863,8 +6087,14 @@ class Game:
         """Somebody's sprite: as they are, swapped, turned to a hen, and
         any of those in gold."""
         gold = self.statue(vid)
+        if self.loo(vid):
+            return "lh_" + vid
+        if self.tree(vid):
+            return "tv_" + vid
         if self.chicken(vid):
             return ("shen_" if gold else "hen_") + self.hen_colour(vid)
+        if self.maid(vid):
+            return ("s" if gold else "v") + "m_" + vid
         return ("s" if gold else "v") + ("x" if self.swapped(vid) else
                                          "") + "_" + vid
 
@@ -5945,6 +6175,656 @@ class Game:
         self.pass_time(TOOL_COST)
         self.talk_menu()
 
+    def maid(self, vid):
+        return vid in self.st.setdefault("maids", {})
+
+    def maidify(self, n):
+        """The maidify spell: a maid in a black dress, white apron and
+        frilled cap, who moves into your cabin and does whatever chore you
+        give her, whether she likes being a maid or not.  Cast again, and
+        she's herself."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        st = self.st
+        flags = st["flags"]
+        if VILLAGERS[vid]["look"].get("age") == "child":
+            self.say("The spell fizzles against %s's grubby school "
+                     "jumper. %s's far too young to be anybody's maid, and "
+                     "has homework besides." % (name, name), "info")
+            self.end_turn(TOOL_COST)
+            return
+        if self.chicken(vid):
+            self.say("The spell bounces off the hen. There's no apron in "
+                     "the world small enough.", "info")
+            self.end_turn(TOOL_COST)
+            return
+        self.portraits = {}
+        if self.statue(vid):
+            if self.maid(vid):
+                del st["maids"][vid]
+            else:
+                st["maids"][vid] = None
+            self.say("The golden statue of %s ripples and shifts shape. "
+                     "It doesn't seem to mind. It's a statue." % name,
+                     "gold")
+            self.end_turn(TOOL_COST)
+            return
+        if self.talk:
+            self.end_talk()
+        likes = self.likes_change(vid, "maidify")
+        n.goal, n.path, n.stuck = None, [], 0
+        lines = MAID_LINES[vid]
+        if not self.maid(vid):
+            st["maids"][vid] = None
+            self.say("Ribbons of light wind round %s, and when they fall "
+                     "away there stands a maid in a black dress, a white "
+                     "apron and a frilled cap, curtseying %s." % (
+                         name, "with a delighted smile" if likes else
+                         "through gritted teeth"), "quest")
+            if likes:
+                pts = 0 if "maidliked:" + vid in flags else 150
+                flags.append("maidliked:" + vid)
+            else:
+                pts = -200
+            line = lines[0 if likes else 1]
+        else:
+            del st["maids"][vid]
+            self.say("The apron and cap unravel into ribbons of light, "
+                     "and %s is back to normal." % name, "quest")
+            if likes:
+                pts = -80
+            else:
+                pts = 0 if "maidfixed:" + vid in flags else 120
+                flags.append("maidfixed:" + vid)
+            line = lines[3 if likes else 2]
+        self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
+                     "text": ""}
+        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.friend(vid)["met"] = True
+        self.speak(vid, line)
+        if pts:
+            self.befriend(vid, pts)
+            self.say("(%s %s.)" % (name, "likes you more for it" if pts > 0
+                                   else "is upset with you"),
+                     "heart" if pts > 0 else "bad")
+        if self.maid(vid):
+            self.say("(%s will move into your cabin and do whatever you "
+                     "tell her. Ask her about her CHORE.)" % name, "info")
+        self.pass_time(TOOL_COST)
+        self.talk_menu()
+
+    def treeify(self, n):
+        """The treeify spell: a young tree, rooted where they stood, with
+        their face in the bark.  Some like it and some don't; water a tree
+        that likes it and it's as good as a gift.  Cast again to uproot
+        them."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        st = self.st
+        flags = st["flags"]
+        if not self.tree(vid):
+            why = ("The spell can't take root in solid gold." if
+                   self.statue(vid) else
+                   "The spell slides off the hen's feathers. She shakes "
+                   "herself and clucks." if self.chicken(vid) else
+                   "The spell glances off %s's starched apron. A maid "
+                   "stays a maid until the spell that made her is undone."
+                   % name if self.maid(vid) else None)
+            if why:
+                self.say(why, "info")
+                self.end_turn(TOOL_COST)
+                return
+        if self.talk:
+            self.end_talk()
+        likes = self.likes_change(vid, "treeify")
+        if not self.tree(vid):
+            st["trees"].append(vid)
+            n.goal, n.path, n.stuck = None, [], 0
+            self.say("Bark creeps up from %s's feet, twigs sprout from "
+                     "%s fingers, and with a rustle there's a young tree "
+                     "where %s stood, %s." % (
+                         name, "their", name, "its leaves trembling with "
+                         "delight" if likes else "its branches creaking "
+                         "crossly"), "quest")
+            if likes:
+                pts = 0 if "treeliked:" + vid in flags else 150
+                flags.append("treeliked:" + vid)
+            else:
+                pts = -200
+            if pts:
+                self.befriend(vid, pts, quiet=True)
+                self.say("(%s %s.)" % (name, "seems to enjoy being a tree"
+                                       if pts > 0 else "is upset with you"),
+                         "heart" if pts > 0 else "bad")
+            self.end_turn(TOOL_COST)
+            return
+        st["trees"].remove(vid)
+        n.goal, n.path, n.stuck = None, [], 0
+        self.say("The bark splits and falls away like old leaves, and %s "
+                 "stumbles out, shaking twigs from %s hair." % (
+                     name, "their"), "quest")
+        if likes:
+            pts = -80
+        else:
+            pts = 0 if "treefixed:" + vid in flags else 120
+            flags.append("treefixed:" + vid)
+        self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
+                     "text": ""}
+        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.friend(vid)["met"] = True
+        self.speak(vid, TREE_BACK[vid][0 if likes else 1])
+        if pts:
+            self.befriend(vid, pts)
+            self.say("(%s %s.)" % (name, "likes you more for it" if pts > 0
+                                   else "is upset with you"),
+                     "heart" if pts > 0 else "bad")
+        self.pass_time(TOOL_COST)
+        self.talk_menu()
+
+    def looify(self, n):
+        """The looify spell: an outhouse, with a moon on the door painted
+        the colour of their shirt, rooted where they stood.  Only out of
+        doors, and only where there's room for the door to open."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        st = self.st
+        flags = st["flags"]
+        if not self.loo(vid):
+            why = None
+            if VILLAGERS[vid]["look"].get("age") == "child":
+                why = ("%s giggles so hard at the very idea that the spell "
+                       "misses entirely." % name)
+            elif self.statue(vid):
+                why = "The spell skids off the gold. Gold makes a poor privy."
+            elif self.chicken(vid):
+                why = ("The spell slides off the hen's feathers. She shakes "
+                       "herself and clucks.")
+            elif self.maid(vid):
+                why = ("The spell glances off %s's starched apron. A maid "
+                       "stays a maid until the spell that made her is "
+                       "undone." % name)
+            elif self.tree(vid):
+                why = ("The spell sinks into %s's bark and is gone. Trees "
+                       "don't hold with that sort of magic." % name)
+            elif not self.loo_room(n):
+                why = ("The spell fizzles. An outhouse needs to be out of "
+                       "doors, with room in front for the door to open." if
+                       not self.area.outdoor else
+                       "The spell fizzles. There's no room for an outhouse "
+                       "there: it needs clear ground in front for the door.")
+            if why:
+                self.say(why, "info")
+                self.end_turn(TOOL_COST)
+                return
+        if self.talk:
+            self.end_talk()
+        likes = self.likes_change(vid, "looify")
+        n.goal, n.path, n.stuck = None, [], 0
+        if not self.loo(vid):
+            st["loos"].append(vid)
+            self.say("There's a creak of planks and a smell of pine, and "
+                     "where %s stood there's an outhouse with a moon on the "
+                     "door. %s" % (name, "It looks oddly proud of itself."
+                                   if likes else "Its door rattles "
+                                   "furiously."), "quest")
+            if likes:
+                pts = 0 if "looliked:" + vid in flags else 150
+                flags.append("looliked:" + vid)
+            else:
+                pts = -200
+            if pts:
+                self.befriend(vid, pts, quiet=True)
+                self.say("(%s %s.)" % (name, "seems to enjoy being an "
+                                       "outhouse" if pts > 0 else
+                                       "is upset with you"),
+                         "heart" if pts > 0 else "bad")
+            self.end_turn(TOOL_COST)
+            return
+        st["loos"].remove(vid)
+        for o in self.npcs.values():          # anybody inside comes out fast
+            if o.visit and o.visit["loo"] == vid:
+                o.visit, o.hidden = None, False
+                self.say("%s tumbles out onto the grass, looking very "
+                         "startled." % o.name, "info")
+        self.say("The planks fold away with a sound like a sigh of relief, "
+                 "and %s is back on two feet." % name, "quest")
+        if likes:
+            pts = -80
+        else:
+            pts = 0 if "loofixed:" + vid in flags else 120
+            flags.append("loofixed:" + vid)
+        self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
+                     "text": ""}
+        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.friend(vid)["met"] = True
+        self.speak(vid, LOO_BACK[vid][0 if likes else 1])
+        if pts:
+            self.befriend(vid, pts)
+            self.say("(%s %s.)" % (name, "likes you more for it" if pts > 0
+                                   else "is upset with you"),
+                     "heart" if pts > 0 else "bad")
+        self.pass_time(TOOL_COST)
+        self.talk_menu()
+
+    def loo_room(self, n):
+        """Is there room for an outhouse where somebody stands: out of
+        doors, off any doorstep, with clear ground in front for the
+        door?"""
+        if not self.area.outdoor or n.where != "valley":
+            return False
+        x, y = n.x, n.y + 1
+        if (n.x, n.y) in self.door_at or (x, y) in self.door_at:
+            return False
+        if not self.can_stand(x, y):
+            return False
+        o = self.npc_at(x, y)
+        return o is None or not self.rooted(o.vid)
+
+    def outside_door(self):
+        """The square outside the room you're in."""
+        key = self.area.key
+        if key == "loo":
+            vid = self.st.get("loo_in")
+            if vid in self.st["loos"]:
+                x, y = self.loo_door(vid)
+                return x, y - 1
+            key = "cabin"
+        return door_of(key)
+
+    def loo_door(self, vid):
+        n = self.npcs[vid]
+        return n.x, n.y + 1
+
+    def loo_bump(self, n):
+        """Walking into an outhouse: in by the door, a knock anywhere
+        else."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        inside = [o for o in self.npcs.values()
+                  if o.visit and o.visit["loo"] == vid and o.hidden]
+        if tuple(self.pos()) != self.loo_door(vid):
+            self.say("You knock on the side of the outhouse that is %s. "
+                     "The door's round the front." % name, "info")
+            self.end_turn(1)
+            return
+        if inside:
+            self.say("You rattle the door. \"Occupied!\" calls %s from "
+                     "inside." % inside[0].name, "info")
+            self.end_turn(1)
+            return
+        self.st["loo_in"] = vid
+        a = self.areas["loo"]
+        self.sound.play("door")
+        self.area = a
+        self.st["pos"] = list(a.entry)
+        self.face(0, -1)
+        self.say("You step into the outhouse that is %s and latch the "
+                 "door. %s" % (name, random.choice(
+                     LOO_IN_LIKE if self.likes_change(vid, "looify") else
+                     LOO_IN_HATE)), "info")
+        self.walking = None
+        self.layout()
+        self.end_turn(WALK_COST)
+
+    def do_business(self):
+        vid = self.st["loo_in"]
+        name = VILLAGERS[vid]["short"] if vid else "nobody"
+        self.sound.play(random.choice(("pour", "raspberry")))
+        self.say(random.choice(LOO_BUSINESS), "info")
+        if vid and random.random() < 0.5:
+            self.say(random.choice(
+                LOO_VOICE_LIKE if self.likes_change(vid, "looify") else
+                LOO_VOICE_HATE).replace("{who}", name), "info")
+        if vid and random.random() < 0.25:
+            here = self.npcs[vid]
+            near = [o for o in self.npcs.values()
+                    if o.where == "valley" and not o.hidden and
+                    not self.rooted(o.vid) and
+                    abs(o.x - here.x) + abs(o.y - here.y) <= 8]
+            if near:
+                self.say("Somebody knocks. \"Will you be long?\" calls "
+                         "%s." % random.choice(near).name, "info")
+        self.end_turn(5)
+
+    def loo_visits(self, n, here, visible):
+        """Somebody near an outhouse may pop in for a minute or two: True
+        if they're busy with that and shouldn't go anywhere else."""
+        st = self.st
+        v = n.visit
+        if v:
+            o = self.npcs.get(v["loo"])
+            if not self.loo(v["loo"]):
+                n.visit, n.hidden = None, False
+                return False
+            if v["in"]:
+                if st["minute"] >= v["until"]:
+                    n.visit, n.hidden = None, False
+                    x, y = self.loo_door(v["loo"])
+                    taken = {(m.where, m.x, m.y) for m in self.npcs.values()
+                             if m is not n}
+                    n.x, n.y = self.free_spot("valley", x, y, taken)
+                    if here == "valley" and visible and self.near_you(n):
+                        self.say(random.choice(LOO_OUT).replace(
+                            "{who}", n.name), "info")
+                    n.goal, n.path = None, []
+                    return False
+                return True
+            if (n.where, n.x, n.y) == ("valley",) + self.loo_door(v["loo"]):
+                if here == "loo" and st["loo_in"] == v["loo"]:
+                    self.say("Somebody tries the door. \"Oh! Sorry!\" says "
+                             "%s, and footsteps hurry away." % n.name,
+                             "info")
+                    n.visit = None
+                    return False
+                v["in"], n.hidden = True, True
+                v["until"] = st["minute"] + random.randint(3, 8)
+                if here == "valley" and visible and self.near_you(n):
+                    self.say(random.choice(LOO_GO_IN).replace(
+                        "{who}", n.name).replace(
+                        "{loo}", VILLAGERS[o.vid]["short"]), "info")
+                return True
+            if st["minute"] > v["give_up"]:
+                n.visit = None
+            return False
+        if not st["loos"] or n.where != "valley" or here != "valley" or \
+                not visible or random.random() > 0.012:
+            return False
+        for lv in st["loos"]:
+            o = self.npcs[lv]
+            if o.where == "valley" and \
+                    abs(o.x - n.x) + abs(o.y - n.y) <= 6 and \
+                    not any(m.visit and m.visit["loo"] == lv
+                            for m in self.npcs.values()):
+                n.visit = {"loo": lv, "in": False,
+                           "give_up": st["minute"] + 40}
+                n.goal, n.path, n.stuck = None, [], 0
+                return False
+        return False
+
+    def near_you(self, n):
+        x, y = self.pos()
+        return abs(n.x - x) <= 9 and abs(n.y - y) <= 7
+
+    def tree_bump(self, n):
+        """Walking into a villager-tree: a rustle, glad or cross; walk into
+        it again straight away to push through the branches."""
+        vid = n.vid
+        here = (vid, self.area.key, n.x, n.y, self.pos())
+        if getattr(self, "last_statue", None) == here and \
+                self.squeeze_past(n):
+            self.last_statue = None
+            self.say("You push through %s's branches and out the other "
+                     "side, picking a leaf out of your collar." %
+                     VILLAGERS[vid]["short"], "info")
+        else:
+            self.last_statue = here
+            self.say(random.choice(
+                TREE_HAPPY if self.likes_change(vid, "treeify") else
+                TREE_CROSS).replace("{who}", VILLAGERS[vid]["short"]) +
+                " (Walk into it again to push past.)", "info")
+        self.end_turn(1)
+
+    def tend_tree(self, n, tool):
+        """A watering can or an axe, used on somebody who's a tree."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        if tool == "axe":
+            self.chop_villager(n)
+            return
+        f = self.friend(vid)
+        if f.get("watered") == self.st["day"]:
+            self.say("%s's roots are already soaked today." % name, "info")
+            self.render()
+            return
+        if self.p["water"] <= 0:
+            self.say("The can's empty. Fill it at the well or any water.",
+                     "bad")
+            return
+        if not self.spend("watering can"):
+            return
+        self.p["water"] -= 1
+        f["watered"] = self.st["day"]
+        self.sound.play("water")
+        if self.likes_change(vid, "treeify"):
+            self.say("You water %s. The leaves shiver happily, and a "
+                     "blossom or two opens just for you." % name, "heart")
+            self.befriend(vid, GIFT_POINTS["like"])
+        else:
+            self.say("You water %s, who shakes the water off at you, "
+                     "crossly." % name, "info")
+        self.end_turn(TOOL_COST - 1)
+
+    def chop_tree(self, x, y, kind):
+        """A swing of the axe at a tree; the third brings it down, for wood
+        and a stump.  It grows back in a season."""
+        if not self.spend("axe"):
+            return
+        k = "%d,%d" % (x, y)
+        chops = getattr(self, "chops", {})
+        if chops.get("at") != k:
+            chops = {"at": k, "n": 0}
+        chops["n"] += 1
+        self.chops = chops
+        self.sound.play("chop")
+        if chops["n"] < CHOPS:
+            left = CHOPS - chops["n"]
+            self.say("You chop at the %s. Chips fly. (%d more swing%s.)" % (
+                kind, left, "s" if left > 1 else ""), "info")
+            self.end_turn(TOOL_COST)
+            return
+        self.chops = {}
+        wood = CHOPPABLE[kind]
+        self.st["felled"][k] = [self.st["day"], kind]
+        self.areas["valley"].grid[y][x] = "grass"
+        self.st["debris"][k] = "stump"
+        self.give("wood", wood)
+        self.flash(x, y, "puff")
+        self.say("Timber! The %s comes down with a creak and a crash. "
+                 "(+%d wood, and a stump to clear.)" % (kind, wood), "good")
+        self.end_turn(TOOL_COST + 2)
+
+    def apply_felled(self):
+        """Felled trees, onto a freshly built valley."""
+        g = self.areas["valley"].grid
+        for k in self.st.get("felled", {}):
+            x, y = map(int, k.split(","))
+            g[y][x] = "grass"
+
+    def regrow_trees(self):
+        """Felled trees grow back after a season, where there's room."""
+        st = self.st
+        g = self.areas["valley"].grid
+        for k, (day, kind) in list(st["felled"].items()):
+            if st["day"] - day < REGROW_DAYS:
+                continue
+            x, y = map(int, k.split(","))
+            if (x, y) == tuple(st["pos"]) or k in st["soil"] or \
+                    k in st["sprinklers"] or k in st["forage"] or \
+                    any(n.where == "valley" and (n.x, n.y) == (x, y)
+                        for n in self.npcs.values()):
+                continue
+            if st["debris"].get(k) not in (None, "stump"):
+                continue
+            st["debris"].pop(k, None)
+            g[y][x] = kind
+            del st["felled"][k]
+
+    def chop_villager(self, n):
+        """The axe, on somebody who's a tree.  It works, but the tree
+        screams, and it doesn't forgive you."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        if VILLAGERS[vid]["look"].get("age") == "child":
+            self.say("You raise the axe, see %s's little face in the bark, "
+                     "and can't do it. Nobody could." % name, "info")
+            self.render()
+            return
+        if not self.spend("axe"):
+            return
+        k = "npc:" + vid
+        chops = getattr(self, "chops", {})
+        if chops.get("at") != k:
+            chops = {"at": k, "n": 0}
+        chops["n"] += 1
+        self.chops = chops
+        self.sound.play("scream")
+        self.befriend(vid, -100, quiet=True)
+        if chops["n"] < CHOPS:
+            self.say(TREE_SCREAMS[chops["n"] - 1].replace("{who}", name),
+                     "bad")
+            self.end_turn(TOOL_COST)
+            return
+        self.chops = {}
+        self.st["trees"].remove(vid)
+        n.goal, n.path, n.stuck = None, [], 0
+        self.give("wood", CHOPPABLE["tree"])
+        self.flash(n.x, n.y, "puff")
+        self.say("With a last, long scream the tree that was %s topples, "
+                 "and the trunk splits open. Out tumbles %s, whole, shaking, "
+                 "and covered in sawdust. (+%d wood.)" % (
+                     name, name, CHOPPABLE["tree"]), "bad")
+        self.befriend(vid, -300, quiet=True)
+        if self.talk:
+            self.end_talk()
+        self.talk = {"v": vid, "mode": "kw", "expr": "cross", "text": ""}
+        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.friend(vid)["met"] = True
+        self.speak(vid, TREE_CHOPPED[vid])
+        self.say("(%s will not forget this.)" % name, "bad")
+        self.pass_time(TOOL_COST)
+        self.talk_menu()
+
+    def chore_menu(self, vid):
+        name = VILLAGERS[vid]["short"]
+        now = self.st["maids"].get(vid)
+        self.open_menu("What should %s do each morning?%s" % (
+            name, " (Now: %s.)" % MAID_CHORES[now][0].lower() if now
+            else ""), [
+            (label, lambda c=c: self.set_chore(vid, c))
+            for c, (label, _) in MAID_CHORES.items()],
+            cancel=lambda: None)
+
+    def set_chore(self, vid, chore):
+        self.st["maids"][vid] = chore
+        pool = MAID_OK_LIKE if self.likes_change(vid, "maidify") else \
+            MAID_OK_HATE
+        self.speak(vid, random.choice(pool).replace(
+            "{chore}", MAID_CHORES[chore][1]))
+
+    def kiss_maid(self, vid):
+        """A kiss for your maid: twice a day, each one as good as a gift
+        she likes."""
+        f = self.friend(vid)
+        day, n = f.get("kissed") or (None, 0)
+        if day != self.st["day"]:
+            n = 0
+        name = VILLAGERS[vid]["short"]
+        if n >= 2:
+            self.speak(vid, random.choice(MAID_KISS_ENOUGH))
+            self.talk_menu()
+            return
+        f["kissed"] = [self.st["day"], n + 1]
+        self.say("> (you kiss %s on the cheek)" % name, "you")
+        likes = self.likes_change(vid, "maidify")
+        self.speak(vid, random.choice(MAID_KISS_LIKE if likes else
+                                      MAID_KISS_HATE))
+        self.befriend(vid, GIFT_POINTS["like"])
+        self.flash(self.npcs[vid].x, self.npcs[vid].y, "heart")
+        self.sound.play("heart")
+        self.pass_time(1)
+        self.check_scene(vid)
+        if not self.scene:
+            self.talk_menu()
+
+    def maid_morning(self):
+        """Every maid does what she was told, before you're up."""
+        st = self.st
+        order = list(MAID_CHORES)
+        maids = sorted(st.get("maids", {}).items(),
+                       key=lambda m: (order.index(m[1]) if m[1] in order
+                                      else 99, m[0]))
+        for vid, chore in maids:
+            name = VILLAGERS[vid]["short"]
+            if self.statue(vid):
+                continue
+            if chore is None:
+                self.say("%s is waiting in your cabin to be told her "
+                         "CHORE." % name, "info")
+                continue
+            likes = self.likes_change(vid, "maidify")
+            how = random.choice(MAID_HAPPILY if likes else MAID_GRUMBLING)
+            done = self.do_chore(vid, chore)
+            if done:
+                self.say("%s %s, %s." % (name, done, how),
+                         "heart" if likes else "info")
+
+    def do_chore(self, vid, chore):
+        """One maid's chore; what she did, or None if there was nothing to
+        do."""
+        st = self.st
+        if chore == "water":
+            soil = [s for s in st["soil"].values() if s[1] and not s[3]]
+            if not soil or st["weather"] in ("rain", "storm"):
+                return None
+            for s in st["soil"].values():
+                s[0] = 1
+            return "watered all the crops"
+        if chore == "harvest":
+            got = {}
+            for k, s in st["soil"].items():
+                if self.ripe(s):
+                    name = s[1]
+                    got[name] = got.get(name, 0) + 1
+                    regrow = crop(name, "regrow")
+                    if regrow:
+                        s[2] = crop(name, "days") - regrow
+                    else:
+                        s[1], s[2] = None, 0
+            if not got:
+                return None
+            for item, c in got.items():
+                self.give(item, c)
+            st["stats"]["harvested"] += sum(got.values())
+            return "picked %s and put %s in your bag" % (and_list(
+                ["%d %s" % (c, plural(n, c)) for n, c in sorted(got.items())]),
+                "it" if sum(got.values()) == 1 else "them")
+        if chore == "weed":
+            keys = [k for k in st["debris"]
+                    if FARM[0] < int(k.split(",")[0]) < FARM[2] and
+                    FARM[1] < int(k.split(",")[1]) < FARM[3]]
+            random.shuffle(keys)
+            got = {}
+            for k in keys[:12]:
+                item, c = DEBRIS[st["debris"].pop(k)][1]
+                got[item] = got.get(item, 0) + c
+            if not got:
+                return None
+            for item, c in got.items():
+                self.give(item, c)
+            return "cleared %d things from the fields (%s for your bag)" % (
+                len(keys[:12]), and_list(["%d %s" % (c, n) for n, c in
+                                          sorted(got.items())]))
+        if chore == "eggs":
+            hens = st["chickens"]
+            if not hens:
+                return None
+            n = len(st["eggs"])
+            st["eggs"] = []
+            for c in hens:
+                c["petted"] = st["day"]
+            if n:
+                self.give("egg", n)
+            return "%s and petted %s" % (
+                "collected %d egg%s for your bag" % (n, "s" if n > 1 else "")
+                if n else "found no eggs", "your hen" if len(hens) == 1
+                else "all %d hens" % len(hens))
+        if chore == "cook":
+            food = random.choice(("pancakes", "bread", "honey cake",
+                                  "stew"))
+            self.give(food)
+            return "made you breakfast (%s, in your bag)" % food
+        return None
+
     def hen_colour(self, vid):
         """The hen somebody becomes, by the colour of their hair."""
         hair = VILLAGERS[vid]["look"].get("hair", "")
@@ -5956,11 +6836,13 @@ class Game:
 
     def look_of(self, vid):
         look = VILLAGERS[vid]["look"]
+        if self.maid(vid):
+            return maid_look(look)
         return swap_look(look) if self.swapped(vid) else look
 
     def display_name(self, vid):
         name = VILLAGERS[vid]["name"]
-        if self.swapped(vid):
+        if self.swapped(vid) and not self.maid(vid):
             for a, b in (("Granny", "Grandpa"),):
                 name = name.replace(a, b) if a in name else name.replace(
                     b, a)
@@ -6187,6 +7069,10 @@ class Game:
             return
         a = self.area
         k = "%d,%d" % (x, y)
+        n = self.npc_at(x, y)
+        if n and self.tree(n.vid) and h in ("watering can", "axe"):
+            self.tend_tree(n, h)
+            return
         if not a.outdoor:
             n = self.npc_at(x, y)
             if n:
@@ -6307,6 +7193,9 @@ class Game:
                 self.say("Face the water to fish.", "info")
                 return
             self.fish(t)
+            return
+        if h == "axe" and t in CHOPPABLE:
+            self.chop_tree(x, y, t)
             return
         if h in ("axe", "pickaxe"):
             self.say("Nothing to %s there." % ("chop" if h == "axe" else
@@ -6648,6 +7537,7 @@ class Game:
         else:
             st["apples"] = {}
         self.spawn_forage()
+        self.regrow_trees()
         # people
         for f in st["friends"].values():
             if self.weekday() == 0:
@@ -6706,6 +7596,14 @@ class Game:
         v = VILLAGERS[vid]
         f = self.st["friends"][vid]
         s = v["sched"]
+        maids = self.st.get("maids", {})
+        if vid in maids:
+            home = "cabin." + MAID_SPOTS[sorted(maids).index(vid) %
+                                         len(MAID_SPOTS)]
+            if maids[vid] in ("water", "harvest", "weed") and \
+                    self.st["weather"] not in ("rain", "storm", "snow"):
+                return [(600, "out.farmyard"), (900, home)]
+            return [(600, home)]
         if f["status"] == "married":
             work = self.spot_at(s["day"], 1100)
             if work.split(".")[0] in ("juniper", "shack", "smithhouse",
@@ -6730,6 +7628,9 @@ class Game:
 
     def wanted(self, vid):
         """Where somebody means to be right now: (area, x, y)."""
+        n = self.npcs[vid]
+        if n.visit:
+            return ("valley",) + self.loo_door(n.visit["loo"])
         h = self.hhmm()
         if h < 600:
             h += 2400
@@ -6757,9 +7658,10 @@ class Game:
         """Everyone straight to where they should be (mornings, and after
         long waits)."""
         taken = {(n.where, n.x, n.y) for vid, n in self.npcs.items()
-                 if self.statue(vid) and n.where}
+                 if self.rooted(vid) and n.where}
         for vid, n in self.npcs.items():
-            if self.statue(vid) and n.where:
+            n.visit, n.hidden = None, False
+            if self.rooted(vid) and n.where:
                 continue
             area, x, y = self.wanted(vid)
             x, y = self.free_spot(area, x, y, taken)
@@ -6792,7 +7694,9 @@ class Game:
             self.chicken_minute()
         taken = {(n.where, n.x, n.y) for n in self.npcs.values()}
         for vid, n in self.npcs.items():
-            if self.talk and self.talk.get("v") == vid or self.statue(vid):
+            if self.talk and self.talk.get("v") == vid or self.rooted(vid):
+                continue
+            if self.loo_visits(n, here, visible):
                 continue
             goal = self.wanted(vid)
             if goal != n.goal:
@@ -6943,6 +7847,14 @@ class Game:
             self.walking = None
             self.statue_bump(n)
             return
+        if self.tree(vid):
+            self.walking = None
+            self.tree_bump(n)
+            return
+        if self.loo(vid):
+            self.walking = None
+            self.loo_bump(n)
+            return
         if self.chicken(vid):
             self.walking = None
             self.say(random.choice(
@@ -6972,6 +7884,10 @@ class Game:
             if birthday:
                 self.speak(vid, "(happy)It's my birthday today! Did you "
                                 "remember?")
+            elif self.maid(vid):
+                self.speak(vid, random.choice(
+                    MAID_GREET_LIKE if self.likes_change(vid, "maidify")
+                    else MAID_GREET_HATE))
             elif self.swapped(vid):
                 self.speak(vid, random.choice(
                     SWAP_GREET_LIKE if self.likes_change(vid) else
@@ -7013,7 +7929,10 @@ class Game:
         for w in self.st["topics"]:
             if w in v["topics"] and w.upper() not in words:
                 words.append(w.upper())
-        if self.swapped(vid):
+        if self.maid(vid):
+            words.insert(0, "CHORE")
+            words.insert(1, "KISS")
+        if self.swapped(vid) or self.maid(vid):
             words.append("CHANGE")
         words += ["NAME", "JOB", "NEWS", "ABOUT...", "PAST"]
         return words
@@ -7091,6 +8010,13 @@ class Game:
             self.end_talk()
             self.end_turn(1)
             return
+        if self.maid(vid) and w[:4] in ("chor", "work", "task", "duty",
+                                        "duti", "clea"):
+            self.chore_menu(vid)
+            return
+        if self.maid(vid) and w[:4] in ("kiss", "smoo", "peck"):
+            self.kiss_maid(vid)
+            return
         if w == "chat":
             self.chat(vid)
         elif w == "gift":
@@ -7129,6 +8055,11 @@ class Game:
                                       "tomorrow, I'd bet on it.",
                              "snow": "Snow tomorrow, I think."}[
                                  self.st["tomorrow"]])
+        elif w[:4] in ("chan", "zap", "wand", "spel", "maid") and \
+                self.maid(vid):
+            self.speak(vid, random.choice(
+                MAID_ABOUT_LIKE if self.likes_change(vid, "maidify") else
+                MAID_ABOUT_HATE))
         elif w[:4] in ("chan", "swap", "zap", "wand", "spel") and \
                 self.swapped(vid):
             self.speak(vid, random.choice(
@@ -7202,10 +8133,43 @@ class Game:
                 self.dom() < 24:
             pool.append("(happy)I wonder who my secret friend is this year!")
         last = self.talk.get("last")
+        gossip = self.gossip(vid)
+        if gossip and gossip != last and random.random() < 0.35:
+            self.talk["last"] = gossip
+            self.speak(vid, gossip)
+            return
         choices = [ln for ln in pool if ln != last] or pool
         line = random.choice(choices)
         self.talk["last"] = line
         self.speak(vid, line)
+
+    def transformed(self, vid):
+        """What the wand has made of somebody, most striking first, or
+        None."""
+        for kind, test in (("loo", self.loo), ("tree", self.tree),
+                           ("chicken", self.chicken), ("statue", self.statue),
+                           ("maid", self.maid), ("swapped", self.swapped)):
+            if test(vid):
+                return kind
+        return None
+
+    def gossip(self, vid):
+        """A word about somebody else the wand has changed, wondering how
+        they're taking to it, with a hint of the truth."""
+        others = [(o, self.transformed(o)) for o in VILLAGERS if o != vid]
+        others = [(o, k) for o, k in others if k]
+        if not others:
+            return None
+        other, kind = random.choice(others)
+        who = GOSSIP_KIN.get((vid, other), VILLAGERS[other]["short"])
+        line = random.choice(GOSSIP[kind])
+        if kind != "statue":
+            spell = {"loo": "looify", "tree": "treeify", "chicken":
+                     "chickenfy", "maid": "maidify"}.get(kind, "genderswap")
+            likes = self.likes_change(other, spell)
+            line += " " + random.choice(GOSSIP_HINTS[kind][0 if likes
+                                                          else 1])
+        return line.replace("{who}", who)
 
     def news(self, vid):
         st = self.st
@@ -7463,7 +8427,7 @@ class Game:
 
     def shop_open(self, vid):
         shop = VILLAGERS[vid]["shop"]
-        if not shop or self.festival_on():
+        if not shop or self.festival_on() or self.maid(vid):
             return False
         n = self.npcs[vid]
         area, mark = shop[0].split(".")
@@ -7800,6 +8764,7 @@ class Game:
             self.say("Today's your wedding day! Go to the square between "
                      "ten and three.", "heart")
         self.spouse_morning()
+        self.maid_morning()
 
     def new_request(self):
         s = self.season()
@@ -8157,8 +9122,23 @@ class Game:
                 self.use_tool_at(tx, ty)
             else:
                 self.move(dx, dy)
+        elif self.area.key == "loo" and self.area.inside(tx, ty) and \
+                self.tile_at(tx, ty) == "loohole" and self.ready():
+            self.use_hole(tx, ty)
         else:
             self.walk_to(tx, ty)
+
+    def use_hole(self, tx, ty):
+        """Tapped a hole along the bench: shuffle over and use it."""
+        for _ in range(4):
+            x, y = self.pos()
+            if x == tx or self.area.key != "loo":
+                break
+            self.move(1 if tx > x else -1, 0)
+            if self.pos() == (x, y) or list(self.pos()) == [x, y]:
+                break
+        if self.area.key == "loo" and tuple(self.pos()) == (tx, ty + 1):
+            self.move(0, -1)
 
     def passable(self, x, y, goal):
         a = self.area
@@ -8266,7 +9246,8 @@ class Game:
         px, py = self.pos()
         lvl = self.light_level()
         people = {(n.x, n.y): self.npc_tile(n.vid)
-                  for n in self.npcs.values() if n.where == a.key}
+                  for n in self.npcs.values()
+                  if n.where == a.key and not n.hidden}
         if a.key == "coop":
             for hen in st["chickens"]:
                 people[(hen["x"], hen["y"])] = "hen_" + hen["colour"]
@@ -8438,6 +9419,8 @@ class Game:
         f_ = self.friend(vid)
         status = {"dating": "  (sweetheart)", "engaged": "  (engaged)",
                   "married": "  (spouse)"}.get(f_["status"], "")
+        if self.maid(vid):
+            status += "  (your maid)"
         c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
                       text=self.display_name(vid), font=bold, fill=ACCENT)
         hf = F("Helvetica", 13)
@@ -8525,7 +9508,7 @@ class Game:
         if self.area is a:
             px, py = self.pos()
         else:
-            px, py = door_of(self.area.key)
+            px, py = self.outside_door()
         c.create_rectangle(mx + px * z - 2, my + py * z - 2,
                            mx + (px + 1) * z + 2, my + (py + 1) * z + 2,
                            outline="#ffff00", width=2, tags="overlay")
@@ -8619,6 +9602,10 @@ class Game:
             h = self.hearts(vid)
             mark = {"dating": " sweetheart", "engaged": " engaged",
                     "married": " spouse"}.get(f["status"], "")
+            if self.maid(vid):
+                chore = self.st["maids"][vid]
+                mark += " maid: %s" % (MAID_CHORES[chore][0].lower()
+                                       if chore else "no chore yet")
             if not mark and v["romance"]:
                 mark = " ❀"
             bd = "%s %d" % (SEASONS[v["birthday"][0]][:3], v["birthday"][1])
@@ -8858,6 +9845,14 @@ def an(s):
     return ("an " if s[:1] in "aeiou" else "a ") + s
 
 
+def and_list(words):
+    """"a", "a and b", "a, b and c"."""
+    words = list(words)
+    if len(words) < 2:
+        return "".join(words)
+    return ", ".join(words[:-1]) + " and " + words[-1]
+
+
 def plural(s, n):
     if n == 1 or s.endswith(("s", "fish")) or s in (
             "wood", "stone", "fiber", "corn", "holly", "coral", "bread",
@@ -9078,6 +10073,103 @@ def swap_look(look):
     return new
 
 
+TREE_SHAPE = (
+    ".....LLLLLL.....",
+    "...LLHHLLLLLL...",
+    "..LLHHLLLBLLLL..",
+    ".LLBLLLLLLLLLLl.",
+    ".LLLLLLLLLLBLLl.",
+    ".LLLLLBLLLLLLll.",
+    "..lLLLLLLLLLLl..",
+    "...llLLLBLLll...",
+    "....lllTTlll....",
+    "......tTTt......",
+    ".....tTTTTt.....",
+    ".....TeTTeT.....",
+    ".....TTTTTT.....",
+    ".....TTmmTT.....",
+    ".....tTTTTt.....",
+    "....tTTttTTt....")
+TREE_LEAVES = {   # season -> leaf, shadow, highlight, blossom (None: shirt)
+    0: ("#78c060", "#4a8a3a", "#a8e080", "#f8c0d8"),
+    1: ("#4a9a3a", "#2e6a2a", "#78c060", None),
+    2: ("#d08030", "#a04a20", "#f0b040", "#c03a20"),
+    3: ("#e4ecf2", "#aab8c6", "#ffffff", "#6a4a2a"),
+}
+
+
+def tree_art(look, season):
+    """A villager turned tree: leaves for the season, a hint of their hair
+    in the green, and their face peering out of the trunk."""
+    leaf, dark, hi, bloom = TREE_LEAVES[season]
+    hair = look.get("hair", "#5a3a1e")
+    if season != 3:
+        leaf, dark, hi = (mix(c, hair, 0.22) for c in (leaf, dark, hi))
+    pal = {"L": leaf, "l": dark, "H": hi,
+           "B": bloom or shade(look.get("shirt", "#c04040"), 1.15),
+           "T": "#7a5434", "t": "#5a3c24", "e": "#1a1410",
+           "m": "#3a2418"}
+    return art_pixels(pal, TREE_SHAPE)
+
+
+LOO_SHAPE = (
+    "................",
+    "......rrrr......",
+    "....rrrrrrrr....",
+    "..rrRRRRRRRRrr..",
+    "..RRRRRRRRRRRR..",
+    "...wWwWwWwWwW...",
+    "...wWddddddwW...",
+    "...wWddmmddwW...",
+    "...wWdmdddDwW...",
+    "...wWddmmddwW...",
+    "...wWddddddwW...",
+    "...wWddddkDwW...",
+    "...wWddddddwW...",
+    "...wWddddddwW...",
+    "...wWDDDDDDwW...",
+    "..kkkkkkkkkkkk..")
+
+
+def loo_art(look, season):
+    """A villager turned outhouse: a little plank privy with a moon on the
+    door, the door painted the colour of their shirt."""
+    door = look.get("shirt", "#a04a3a")
+    roof, roof_d = ("#eef2f6", "#c4ccd6") if season == 3 else \
+        ("#7a5a44", "#5a4030")
+    pal = {"r": roof, "R": roof_d, "w": "#a0703e", "W": "#7a5028",
+           "d": door, "D": shade(door, 0.78), "m": "#f4e070",
+           "k": "#3a2818"}
+    return art_pixels(pal, LOO_SHAPE)
+
+
+MAID_DRESS = "#2a2838"
+MAID_GONE = ("beard", "mustache", "wrinkles", "hat", "bandana", "coat",
+             "overalls", "scarf", "apron", "headband", "flower")
+
+
+def maid_look(look):
+    """How someone looks after the maidify spell: a young woman in a black
+    dress, a white apron and a frilled cap, whatever they were before."""
+    new = dict(look)
+    if look.get("face", "M") != "F":
+        new["style"] = STYLE_TO_F.get(look.get("style", "short"),
+                                      look.get("style", "short"))
+    new["face"] = "F"
+    if look.get("body") in ("M", "F"):
+        new["body"] = "F"
+    if new.get("hair") in ("#eeeeee", "#9a9a9a"):
+        new["hair"] = "#c8c0b0"         # a little silver, not grey
+    new["extras"] = tuple([e for e in look.get("extras", ())
+                           if e not in MAID_GONE] +
+                          ["apron", "maidcap", "bow"])
+    new.update(shirt=MAID_DRESS, pants=MAID_DRESS, trim=MAID_DRESS,
+               collar="#f4f0e8", shoes="#1a1a22", rosy=True)
+    new.pop("lips", None)
+    new.pop("beardc", None)
+    return new
+
+
 SWAP_LINES = {   # liked it, hated it, glad to be back, sorry to be back
     "rowan": ("(blush)...Huh. I look like my mother. ...I don't hate it. "
               "Don't tell Otto I don't hate it.",
@@ -9154,6 +10246,363 @@ SWAP_LINES = {   # liked it, hated it, glad to be back, sorry to be back
                 "(happy)Thank you! Now I'll cry from relief!",
                 "(sad)Oh. And I'd just found the perfect apron for it."),
 }
+TREE_HAPPY = ["The tree that is {who} rustles happily.",
+              "{who}'s leaves shiver with delight, and a bird hops along a "
+              "branch.",
+              "{who} the tree sways contentedly in a breeze you can't feel.",
+              "A blossom drifts down from {who} and lands on your nose."]
+TREE_CROSS = ["The tree that is {who} creaks crossly at you.",
+              "{who}'s branches rattle. It sounds a lot like grumbling.",
+              "A twig drops from {who} and bonks you on the head. On "
+              "purpose, you're fairly sure.",
+              "{who} the tree glowers at you from the bark."]
+TREE_SCREAMS = [
+    "The axe bites. The tree that is {who} SCREAMS, and every bird in the "
+    "valley takes flight.",
+    "{who} screams again, the whole trunk shuddering. Leaves rain down "
+    "on you. \"STOP! PLEASE!\""]
+TREE_CHOPPED = {   # chopped out of being a tree
+    "rowan": "(cross)You took an axe to me. An axe, {name}. I'm going to go "
+             "and sit somewhere far away from you for a very long time.",
+    "felix": "(cross)I am covered in sawdust and I can feel every ring. "
+             "Do you have ANY idea what you've done to my nerves?",
+    "theo": "(sad)Dude. Dude. I thought we were friends. Trees don't even "
+            "get to run away.",
+    "juniper": "(sad)I'll remember the sound of that axe for the rest of my "
+               "life. I don't think I can look at you right now.",
+    "wren": "(cross)YOU CHOPPED ME DOWN! I screamed SO LOUD! Everyone heard! "
+            "Get away from me!",
+    "ivy": "(cross)I know what an axe does to timber, {name}. I felt every "
+           "swing. We're done talking.",
+    "edmund": "(cross)Assault! Arboreal assault! I shall convene a "
+              "committee on you!",
+    "rose": "(sad)Oh, sweetheart. I'm too old to be chopped down. I thought "
+            "you were Lily's. I thought you were kind.",
+    "mabel": "(cross)Firewood! You were going to make me into FIREWOOD! The "
+             "whole valley's going to hear about this!",
+    "otto": "(cross)You FELLED me! Like a common pine! Get out of my sight "
+            "before I fell YOU!",
+    "pip": "(sad)...",
+    "bernard": "(sad)Oh my, oh my. I'm shaking. I can't stop shaking. Why "
+               "would you do that to me?",
+}
+TREE_BACK = {   # uprooted: sorry to be walking again, glad of it
+    "rowan": ("(sad)...It was so quiet. Just wind and sun. Nobody wanting "
+              "anything from me. Can I go back?",
+              "(cross)A woodpecker, {name}. A WOODPECKER. Do you know what "
+              "that feels like?"),
+    "felix": ("(happy)Do you know, I photosynthesised? I've never felt so "
+              "healthy. I may prescribe it.",
+              "(cross)Aphids! I had APHIDS! I'm going to go and wash for a "
+              "week."),
+    "theo": ("(laugh)Dude! Birds lived in me! I had like, a whole family! I "
+             "miss them already.",
+             "(cross)A dog. Peed on me. Not cool, {name}. Not cool at all."),
+    "juniper": ("(blush)Oh... I was a tree. Like in the old poems. I could "
+                "have stood there for a hundred years, reading the clouds.",
+                "(sad)Do you know what books are made of, {name}? I do now. "
+                "It was very upsetting."),
+    "wren": ("(laugh)I rustled in TUNE! I was a singing tree! The wind "
+             "played me like a fiddle!",
+             "(cross)I couldn't sing! I tried and it just came out as "
+             "CREAKING!"),
+    "ivy": ("(laugh)Huh. Good solid grain, if I say so myself. I'd have made "
+            "fine planks.",
+            "(cross)Pip tried to build a treehouse in me. IN me, {name}."),
+    "edmund": ("(happy)Splendid! A mayor should be rooted in the community. "
+               "Literally, as it turns out!",
+               "(cross)I was nearly declared a protected landmark! The "
+               "indignity!"),
+    "rose": ("(laugh)Oh, how lovely. I was a little apple tree, just like "
+             "Lily's. I felt young as a sapling.",
+             "(sad)Oh, sweetheart. My old roots were not made for this. "
+             "Don't do it again."),
+    "mabel": ("(surprised)Do you know trees don't pay rent? NONE! I could "
+              "get used to that.",
+              "(cross)Biscuit sharpened her claws on me! My own cat!"),
+    "otto": ("(laugh)HA! A magnificent oak! The mightiest oak! Do it again "
+             "so Rowan can see!",
+             "(cross)My beard was MOSS! Moss is not a beard!"),
+    "pip": ("(laugh)THAT WAS THE BEST! A squirrel lived in my HAIR! Can I "
+            "be a tree again tomorrow?",
+            "(cross)Ivy hung a swing on me! She SWUNG on me!"),
+    "bernard": ("(happy)Oh! You know, I think I grew a few walnuts. I'll "
+                "bake them into something.",
+                "(sad)Oh dear, oh dear. Somebody tried to pick my leaves "
+                "for a salad."),
+}
+GOSSIP = {   # what folk say about somebody the wand has changed
+    "statue": ["(sad)Every time I pass the golden statue of {who}, I "
+               "wonder... can they hear us? Do they mind?",
+               "Have you seen the statue of {who}? So shiny. I do wonder if "
+               "there's anyone still in there, enjoying the view.",
+               "(sad)I put a scarf on the statue of {who} this morning. It "
+               "looked cold. Do you think they know?"],
+    "swapped": ["Have you seen {who} since the change? I can't decide if "
+                "they're happier.",
+                "(surprised)I hardly recognised {who} at the fountain. I "
+                "wonder how they're finding it, really.",
+                "Between you and me, I keep wondering whether {who} likes "
+                "the new look."],
+    "chicken": ["(surprised)Is it true that hen by the path is {who}? I "
+                "wonder if they like it. Chickens seem content enough.",
+                "(sad)I saved some grain for {who}. Is that rude? I never "
+                "know what to do. Do you think they're happy?",
+                "Do you suppose {who} still thinks like a person, under all "
+                "those feathers? Or just about bugs?"],
+    "maid": ["(surprised)Is it true {who} keeps house at your farm now? "
+             "Apron and all? I wonder how that's going.",
+             "I haven't seen {who} in the village for days. Do they like it "
+             "out at your place, really?",
+             "Somebody said {who} was out at dawn doing your chores. I can't "
+             "picture it. Are they happy?"],
+    "tree": ["(sad)I talk to {who} on my walks. Well, to the tree. I do "
+             "wonder if they like it, standing there all day.",
+             "Do you think {who} gets lonely, being a tree? Or is it "
+             "restful? I can't decide.",
+             "(surprised)I could've sworn the tree that's {who} waved at me. "
+             "I wonder if they're enjoying it."],
+    "loo": ["(surprised)An outhouse! {who}'s an actual outhouse! I can't "
+            "stop wondering what that's like.",
+            "(sad)I used the outhouse that's {who} yesterday and felt "
+            "terribly guilty. Do you think they mind?",
+            "Do you suppose {who} likes being so... useful? I've never "
+            "known what to say to a privy."],
+}
+GOSSIP_HINTS = {   # kind -> (they like it, they don't)
+    "swapped": (["They do seem to be walking taller these days.",
+                 "I heard them laughing at the inn the other night."],
+                ["They looked so glum at the fountain yesterday.",
+                 "They wouldn't look in the shop window, I noticed."]),
+    "chicken": (["I saw them scratching about in the sun, very content.",
+                 "They clucked at me ever so cheerfully."],
+                ["They pecked Biscuit on the nose. Hard.",
+                 "They glared at me with one beady eye. Just one."]),
+    "maid": (["I heard singing from your cabin the other morning.",
+              "They waved at me with a feather duster, all smiles."],
+             ["I passed your farm and heard an awful lot of grumbling.",
+              "They were scrubbing your step like it owed them money."]),
+    "tree": (["The birds love them, and they rustle so cheerfully.",
+              "They blossomed the moment I said good morning."],
+             ["I swear the branches shook at me when I walked by.",
+              "A twig fell on my head. I don't think it was an accident."]),
+    "loo": (["Everyone says it's the cosiest privy in the valley.",
+             "Somebody heard humming from inside the walls."],
+            ["I heard the door rattling all by itself last night.",
+             "Somebody heard it muttering 'unbelievable.'"]),
+}
+GOSSIP_KIN = {   # (speaker, about) -> what they call them
+    ("wren", "bernard"): "Dad", ("bernard", "wren"): "my Wren",
+    ("ivy", "pip"): "my little brother", ("pip", "ivy"): "my sister",
+    ("otto", "rowan"): "my apprentice", ("rose", "edmund"): "dear Edmund",
+}
+LOO_BUSINESS = ["You do your business.",
+                "You do your business. Nature's call, answered.",
+                "You sit a while and do what you came to do.",
+                "You do your business, and feel a good deal better.",
+                "You do your business, humming to cover the silence."]
+LOO_ALMANAC = ["A well-thumbed farmer's almanac, missing most of its "
+               "pages. You can guess where they went.",
+               "The almanac predicts a hard winter, a soft spring and, "
+               "in pencil, 'Otto smells.'",
+               "An old almanac. Someone's done the crossword in it, "
+               "badly."]
+LOO_IN_LIKE = ["It's surprisingly fresh in here, with a hint of lavender.",
+               "Somebody's put a little jar of wildflowers on the bench.",
+               "It's spotless. The planks seem to be smiling."]
+LOO_IN_HATE = ["From the walls comes a long-suffering sigh.",
+               "The door slams itself behind you. Pointedly.",
+               "The planks creak in a way that sounds a lot like 'ugh.'"]
+LOO_VOICE_LIKE = ["Somewhere in the walls, {who} hums cheerfully.",
+                  "A muffled voice says, \"Take your time!\" It's {who}.",
+                  "The outhouse that is {who} gives a contented creak."]
+LOO_VOICE_HATE = ["A muffled voice mutters, \"Unbelievable.\" It's {who}.",
+                  "The outhouse that is {who} groans on its foundations.",
+                  "\"Never,\" says {who}'s voice from the planks, \"speak "
+                  "of this.\""]
+LOO_GO_IN = ["{who} slips into the outhouse that is {loo}. The door bangs "
+             "shut.",
+             "{who} glances about, then nips into the outhouse that is "
+             "{loo}.",
+             "{who} hurries into the outhouse that is {loo}."]
+LOO_OUT = ["{who} comes out of the outhouse, whistling.",
+           "{who} steps out of the outhouse, looking relieved.",
+           "The outhouse door creaks, and out comes {who}, very "
+           "casually."]
+LOO_BACK = {   # turned back: sorry about it, glad of it
+    "rowan": ("(blush)...People needed me. Every one of them, and nobody "
+              "wanted to chat. Honestly? I liked it.",
+              "(cross)Don't. Don't even look at me. I'm going to go and "
+              "stand in the river for a week."),
+    "felix": ("(happy)Do you know, I've never seen such regular habits? "
+              "Medically speaking, this valley is in splendid shape.",
+              "(cross)I am a DOCTOR, {name}. I wash my hands for a living. "
+              "And now this."),
+    "theo": ("(laugh)Dude, I had the best view in the valley! And SO many "
+             "visitors!",
+             "(cross)A seagull sat on my roof for an hour. On my ROOF. "
+             "Not cool."),
+    "juniper": ("(blush)People read in there, you know. I had a whole "
+                "almanac. It was oddly cosy.",
+                "(sad)I'll never be able to look at an almanac again. "
+                "Never."),
+    "wren": ("(laugh)The ACOUSTICS in there! Everybody who came in sang! "
+             "Well. Hummed.",
+             "(cross)Dad came in! DAD! I'm going to scream into a "
+             "pillow forever!"),
+    "ivy": ("(laugh)Solid build, good ventilation, door hung true. I was a "
+            "fine piece of work.",
+            "(cross)Pip carved his initials in me. I'm going to carve mine "
+            "in him."),
+    "edmund": ("(happy)A public convenience! There's no greater civic "
+               "service! I shall mention it in my next speech.",
+               "(cross)This was a gross indignity to the office of mayor! "
+               "I shall be drafting legislation!"),
+    "rose": ("(laugh)Oh, how lovely. We had one just like it when I was a "
+             "girl. Lily painted ours blue.",
+             "(sad)Oh, sweetheart. At my age, I'd hoped to be spared "
+             "certain experiences."),
+    "mabel": ("(surprised)Do you know what people TALK about in an "
+              "outhouse? Oh, I've got gossip for a month!",
+              "(cross)Biscuit was in me for an HOUR! My own cat!"),
+    "otto": ("(laugh)HA! The sturdiest privy in the valley! Built like a "
+             "Brandt!",
+             "(cross)Rowan came in and READ in me! For twenty minutes!"),
+    "bernard": ("(happy)Oh! You know, everyone who came in had eaten at "
+                "the inn. I felt very proud.",
+                "(sad)Oh dear, oh dear. I can never unknow what I now "
+                "know about my regulars."),
+}
+MAID_SPOTS = "2345"           # where maids wait in your cabin
+MAID_CHORES = {   # what you can tell a maid to do: menu, and in her words
+    "harvest": ("Pick ripe crops", "pick whatever's ripe"),
+    "weed": ("Clear the fields", "clear the weeds and stones and branches"),
+    "water": ("Water the crops", "water the crops"),
+    "eggs": ("Collect the eggs", "collect the eggs and see to the hens"),
+    "cook": ("Cook breakfast", "cook you breakfast"),
+    "rest": ("Just rest", "rest. Just rest. If you say so"),
+}
+MAID_LINES = {   # liked it, hated it, glad to be back, sorry to be back
+    "rowan": ("(blush)...It's a very practical apron. Lots of pockets. "
+              "I'll sweep your floors. Don't make it weird.",
+              "(cross)A FRILLY CAP. Fine. Fine! What needs cleaning? I'll "
+              "do it. I'll just hate every second.",
+              "(cross)Good. I'm burning that cap. Your floors are spotless, "
+              "by the way. You're welcome.",
+              "(sad)Oh. ...I'd just got the hang of the curtsey."),
+    "felix": ("(happy)Fascinating. I feel... tidy. Profoundly tidy. Your "
+              "cabin is a hygiene emergency, {name}. Leave it to me.",
+              "(cross)I have patients! I have a medical degree! And now I "
+              "have a feather duster. ...Very well. What needs doing?",
+              "(happy)Thank you. I'm going to go and sit very still in my "
+              "own clinic for a while.",
+              "(sad)Already? I'd reorganised your pantry alphabetically. "
+              "And by vitamin content."),
+    "theo": ("(laugh)Whoa, a maid! Do I get a feather duster? I DO get a "
+             "feather duster! Best day ever!",
+             "(cross)Dude! A dress?! I can't fish in a dress! ...Okay, "
+             "okay, what do you want done. Just don't let the gulls see.",
+             "(laugh)Free! I'm going straight to the dock. In trousers!",
+             "Aw, man. I was about to dust your whole roof."),
+    "juniper": ("(blush)Oh! Like in the old novels... the quiet maid who "
+                "knows all the house's secrets. I think I'd like that very "
+                "much.",
+                "(sad)I'll do as you ask. I just never pictured my life "
+                "ending up in an apron in someone else's kitchen.",
+                "(happy)Thank you. I'm going to go home and read for three "
+                "days straight.",
+                "(sad)Oh. I'd started a diary. 'The Maid of Blossom Farm.' "
+                "It was going so well."),
+    "wren": ("(laugh)OH MY GOSH, a MAID! Look at this cap! I'll sing while "
+             "I scrub! You'll have the cleanest, loudest cabin in the "
+             "valley!",
+             "(cross)A MAID?! I already wait tables all week! This is the "
+             "WORST! ...Fine! What do you want?!",
+             "(laugh)YES! Back to the fiddle! Do your own dishes!",
+             "(sad)Aww! I was going to write a song about mopping!"),
+    "ivy": ("(laugh)Huh. Good boots, sturdy apron. I can work in this. "
+            "Point me at something that needs doing.",
+            "(cross)Seriously, {name}? I build houses. Now I'm meant to dust "
+            "them? ...Fine. Tell me the job and I'll do it right.",
+            "(happy)Thanks. I'm going to go and hit something with a "
+            "hammer.",
+            "Oh. I'd just fixed your squeaky door. Twice."),
+    "edmund": ("(happy)Splendid! Public service in its purest form! A mayor "
+               "should never be above polishing a spoon!",
+               "(cross)This is a gross indignity to the office of mayor! "
+               "...Nonetheless, a Pell does what is asked. What do you "
+               "require?",
+               "(happy)Order is restored! I shall issue a proclamation. "
+               "Against wands.",
+               "(sad)Oh. I'd drafted a speech on the dignity of dusting."),
+    "rose": ("(laugh)Oh my! Look at me, fresh as a spring blossom! I'll keep "
+             "the cabin just the way Lily liked it, dear.",
+             "(sad)Oh, sweetheart. I've kept house for seventy years. I'd "
+             "hoped I was done. ...Well. Tell me what wants doing.",
+             "(happy)Thank you, dear. These old bones are glad to be old "
+             "bones again.",
+             "(sad)Oh. And I'd just got used to touching my toes."),
+    "mabel": ("(surprised)Room and board, and I get to see EVERYTHING that "
+              "goes on at your farm? Oh, I'm going to love this.",
+              "(cross)Who's minding my store?! Biscuit?! ...Fine. FINE. "
+              "What do you want done, and quickly?",
+              "(happy)Thank goodness! I've three days of gossip to catch up "
+              "on!",
+              "(sad)Oh, already? I hadn't even read your letters. Er. "
+              "Dusted your letters."),
+    "otto": ("(laugh)HA! What a fine maid I make! The finest maid! Bring me "
+             "your dirtiest pots!",
+             "(cross)My beard! Where is my BEARD?! ...A Brandt does as she's "
+             "told. But she grumbles!",
+             "(laugh)HA! The beard is back! Never touch the beard again, "
+             "farmer!",
+             "(sad)Hm. I was the best maid in the valley, you know."),
+    "bernard": ("(happy)Oh! A whole new kitchen to cook in! I'll make you "
+                "breakfast every morning, dear!",
+                "(sad)Oh dear, oh dear. Who'll run the inn? Wren can't cook! "
+                "...Well. Tell me what you need.",
+                "(happy)Oh, thank you! I'd better get back before Wren burns "
+                "the inn down.",
+                "(sad)Oh. I'd left a pie in your oven."),
+}
+MAID_GREET_LIKE = ["(happy)Welcome home! Shall I put the kettle on?",
+                   "(happy)Good day! Is there anything you'd like done?",
+                   "(laugh)At your service!"]
+MAID_GREET_HATE = ["(cross)Yes. What is it.",
+                   "(cross)Oh. It's you. What do you want done now?",
+                   "(sad)Still a maid, then. What can I do for you?"]
+MAID_OK_LIKE = ["(happy)Of course! I'll {chore}, every morning.",
+                "(laugh)Consider it done! I'll {chore}.",
+                "(happy)With pleasure. I'll {chore}."]
+MAID_OK_HATE = ["(cross)Fine. I'll {chore}. Every morning. Happily. Can't "
+                "you tell?",
+                "(cross)Yes, yes. I'll {chore}. Not that I have a choice.",
+                "(sad)As you wish. I'll {chore}."]
+MAID_ABOUT_LIKE = ["(happy)Honestly? I love it. Everything in its place, and "
+                   "such a lovely apron.",
+                   "(laugh)Don't you dare change me back. I've only just "
+                   "learned to fold napkins into swans."]
+MAID_ABOUT_HATE = ["(cross)Every morning I wake up in your cabin in a frilly "
+                   "cap. Change me back!",
+                   "(sad)I'll do what you say. I can't help it. But please, "
+                   "use that wand again."]
+MAID_KISS_LIKE = ["(blush)*She goes pink to the tips of her ears and smooths "
+                  "her apron.",
+                  "(blush)Why, thank you! Oh, I'm all of a flutter.",
+                  "(laugh)Again? You'll make me drop the tea tray!",
+                  "(blush)*She giggles and hides behind her feather duster."]
+MAID_KISS_HATE = ["(blush)...Hmph.",
+                  "(cross)I'm only allowing that because I have to. ...It "
+                  "wasn't terrible.",
+                  "(blush)*She scowls, and blushes, and scowls harder.",
+                  "(sad)Is that all, then? ...Fine."]
+MAID_KISS_ENOUGH = ["(blush)That's quite enough for one day! I've chores "
+                    "to think about.",
+                    "(laugh)Twice is plenty! Ask me again tomorrow."]
+MAID_HAPPILY = ["humming", "singing as she went", "with a happy little "
+                "curtsey", "beaming"]
+MAID_GRUMBLING = ["muttering darkly", "with a face like thunder",
+                  "grumbling all the while", "very stiffly"]
 PAST_LINES = ["Oh! Sorry, after you.", "Excuse me!", "Mind your step.",
               "Scoot, scoot."]
 CLUCK_HAPPY = ["The chicken that is {who} clucks happily and fluffs up "
@@ -9328,7 +10777,7 @@ TERRAIN = ["grass", "tallgrass", "meadow", "flowers", "path", "cobble",
            "seeds", "counter", "bed", "bed2", "table", "chair", "stove",
            "fireplace", "forge", "anvil", "barrel", "crates", "plant", "cot",
            "cabinet", "piano", "easel", "nets", "toolrack", "straw", "nest",
-           "trough"]
+           "trough", "loohole", "loobench"]
 TERRAIN += ["roof_" + r for r in ROOFS] + ["eave_" + r for r in ROOFS]
 TERRAIN += [k + "_" + m for m in WALLS for k in ("wall", "win", "door")]
 ANIMATED_TERRAIN = {"water", "river", "pond", "fountain", "lamp",
@@ -9359,6 +10808,10 @@ def all_tiles(season=0):
         sprites["s_" + vid] = golden(sprites["v_" + vid])
         sprites["vx_" + vid] = art_pixels(*person_art(swap_look(v["look"])))
         sprites["sx_" + vid] = golden(sprites["vx_" + vid])
+        sprites["vm_" + vid] = art_pixels(*person_art(maid_look(v["look"])))
+        sprites["tv_" + vid] = tree_art(v["look"], season)
+        sprites["lh_" + vid] = loo_art(v["look"], season)
+        sprites["sm_" + vid] = golden(sprites["vm_" + vid])
     for colour in HEN_COLOURS:
         sprites["hen_" + colour] = hen_art(colour)
     sprites["egg"] = egg_art()
@@ -9367,7 +10820,7 @@ def all_tiles(season=0):
     for name, px in sprites.items():
         tiles[name] = px
         SPRITES.add(name)
-        if name.startswith(("v_", "vx_", "hen_")):
+        if name.startswith(("v_", "vx_", "vm_", "hen_")):
             tiles[name + "@1"] = px[1:] + [[None] * 16]   # a bob
     return tiles
 
@@ -9401,7 +10854,10 @@ def selftest():
                 problems.append("tile %s is not 16x16" % name)
     for vid, v in VILLAGERS.items():
         if vid not in SWAP_LINES or vid not in UNSTATUE or \
-                vid not in CHICKEN_BACK:
+                vid not in CHICKEN_BACK or vid not in TREE_BACK or \
+                vid not in TREE_CHOPPED or (
+                    (vid not in MAID_LINES or vid not in LOO_BACK) and
+                    v["look"].get("age") != "child"):
             problems.append("%s lacks spell reactions" % vid)
         for expr in EXPRESSIONS:
             px = portrait(swap_look(v["look"]), expr)
@@ -9414,6 +10870,10 @@ def selftest():
     if len(grid) != VH or any(len(r) != VW for r in grid):
         problems.append("valley size")
     rooms = {}
+    for key in EXTRA_ROOMS:
+        g, spots, entry, ex = make_room(key)
+        if g[entry[1]][entry[0]] not in WALKABLE or ex is None:
+            problems.append("room %s has no way in and out" % key)
     for key, (floor, wall, rows) in ROOMS.items():
         if len({len(r) for r in rows}) != 1:
             problems.append("room %s rows differ" % key)
