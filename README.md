@@ -119,6 +119,31 @@ fleece of white, cream, brown or black.
   shows your cows and sheep, which have been milked today, and which are
   woolly.
 
+### Machines
+
+Nell at **Garrow's Workshop** builds machines that turn what your farm
+makes into something worth more. Buy one across her counter, hold it, and
+use it on open ground on your farm to set it down, just like a sprinkler.
+Walk into it to load it, see how long it has to go, take what it's made,
+or pick it up again (when it's empty). A machine with something ready
+twinkles.
+
+| Machine | Cost | Takes | Makes | How long |
+| --- | --- | --- | --- | --- |
+| Mayonnaise jar | 600g, 10 stone | an egg | mayonnaise (150g) | 3 hours |
+| Preserves jar | 700g, 10 wood, 10 stone | a fruit, or a vegetable | that fruit's jam, or that vegetable pickled (twice its price, plus 50g) | by morning |
+| Beehive | 900g, 30 wood, 20 fiber | nothing | honey (180g) | every third morning, but not in winter |
+| Cheese press | 1,200g, 40 wood, 20 stone | milk | cheese (300g) | 6 hours |
+| Loom | 1,500g, 60 wood | one wool, or two | cloth (420g), or a wool scarf | 4 hours, or 8 |
+
+Jam is made from strawberries, blueberries, cranberries, melons, apples
+and wild berries and plums; pickles from turnips, potatoes, cauliflower,
+peas, corn, eggplant, pumpkins, tomatoes, yams, leeks and roots. Everything
+a machine makes can be eaten (except cloth) or shipped, and people have
+opinions: Bernard likes cheese, Agnes honey, Rusty cloth, and Marisol
+anything handmade. The wool scarf is a gift Granny Rose, Jonah and Clara
+love.
+
 ## The magic wand
 
 Among Grandmother's tools is a **magic wand**. (Someday it will be the reward
@@ -246,7 +271,7 @@ up to eight squares until it hits someone or something solid.
 
 | Place | Who | What's there |
 | --- | --- | --- |
-| Pike's General Store | Mabel Pike | seeds for the season, hens, cows, a milk pail, a leash, gifts, the Blossom Bouquet |
+| Pike's General Store | Mabel Pike | seeds for the season, hens, cows, sheep, a milk pail, shears, a leash, gifts, the Blossom Bouquet |
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
 | Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, the copper watering can, fine gifts, the Blossom Pendant |
@@ -264,7 +289,7 @@ up to eight squares until it hits someone or something solid.
 | The Post Office | Clara Ashford (and her son Benji) | the post, and all the news |
 | Gus's Boathouse | Gus Pemberton | the old fisherman, Theo's rival |
 | Whitlock House | Agnes Whitlock (and her niece Bea) | the retired schoolmistress's roses, and the valley's vet |
-| Garrow's Workshop | Nell Garrow | the clockmaker and tinker |
+| Garrow's Workshop | Nell Garrow | the clockmaker and tinker, who builds machines for your farm, eight till five (shut for lunch) |
 
 Past the woods on the east side of the village is the **east quarter**, a
 newer neighbourhood of eight houses along the roads, with its own green.

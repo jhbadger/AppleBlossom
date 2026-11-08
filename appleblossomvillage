@@ -1200,6 +1200,38 @@ ITEMS = {
 for _c in CROPS:
     ITEMS[_c] = (crop(_c, "price"), crop(_c, "energy"), "crop")
 
+# Nell's machines: put one on your farm, load it, come back for something
+# worth more.  Recipes: (what goes in, how many, what comes out, minutes;
+# None means by tomorrow morning).  "jam" and "pickle" take any fruit or
+# vegetable, and make that fruit's jam or that vegetable pickled.
+MACHINES = {
+    "mayonnaise jar": [("egg", 1, "mayonnaise", 180)],
+    "cheese press": [("milk", 1, "cheese", 360)],
+    "preserves jar": [("jam", 1, "jam", None), ("pickle", 1, "pickles",
+                                                None)],
+    "loom": [("wool", 1, "cloth", 240), ("wool", 2, "wool scarf", 480)],
+    "beehive": [],
+}
+HIVE_DAYS = 3                   # a beehive fills every third morning
+JAM_FRUIT = ("strawberry", "blueberry", "cranberry", "melon", "apple",
+             "salmonberry", "spice berry", "wild plum", "blackberry",
+             "wild grape")
+PICKLE_VEG = ("turnip", "potato", "cauliflower", "pea", "corn", "eggplant",
+              "pumpkin", "tomato", "yam", "wild leek", "winter root",
+              "snow yam")
+for _m in MACHINES:
+    ITEMS[_m] = (0, 0, "machine")
+ITEMS.update({"mayonnaise": (150, 25, "artisan"),
+              "cheese": (300, 50, "artisan"),
+              "cloth": (420, 0, "artisan"),
+              "honey": (180, 30, "artisan")})
+for _c in JAM_FRUIT:
+    ITEMS[_c + " jam"] = (2 * ITEMS[_c][0] + 50, ITEMS[_c][1] * 2,
+                          "artisan")
+for _c in PICKLE_VEG:
+    ITEMS["pickled " + _c] = (2 * ITEMS[_c][0] + 50, ITEMS[_c][1] * 2,
+                              "artisan")
+
 FORAGE = {   # season -> (item, shape, colour, where): where is wood, field
     0: [("wild leek", "leaf", "#80c060", "wood"),
         ("dandelion", "flower", "#f0e040", "field"),
@@ -3385,7 +3417,7 @@ VILLAGERS = {
                  "extras": ("mustache", "apron"), "beardc": "#7a7070"},
         "birthday": (3, 11), "home": "inn", "rest": 7,
         "loves": ["tomato", "morel", "chanterelle"],
-        "likes": ["eggplant", "potato", "yam", "kind:fish", "wild leek",
+        "likes": ["cheese", "eggplant", "potato", "yam", "kind:fish", "wild leek",
                   "egg"],
         "dislikes": ["chocolate", "fiber"],
         "hates": ["energy tonic"],
@@ -3666,7 +3698,7 @@ VILLAGERS = {
                  "extras": ("liner", "nosering")},
         "birthday": (1, 12), "home": "rusty", "rest": 1,
         "loves": ["rose", "chocolate", "strawberry"],
-        "likes": ["wool scarf", "sheet music", "coral", "wild grape",
+        "likes": ["cloth", "wool scarf", "sheet music", "coral", "wild grape",
                   "apple pie"],
         "dislikes": ["turnip", "fiber"],
         "hates": ["herring", "salad"],
@@ -3830,7 +3862,7 @@ VILLAGERS = {
                  "extras": ("apron", "earring")},
         "birthday": (0, 10), "home": "bakery", "rest": 4,
         "loves": ["strawberry", "honey cake", "wild plum"],
-        "likes": ["blueberry", "egg", "pumpkin", "coffee", "kind:crop"],
+        "likes": ["kind:artisan", "blueberry", "egg", "pumpkin", "coffee", "kind:crop"],
         "dislikes": ["herring", "fiber"],
         "hates": ["energy tonic", "salad"],
         "intro": "(happy)Ah! The new farmer! Marisol Vega, the bakery's mine. "
@@ -4745,7 +4777,7 @@ VILLAGERS = {
                  "glassc": "#c8a040"},
         "birthday": (2, 27), "home": "whitlock", "rest": 0,
         "loves": ["rose", "tea", "book of poems"],
-        "likes": ["sweet pea", "daffodil", "crocus", "honey cake",
+        "likes": ["honey", "sweet pea", "daffodil", "crocus", "honey cake",
                   "apple pie"],
         "dislikes": ["fish supper", "coffee", "seashell"],
         "hates": ["dandelion", "stone"],
@@ -5073,7 +5105,7 @@ VILLAGERS = {
                              (1900, "inn.4"), (2300, "workshop.2")],
                   "rain_s": [(600, "workshop.2"), (800, "workshop.1"),
                              (1800, "workshop.3"), (2300, "workshop.2")]},
-        "shop": None,
+        "shop": ("workshop.1", "workshop"),
     },
 }
 
@@ -5100,11 +5132,18 @@ SHOP_STOCK = {
     "carpentry": [("wood", 50), ("chicken coop", 1500), ("barn", 4000),
                   ("cabin extension", 3000)],
     "tackle": [("fishing rod", 100), ("fishing lure", 120)],
+    "workshop": [("mayonnaise jar", 600), ("preserves jar", 700),
+                 ("beehive", 900), ("cheese press", 1200), ("loom", 1500)],
 }
 EXTRA_COST = {"sprinkler": {"stone": 5}, "copper can": {"stone": 15},
               "chicken coop": {"wood": 80},
               "barn": {"wood": 150, "stone": 50},
-              "cabin extension": {"wood": 150}}
+              "cabin extension": {"wood": 150},
+              "mayonnaise jar": {"stone": 10},
+              "preserves jar": {"wood": 10, "stone": 10},
+              "beehive": {"wood": 30, "fiber": 20},
+              "cheese press": {"wood": 40, "stone": 20},
+              "loom": {"wood": 60}}
 BUNDLES = {"wood": 10}           # bought ten at a time
 
 FESTIVALS = {   # (season, day): name, start, end, where, what you do
@@ -5537,7 +5576,7 @@ ROOMS["workshop"] = ("boards", "W", (
     "WWwWWWWWwWW",
     "WXAc.L..B.W",
     "W.1....2..W",
-    "Wcc.T.....W",
+    "WCC.T.....W",
     "W...h..3..W",
     "WR.....P.RW",
     "WWWWWxWWWWW"))
@@ -6571,6 +6610,10 @@ builds a barn; Mabel sells cows and sheep, the milk pail
 (cows daily, sheep every other day) and shears (a sheep
 is woolly enough to shear every third day).
 
+Nell builds machines: jars for mayonnaise and preserves, a
+cheese press, a loom and beehives.  Set one on your farm
+and walk into it to load it or take what it's made.
+
 Tap a square to walk there, next to you to step or use
 your tool there, yourself to use it ahead.
 
@@ -7166,7 +7209,7 @@ class Game:
         self.p["look"]["bg"] = "#f8e0c0"
         st = self.st = {
             "seed": seed, "day": 0, "minute": WAKE, "weather": "sun",
-            "tomorrow": "sun", "soil": {}, "sprinklers": [],
+            "tomorrow": "sun", "soil": {}, "sprinklers": [], "machines": {},
             "debris": {"%d,%d" % k: v for k, v in farm_debris(
                 self.areas["valley"].grid, seed).items()},
             "forage": {}, "apples": {}, "shipped": {}, "mail": [],
@@ -7241,6 +7284,7 @@ class Game:
         st.setdefault("cows", [])
         st.setdefault("cowified", [])
         st.setdefault("sheepified", [])
+        st.setdefault("machines", {})
         for vid in VILLAGERS:
             st["friends"].setdefault(vid, {
                 "pts": 0, "talked": -1, "week": 0, "gift_day": -1,
@@ -7426,6 +7470,8 @@ class Game:
             return ("debris", st["debris"][k])
         if k in st["sprinklers"]:
             return ("sprinkler", None)
+        if k in st.get("machines", ()):
+            return ("machine", st["machines"][k])
         s = st["soil"].get(k)
         if s and s[1]:
             return ("crop", s)
@@ -7449,7 +7495,7 @@ class Game:
             return False
         if a.outdoor:
             th = self.thing_at(x, y)
-            if th and th[0] in ("debris", "sprinkler"):
+            if th and th[0] in ("debris", "sprinkler", "machine"):
                 return False
         elif a.key == "coop" and self.chicken_at(x, y) is not None:
             return False
@@ -7515,6 +7561,9 @@ class Game:
             th = self.thing_at(x, y)
             if th and th[0] == "debris":
                 self.clear_debris(x, y, th[1], auto=True)
+                return True
+            if th and th[0] == "machine":
+                self.machine_menu("%d,%d" % (x, y))
                 return True
             if t == "bin":
                 self.ship_menu()
@@ -7697,7 +7746,8 @@ class Game:
 
     def hand_list(self):
         seeds = sorted(n for n, c in self.p["items"].items()
-                       if c and (n.endswith(" seeds") or n == "sprinkler"))
+                       if c and (n.endswith(" seeds") or n == "sprinkler" or
+                                 n in MACHINES))
         return [t for t in TOOLS if t in self.p["tools"]] + seeds
 
     def hand_name(self, h=None):
@@ -7779,7 +7829,7 @@ class Game:
             return on_farm(x, y) and t in TILLABLE and not th
         if h and h.endswith(" seeds"):
             return t == "soil" and not th
-        if h == "sprinkler":
+        if h == "sprinkler" or h in MACHINES:
             return on_farm(x, y) and not th and (t == "soil" or
                                                  t in TILLABLE)
         if h == "fishing rod":
@@ -8582,6 +8632,7 @@ class Game:
             x, y = map(int, k.split(","))
             if (x, y) == tuple(st["pos"]) or k in st["soil"] or \
                     k in st["sprinklers"] or k in st["forage"] or \
+                    k in st["machines"] or \
                     any(n.where == "valley" and (n.x, n.y) == (x, y)
                         for n in self.npcs.values()):
                 continue
@@ -9395,6 +9446,11 @@ class Game:
                 if k in st["sprinklers"]:
                     st["sprinklers"].remove(k)
                     self.give("sprinkler")
+                m = st["machines"].pop(k, None)
+                if m:
+                    self.give(m["kind"])
+                    if m.get("out") and m["kind"] != "beehive":
+                        self.give(m["out"])
             if y >= y0 + h and v.grid[y][dx] != "path":
                 break
         self.door_at[(dx, dy)] = key
@@ -9576,6 +9632,140 @@ class Game:
             self.step_on(*self.pos())
         return True
 
+    # ── Machines ──
+
+    def now_abs(self):
+        """Minutes since the game began, carrying on past midnight."""
+        return self.st["day"] * 1440 + self.st["minute"]
+
+    def machine_ready(self, m):
+        if not m.get("out"):
+            return False
+        if m["kind"] == "beehive" and self.season() == 3:
+            return False                        # the bees sleep in winter
+        return self.now_abs() >= m["ready"]
+
+    def machine_tile(self, m):
+        return "m_" + m["kind"].replace(" ", "_") + (
+            "_r" if self.machine_ready(m) else "")
+
+    def place_machine(self, k, kind):
+        st = self.st
+        st["soil"].pop(k, None)
+        m = {"kind": kind, "out": None, "ready": 0}
+        if kind == "beehive":
+            m["out"] = "honey"
+            m["ready"] = (st["day"] + HIVE_DAYS) * 1440 + 360
+        st["machines"][k] = m
+        self.take(kind)
+        self.sound.play("pick")
+        self.say(MACHINE_PLACED[kind], "good")
+        self.end_turn(TOOL_COST)
+
+    def machine_inputs(self, kind):
+        """What you could put in this machine now: (label, in, how many,
+        out, minutes)."""
+        have = self.p["items"]
+        out = []
+        for need, n, made, mins in MACHINES[kind]:
+            if need in ("jam", "pickle"):
+                for c in (JAM_FRUIT if need == "jam" else PICKLE_VEG):
+                    if have.get(c, 0) >= n:
+                        prod = c + " jam" if need == "jam" else "pickled " + c
+                        out.append(("Make %s (1 %s, have %d)" % (
+                            prod, c, have[c]), c, n, prod, mins))
+            elif have.get(need, 0) >= n:
+                out.append(("Make %s (%d %s, have %d)" % (
+                    an(made) if made in ("wool scarf",) else made, n, need,
+                    have[need]), need, n, made, mins))
+        return out
+
+    def machine_menu(self, k):
+        m = self.st["machines"].get(k)
+        if not m:
+            return
+        kind = m["kind"]
+        self.walking = None
+        items = []
+        title = cap(kind)
+        if self.machine_ready(m):
+            title += ": %s, ready!" % m["out"]
+            items.append(("Take the %s" % m["out"],
+                          lambda: self.collect_machine(k)))
+        elif m.get("out"):
+            if kind == "beehive" and self.season() == 3:
+                title += ": the bees are huddled up for winter"
+            else:
+                left = m["ready"] - self.now_abs()
+                days = m["ready"] // 1440 - self.st["day"]
+                title += ": %s, %s" % (
+                    "filling with honey" if kind == "beehive" else
+                    "making %s" % m["out"],
+                    "ready in about %d hour%s" % (
+                        max(1, (left + 59) // 60), "" if left <= 60 else "s")
+                    if m["ready"] % 1440 != 360 else
+                    "ready by morning" if days <= 1 else
+                    "ready in %d days" % days)
+        else:
+            choices = self.machine_inputs(kind)
+            if choices:
+                for label, need, n, made, mins in choices:
+                    items.append((label, lambda a=(k, need, n, made, mins):
+                                  self.load_machine(*a)))
+            else:
+                title += ": empty. It takes %s." % MACHINE_TAKES[kind]
+        if not m.get("out") or kind == "beehive":
+            items.append(("Pick it up", lambda: self.pick_up_machine(k)))
+        items.append(("Leave it", lambda: None))
+        self.open_menu(title, items)
+
+    def load_machine(self, k, need, n, made, mins):
+        st = self.st
+        m = st["machines"].get(k)
+        if not m or m.get("out") or self.p["items"].get(need, 0) < n:
+            return
+        self.take(need, n)
+        m["out"] = made
+        m["ready"] = (st["day"] + 1) * 1440 + 360 if mins is None else \
+            self.now_abs() + mins
+        self.sound.play("pick")
+        self.say("You put %s in the %s. %s" % (
+            "two fleeces of wool" if need == "wool" and n == 2 else
+            measure(need), m["kind"],
+            "It'll be ready by morning." if mins is None else
+            "It'll be ready in about %d hours." % (mins // 60)), "info")
+        self.end_turn(1)
+
+    def collect_machine(self, k):
+        st = self.st
+        m = st["machines"].get(k)
+        if not m or not self.machine_ready(m):
+            return
+        made = m["out"]
+        self.give(made)
+        self.sound.play("gold" if m["kind"] == "beehive" else "pick")
+        x, y = map(int, k.split(","))
+        self.flash(x, y, "sparkle")
+        if m["kind"] == "beehive":
+            m["ready"] = (st["day"] + HIVE_DAYS) * 1440 + 360
+            self.say("You lift the lid, smoke the bees sleepy, and take a "
+                     "comb of golden honey. (+1 honey)", "good")
+        else:
+            m["out"] = None
+            self.say("You take %s from the %s. (+1 %s)" % (
+                measure(made), m["kind"], made), "good")
+        self.end_turn(1)
+
+    def pick_up_machine(self, k):
+        m = self.st["machines"].pop(k, None)
+        if not m:
+            return
+        self.give(m["kind"])
+        self.p["hand"] = m["kind"]
+        self.say("You pick up the %s. Hold it and use it on open ground "
+                 "to put it down again." % m["kind"], "info")
+        self.end_turn(1)
+
     def spend(self, h):
         need = TOOL_ENERGY.get(h, 0)
         if self.p["energy"] < need:
@@ -9646,6 +9836,9 @@ class Game:
             return
         if th and th[0] == "debris":
             self.clear_debris(x, y, th[1])
+            return
+        if th and th[0] == "machine":
+            self.machine_menu(k)
             return
         if t == "bin":
             self.ship_menu()
@@ -9736,6 +9929,14 @@ class Game:
             self.say("You set the sprinkler in the ground. It'll water the "
                      "four squares around it every morning.", "good")
             self.end_turn(TOOL_COST)
+            return
+        if h in MACHINES:
+            if not on_farm(x, y) or th or not (t == "soil" or
+                                               t in TILLABLE):
+                self.say("Put the %s on open ground on your farm." % h,
+                         "info")
+                return
+            self.place_machine(k, h)
             return
         if h == "fishing rod":
             if t not in WATER:
@@ -9870,7 +10071,7 @@ class Game:
         if energy and self.p["items"].get(n):
             acts.append(("Eat it (+%d energy)" % energy,
                          lambda: self.eat(n)))
-        if n.endswith(" seeds") or n == "sprinkler":
+        if n.endswith(" seeds") or n == "sprinkler" or n in MACHINES:
             acts.append(("Hold it", lambda: (self.p.update(hand=n),
                                              self.say("You hold the %s." %
                                                       self.hand_name(),
@@ -10077,6 +10278,7 @@ class Game:
             k = "%d,%d" % (x, y)
             if valley.grid[y][x] == "grass" and k not in st["soil"] and \
                     k not in st["debris"] and k not in st["sprinklers"] and \
+                    k not in st["machines"] and \
                     (x, y) != self.pos() and season != 3:
                 st["debris"][k] = "weed"
         if season == 2:
@@ -10117,7 +10319,8 @@ class Game:
             for _ in range(random.randint(1, 3)):
                 x, y = random.choice(spots)
                 k = "%d,%d" % (x, y)
-                if k not in st["forage"] and k not in st["debris"]:
+                if k not in st["forage"] and k not in st["debris"] and \
+                        k not in st["machines"]:
                     st["forage"][k] = item
 
     def mail(self, sender, text):
@@ -11174,6 +11377,9 @@ class Game:
             return
         else:
             self.give(name, BUNDLES.get(name, 1))
+            if name in MACHINES:
+                p["hand"] = name
+                self.speak(vid, MACHINE_SOLD[name])
         self.say("You buy %s for %dg." % (
             "%d %s" % (BUNDLES[name], name) if name in BUNDLES else
             an(name), price), "gold")
@@ -11903,6 +12109,8 @@ class Game:
                                    else self.stage(what) if kind == "crop"
                                    else "fg_" + what if kind == "forage"
                                    else "sprinkler" if kind == "sprinkler"
+                                   else self.machine_tile(what)
+                                   if kind == "machine"
                                    else what)
                     base = t
                     if a.key == "coop" and [x, y] in st["eggs"]:
@@ -12076,19 +12284,50 @@ class Game:
         self.root.after(300, hide)
 
     def draw_text_box(self, text, color=INK):
+        """Text in a box in the middle of the map: in two columns, split
+        at a paragraph, when it's too tall and there's room side by side;
+        then smaller, if it still doesn't fit."""
         c = self.canvas
         W, H = c.winfo_width(), c.winfo_height()
-        t = c.create_text(W / 2, H / 2, text=text, fill=color, font=F(*MONO),
-                          justify="left", tags="overlay")
-        x0, y0, x1, y1 = c.bbox(t)
-        if y1 - y0 > H - 20 or x1 - x0 > W - 20:
+        probe = c.create_text(0, 0, text=text, font=F(*MONO), anchor="nw")
+        x0, y0, x1, y1 = c.bbox(probe)
+        c.delete(probe)
+        cols = [text]
+        paras = text.split("\n\n")
+        w, h = x1 - x0, y1 - y0
+        one = min(1, (H - 20) / h, (W - 20) / w)            # how big each
+        two = min(1, (H - 20) / (h / 2 + 20), (W - 20) / (2 * w + 32))
+        if one < 1 and two > one and len(paras) > 1:
+            def tallest(i):
+                return max("\n\n".join(paras[:i]).count("\n"),
+                           "\n\n".join(paras[i:]).count("\n"))
+            i = min(range(1, len(paras)), key=tallest)
+            cols = ["\n\n".join(paras[:i]), "\n\n".join(paras[i:])]
+        font = F(*MONO)
+        for attempt in range(2):
+            ts, x = [], 0
+            for col in cols:
+                t = c.create_text(x, 0, text=col, fill=color, font=font,
+                                  justify="left", anchor="nw",
+                                  tags="overlay")
+                ts.append(t)
+                x = c.bbox(t)[2] + 32
+            x0, y0, x1, y1 = c.bbox(*ts)
+            if attempt or (y1 - y0 <= H - 20 and x1 - x0 <= W - 20):
+                break
             k = min((H - 20) / (y1 - y0), (W - 20) / (x1 - x0))
-            c.itemconfig(t, font=F("Menlo", max(7, int(12 * k))))
-            x0, y0, x1, y1 = c.bbox(t)
+            font = F("Menlo", max(7, int(12 * k)))
+            for t in ts:
+                c.delete(t)
+        dx, dy = (W - (x1 - x0)) / 2 - x0, (H - (y1 - y0)) / 2 - y0
+        for t in ts:
+            c.move(t, dx, dy)
+        x0, y0, x1, y1 = c.bbox(*ts)
         r = c.create_rectangle(x0 - 16, y0 - 12, x1 + 16, y1 + 12,
                                fill=PANEL, outline=ACCENT, width=2,
                                tags="overlay")
-        c.tag_raise(t, r)
+        for t in ts:
+            c.tag_raise(t, r)
 
     def draw_map(self):
         c, a = self.canvas, self.areas["valley"]
@@ -12471,6 +12710,17 @@ def cap(s):
     return s[:1].upper() + s[1:]
 
 
+def measure(item):
+    """A natural amount of one of something: a pail of milk, a jar of
+    jam."""
+    if item.endswith(" jam") or item.startswith("pickled "):
+        return "a jar of " + item
+    return {"milk": "a pail of milk", "wool": "a fleece of wool",
+            "mayonnaise": "a jar of mayonnaise", "cheese": "a wheel of cheese",
+            "cloth": "a bolt of cloth", "honey": "a comb of honey"}.get(
+                item, an(item))
+
+
 def an(s):
     if s in ITEMS and ITEMS[s][2] in ("material",) or s.endswith("s") and \
             s not in ("cress",):
@@ -12600,10 +12850,42 @@ COMMON_TOPICS = {
     "pendant": "Otto makes the blossom pendants. Only for a sweetheart at "
                "ten hearts, mind.",
     "sprinkler": "Otto at the smithy makes sprinklers.",
+    "machine": "Nell at the workshop builds machines: jars for mayonnaise "
+               "and jam, a cheese press, a loom, even beehives.",
+    "cheese": "Get a cheese press from Nell and some milk. Bernard pays "
+              "well for a good cheese, they say.",
     "legend": "The golden carp? Theo knows that story.",
     "request": "The notice board's in the square. People post what they "
                "need.",
 }
+MACHINE_SOLD = {   # Nell, selling you a machine
+    "mayonnaise jar": "(happy)Pop an egg in, give it three hours, and you've "
+                      "mayonnaise. Set it on open ground on your farm.",
+    "preserves jar": "(happy)Any fruit makes jam, any vegetable pickles. "
+                     "Leave it overnight. Jam's worth twice the fruit, near "
+                     "enough.",
+    "beehive": "(laugh)The bees come free! Put it somewhere on your farm "
+               "and leave them be. Honey every third morning, except in "
+               "winter.",
+    "cheese press": "(happy)Milk in, wait six hours, cheese out. Bernard "
+                    "will want to know where you got it.",
+    "loom": "(happy)One fleece makes a bolt of cloth. Two make a scarf, if "
+            "you've the patience. I never have.",
+}
+MACHINE_PLACED = {
+    "mayonnaise jar": "You set down the mayonnaise jar. It needs an egg.",
+    "preserves jar": "You set down the preserves jar. It takes a fruit or a "
+                     "vegetable.",
+    "beehive": "You set down the beehive. A few bees drift out, look "
+               "around, and seem to approve.",
+    "cheese press": "You set down the cheese press. It needs milk.",
+    "loom": "You set up the loom. It needs wool.",
+}
+MACHINE_TAKES = {"mayonnaise jar": "an egg",
+                 "preserves jar": "a fruit (for jam) or a vegetable (to "
+                                  "pickle)",
+                 "beehive": "nothing", "cheese press": "milk",
+                 "loom": "wool (one for cloth, two for a scarf)"}
 GENERIC_NEWS = [
     "Mabel's cat has gone missing again. She'll turn up. She always does.",
     "Otto challenged Ivy to arm-wrestle again. Again.",
@@ -14072,6 +14354,9 @@ def all_tiles(season=0):
     sprites = {}
     for name, (pal, rows) in ART.items():
         sprites[name] = art_pixels(pal, rows)
+    for m in MACHINES:
+        k = "m_" + m.replace(" ", "_")
+        sprites[k + "_r"] = ready_art(sprites[k])
     for s in FORAGE.values():
         for item, shape, col, _ in s:
             pal = {"a": col, "A": shade(col, 1.3), "s": "#4a8a3a",
@@ -14108,6 +14393,104 @@ def all_tiles(season=0):
         if name.startswith(("v_", "vx_", "vm_", "hen_", "cow_", "sheep")):
             tiles[name + "@1"] = px[1:] + [[None] * 16]   # a bob
     return tiles
+
+
+# Nell's machines, and each with a sparkle when there's something to take
+ART["m_mayonnaise_jar"] = ({"L": "#902828", "l": "#c04040", "G": "#8aa8b8",
+                           "c": "#dcecf4", "w": "#ffffff", "m": "#f8f0c8",
+                           "M": "#e0d4a0"}, (
+    "................", "................", "................",
+    "................",
+    ".....LLLLLL.....",
+    ".....llllll.....",
+    "....GccccccG....",
+    "....GcwmmmmG....",
+    "....GcmmmmmG....",
+    "....GwmmmmmG....",
+    "....GcmmmmMG....",
+    "....GcmmmmMG....",
+    "....GcmMMMMG....",
+    "....GGGGGGGG....",
+    "................", "................"))
+ART["m_preserves_jar"] = ({"K": "#d04040", "k": "#f4f0f0", "s": "#a07040",
+                          "G": "#8aa8b8", "c": "#dcecf4", "w": "#ffffff",
+                          "j": "#c02848", "J": "#801830"}, (
+    "................", "................", "................",
+    "....KkKkKkKk....",
+    "....kKkKkKkK....",
+    ".....ssssss.....",
+    "....GccccccG....",
+    "....GcwjjjjG....",
+    "....GcjjjjjG....",
+    "....GwjjjjjG....",
+    "....GcjjjjJG....",
+    "....GcjjjjJG....",
+    "....GcjJJJJG....",
+    "....GGGGGGGG....",
+    "................", "................"))
+ART["m_cheese_press"] = ({"b": "#a07040", "B": "#6a4828", "s": "#9098a0",
+                         "S": "#5a6068", "y": "#f0d060",
+                         "Y": "#c8a838"}, (
+    "................", "................",
+    ".......SS.......",
+    ".......ss.......",
+    "...bbbbssbbbb...",
+    "...BBBBssBBBB...",
+    "...b...ss...b...",
+    "...b..SSSS..b...",
+    "...b.yyyyyy.b...",
+    "...b.yyyyyy.b...",
+    "...b.YYYYYY.b...",
+    "...bbbbbbbbbb...",
+    "...BBBBBBBBBB...",
+    "...B........B...",
+    "...B........B...",
+    "................"))
+ART["m_loom"] = ({"b": "#a07040", "B": "#6a4828", "t": "#e8e0f0",
+                 "T": "#a088c0", "c": "#c06080", "C": "#8a3a5a"}, (
+    "................", "................",
+    "..b..........b..",
+    "..bbbbbbbbbbbb..",
+    "..bBBBBBBBBBBb..",
+    "..b.t.t.t.t..b..",
+    "..b.t.t.t.t..b..",
+    "..bTTTTTTTTT.b..",
+    "..b.cccccccc.b..",
+    "..b.cCcCcCcC.b..",
+    "..bbbbbbbbbbbb..",
+    "..bBBBBBBBBBBb..",
+    "..b..........b..",
+    "..b..........b..",
+    "..B..........B..",
+    "................"))
+ART["m_beehive"] = ({"h": "#e0b050", "H": "#a07828", "d": "#3a2810",
+                    "s": "#7a5a3a", "e": "#202020"}, (
+    "................",
+    "............e...",
+    "......hhhh......",
+    ".....hhhhhh.....",
+    "....HHHHHHHH....",
+    "....hhhhhhhh....",
+    "...hhhhhhhhhh...",
+    "...HHHHHHHHHH...",
+    "...hhhhhhhhhh...",
+    "..hhhhhhhhhhhh..",
+    "..HHHHHddHHHHH..",
+    "..hhhhhddhhhhh..",
+    ".ssssssssssssss.",
+    "..s..........s..",
+    "..s..........s..",
+    "................"))
+
+
+def ready_art(px):
+    """A machine with something to collect: a twinkle above it."""
+    px = [list(r) for r in px]
+    for (x, y), c in (((13, 0), "#ffe060"), ((12, 1), "#ffe060"),
+                      ((13, 1), "#ffffff"), ((14, 1), "#ffe060"),
+                      ((13, 2), "#ffe060"), ((2, 2), "#ffe060")):
+        px[y][x] = c
+    return px
 
 
 ART["puff"] = ({"g": "#e8e0d0", "G": "#b8b0a0"}, (
@@ -14233,6 +14616,17 @@ def selftest():
                         "cow", "milk pail", "sheep", "shears",
                         "fishing rod", "sprinkler"):
                 problems.append("shop %s sells unknown %s" % (kind, entry))
+    for m, recipes in MACHINES.items():
+        if "m_" + m.replace(" ", "_") not in ART or m not in MACHINE_SOLD \
+                or m not in MACHINE_PLACED or m not in MACHINE_TAKES:
+            problems.append("machine %s lacks art or words" % m)
+        for need, n, made, mins in recipes:
+            if need not in ("jam", "pickle") and (
+                    need not in ITEMS or made not in ITEMS):
+                problems.append("machine %s: %s -> %s" % (m, need, made))
+    for c in JAM_FRUIT + PICKLE_VEG:
+        if c not in ITEMS:
+            problems.append("preserves: no %s" % c)
     for name, tune in MUSIC.items():
         try:
             render_tune(tune)
