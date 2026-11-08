@@ -6,9 +6,9 @@ Standard library only.  The engine is the one the tilerpgs share (one hero,
 a map of squares, people to talk to by keyword, shops, tiles and music drawn
 in code), turned to farming: you've inherited your grandmother's overgrown
 farm at the edge of Apple Blossom Village.  Clear it, till it, plant it,
-water it, ship what you grow, and get to know the fourteen people of the
+water it, ship what you grow, and get to know the twenty-four people of the
 village, who have opinions about everything, birthdays, favourite things,
-and stories they tell only to friends.  Eight of them might come to love you.
+and stories they tell only to friends.  Twelve of them might come to love you.
 
 Time
   A step is a minute, a swing of a tool three.  Days run from six in the
@@ -29,8 +29,8 @@ People
   NAME, JOB, NEWS and GIFT, and words in CAPITALS are worth asking about.
   Talking every day and giving gifts they like earns hearts.  At some
   heart levels a friend will share a moment with you.  The bachelors and
-  bachelorettes (Rowan, Felix, Theo, Juniper, Wren, Ivy, Amy and
-  Rusty) will accept a
+  bachelorettes (Rowan, Felix, Theo, Juniper, Wren, Ivy, Amy, Rusty,
+  Marisol, Silas, Dmitri and Jonah) will accept a
   Blossom Bouquet at eight hearts, and a Blossom Pendant at ten.
 
 Touch and mouse
@@ -3818,6 +3818,1261 @@ VILLAGERS = {
                              (2300, "rusty.2")]},
         "shop": None,
     },
+    "marisol": {
+        "name": "Marisol Vega", "short": "Marisol", "romance": True,
+        "job": "the BAKER. Bread at dawn, pastries by seven, open till three. "
+               "Closed Thursdays, when I sleep like the dead",
+        "look": {"face": "F", "body": "F", "skin": 3, "hair": "#2a1a14",
+                 "style": "bun", "eyes": "#5a3a1e", "shirt": "#d8604a",
+                 "pants": "#5a3a2a", "bg": "#f4d8b0", "rosy": True,
+                 "extras": ("apron", "earring")},
+        "birthday": (0, 10), "home": "bakery", "rest": 4,
+        "loves": ["strawberry", "honey cake", "wild plum"],
+        "likes": ["blueberry", "egg", "pumpkin", "coffee", "kind:crop"],
+        "dislikes": ["herring", "fiber"],
+        "hates": ["energy tonic", "salad"],
+        "intro": "(happy)Ah! The new farmer! Marisol Vega, the bakery's mine. "
+                 "You look hungry. Everyone looks hungry to me. Come by early, "
+                 "the cinnamon buns go fast.",
+        "greet": [["(happy)Good morning! Or is it afternoon? I've been up "
+                   "since four.", "Ah, hello!"],
+                  ["(happy){name}! Have you eaten?", "(laugh)There you are! "
+                   "You've got flour on you. No wait, that's me."],
+                  ["(happy){name}! I saved you the end of the loaf. The best "
+                   "bit.", "(laugh)My favourite customer!"],
+                  ["(blush){name}! I was just thinking about you. And "
+                   "croissants. But mostly you."]],
+        "chat": [["Bread is simple. Flour, water, salt, time. Most people "
+                  "forget the time.",
+                  "(laugh)Bernard says my rolls are better than his. Bernard "
+                  "is a wise man.",
+                  "(cross)Somebody keeps stealing pies off my windowsill. I "
+                  "suspect a raccoon. Or Benji."],
+                 ["(happy)My abuela taught me to bake. She said you can taste "
+                  "it when a baker's in a bad mood. So I sing.",
+                  "If you grow strawberries, bring them here. I'll make you a "
+                  "tart that will make you weep.",
+                  "Up at four every day. You'd think I'd be grumpy. I am, "
+                  "until the first loaf comes out."],
+                 ["(sad)Some mornings, alone in the bakery before dawn, it's "
+                  "very quiet. I talk to the dough. The dough doesn't answer.",
+                  "(happy)I made a new loaf. Apple and honey. I named it after "
+                  "your farm. Don't let it go to your head.",
+                  "I came to this valley with a suitcase and a sourdough "
+                  "starter. The starter's older than some of the villagers."],
+                 ["(happy)You're part of my mornings now, {name}. That's the "
+                  "most important part of my day."]],
+        "season": ["(happy)Spring! Strawberries soon! I'm counting the days.",
+                   "Summer. Too hot for the ovens. I bake anyway. I'm a "
+                   "martyr to bread.",
+                   "(happy)Fall! Pumpkin bread, apple pie, cinnamon on "
+                   "everything!",
+                   "Winter. The bakery's the warmest room in the village. "
+                   "Everyone comes in to 'look at the cakes.'"],
+        "rain": "Rain! Good. Everyone wants something warm, and I've got "
+                "the ovens going.",
+        "topics": {
+            "baker": "(happy)Four o'clock every morning. I knead, I shape, I "
+                     "proof, I bake. Then I sell it all and do it again. I "
+                     "love it.",
+            "starter": "(laugh)My sourdough starter is called Esperanza. She's "
+                       "twelve years old. I've had boyfriends who lasted less.",
+            "abuela": "(sad)My grandmother. She had a bakery by the sea. I "
+                      "still use her rolling pin. It's worn smooth from her "
+                      "hands.",
+            "strawberry": "(happy)Strawberries! Spring only. Bring me some and "
+                          "I'll love you forever. Well. For a week.",
+        },
+        "opinions": {
+            "bernard": "(happy)Bernard! He buys my bread for the inn. We argue "
+                       "about butter. It's the best part of my week.",
+            "benji": "(laugh)Benji Ashford. Pie thief. Probably. I have no "
+                     "proof. He has crumbs on his face every Tuesday.",
+            "gus": "Gus brings me fish heads for the cats. I don't have cats. "
+                   "I think he just likes visiting.",
+            "silas": "(blush)Silas painted my bakery once. Made it look like a "
+                     "palace. I hung it behind the counter.",
+        },
+        "gift": {"love": "(laugh)Oh! You wonderful person! I'm going to bake "
+                         "you something enormous!",
+                 "like": "(happy)Ooh, thank you! I can use this!",
+                 "neutral": "Thank you, dear.",
+                 "dislike": "Oh. Hm. Well. Thank you anyway.",
+                 "hate": "(cross)No! Absolutely not in my bakery!"},
+        "unknown": "No idea, love. If it's not bread, I'm useless.",
+        "scenes": {
+            2: ["*Marisol is outside the bakery before dawn, flour to her "
+                "elbows, staring at a collapsed loaf.",
+                "(cross)Look at it. Flat as a pancake. The oven's been sulking "
+                "all week.",
+                ("?", "She pokes the loaf sadly.",
+                 [("Let me help you knead the next one.", 40,
+                   "(laugh)You knead like you're angry at it! Gentle! There. "
+                   "...That's actually not bad."),
+                  ("It still smells amazing.", 30,
+                   "(happy)It does, doesn't it? Here. Ugly bread tastes just "
+                   "as good. Eat.")])],
+            4: ["*Marisol sits on the bakery step after closing, holding an "
+                "old rolling pin.",
+                "(sad)My abuela's. Twelve years since she passed. Today.",
+                ("?", "She turns it over in her hands.",
+                 [("Tell me about her.", 50,
+                   "(happy)Loud. Bossy. Sang flamenco at the ovens. Gave bread "
+                   "to anyone hungry and never asked why. ...I miss her."),
+                  ("She'd be proud of you.", 40,
+                   "(sad)You think so? ...I hope so. I try to bake like she "
+                   "watched.")])],
+            6: ["*Marisol pulls a small round loaf from the oven and holds it "
+                "out to you, oddly shy.",
+                "I made it just for you. Honey, oats, a pinch of something "
+                "secret. It's not on the menu. It'll never be on the menu.",
+                ("?", "She watches you taste it.",
+                 [("It's the best thing I've ever eaten.", 60,
+                   "(blush)Don't say that. ...Say it again."),
+                  ("What's the secret ingredient?", 40,
+                   "(blush)If I told you, it wouldn't be a secret. ...Fine. "
+                   "It's that I was thinking about you.")])],
+            8: ["*Marisol meets you at the bakery door at dawn, hair loose "
+                "for once, no apron.",
+                "(blush)I've been up since three. Not baking. Thinking.",
+                "Every morning, the first thing I do is look for you through "
+                "the window. I didn't know that until today.",
+                "(happy)I'm in love with you, {name}. There. I said it before "
+                "the bread burns."],
+        },
+        "date": ["*You and Marisol sit on the bakery roof as the sun comes up, "
+                 "sharing a warm loaf.",
+                 "(happy)This is my favourite hour. The whole village asleep, "
+                 "and the bread smell going out over the rooftops.",
+                 "(blush)I never shared it with anyone before."],
+        "dating": ["(blush)I put a heart in the crust of your loaf. Don't tell "
+                   "anyone.",
+                   "(laugh)Bernard asked why I was singing. I told him the "
+                   "bread rose. He did not believe me."],
+        "spouse": ["(happy)Morning, love. Fresh bread on the table, and I "
+                   "didn't even burn myself.",
+                   "(blush)I like waking up next to you better than waking up "
+                   "next to the oven.",
+                   "I left you a pastry in your bag. Two. Fine, three."],
+        "sched": {"day": [(600, "bakery.2"), (700, "bakery.1"),
+                          (1500, "out.fountain_e"), (1700, "bakery.3"),
+                          (1900, "inn.6"), (2130, "bakery.2")],
+                  "rest_s": [(600, "bakery.2"), (1000, "out.beach2"),
+                             (1300, "out.eastgreen"), (1800, "inn.6"),
+                             (2130, "bakery.2")],
+                  "rain_s": [(600, "bakery.2"), (700, "bakery.1"),
+                             (1500, "bakery.3"), (2130, "bakery.2")]},
+        "shop": ("bakery.1", "bakery"),
+    },
+    "silas": {
+        "name": "Silas Reed", "short": "Silas", "romance": True,
+        "job": "a PAINTER. Landscapes, mostly. Occasionally a portrait, if the "
+               "face is interesting enough",
+        "look": {"face": "M", "body": "M", "skin": 1, "hair": "#e8c870",
+                 "style": "messy", "eyes": "#3a6ac0", "shirt": "#3a3a4a",
+                 "pants": "#4a3a2a", "bg": "#c8d0e8",
+                 "extras": ("scarf",), "scarfc": "#4a6ab0"},
+        "birthday": (3, 21), "home": "studio", "rest": 1,
+        "loves": ["sketchbook", "sunflower", "coffee"],
+        "likes": ["wild grape", "book of poems", "coral", "seashell",
+                  "kind:forage"],
+        "dislikes": ["turnip", "stone"],
+        "hates": ["energy tonic", "eel"],
+        "intro": "Hm? Oh. You're standing in my light. ...Sorry. Silas Reed. I "
+                 "paint. You're the farmer. Your field looks like a Breughel. "
+                 "That's a compliment.",
+        "greet": [["Oh. Hello.", "Hm. Hello. You're in my light again."],
+                  ["(happy){name}. Good. You're interesting today.",
+                   "Hello. Don't move. ...No, go on, move. I was just looking."],
+                  ["(happy){name}. I was hoping you'd pass by.",
+                   "(happy)Ah, my favourite subject."],
+                  ["(blush){name}. Every colour I mix lately comes out the "
+                   "colour of your coat."]],
+        "chat": [["The light here in the evening. It's ridiculous. It makes "
+                  "everything look like a lie.",
+                  "Rusty says I dress like a mournful lamp post. Rusty's not "
+                  "wrong.",
+                  "I can't paint people well. They keep having feelings at "
+                  "me."],
+                 ["(happy)I painted the fountain forty times. It's never the "
+                  "same fountain twice.",
+                  "(laugh)Benji asked me to paint a dragon. I did. Now he wants "
+                  "me to paint it eating Agnes's roses.",
+                  "Do you ever just look at a hay field? Really look? No? You "
+                  "should. You made one."],
+                 ["(sad)My family wanted me to be a lawyer. I wanted to be a "
+                  "painter. We haven't spoken in three years.",
+                  "(happy)I'm working on something new. I won't tell you what. "
+                  "It's got a lot of your farm in it.",
+                  "I used to paint storms. Now I paint mornings. I don't know "
+                  "what changed. ...Well. I might."],
+                 ["(happy)You're the only thing in this valley I can't get "
+                  "right on canvas. I'll keep trying. Forever, probably."]],
+        "season": ["Spring. Too many colours. It's showing off.",
+                   "Summer. The light goes on and on. I never sleep in summer.",
+                   "(happy)Fall. My season. Ochre and rust and crimson. I "
+                   "could eat it.",
+                   "Winter. White on white on white. It's harder than it "
+                   "looks."],
+        "rain": "Rain. Grey's an underrated colour. Fifty kinds of it out "
+                "there today.",
+        "topics": {
+            "painter": "I sell landscapes to the city galleries. They pay for "
+                       "the cottage and the paint. Mostly the paint.",
+            "light": "(happy)Painters chase light. That's all we really do. "
+                     "Here it's golden till half past nine in summer.",
+            "family": "(sad)They're not bad people. They just wanted a son "
+                      "who made sense. I paint clouds for a living.",
+            "portrait": "(blush)I don't do portraits. I've started one. Don't "
+                        "ask me whose.",
+        },
+        "opinions": {
+            "rusty": "(laugh)Rusty and I are the valley's two artists. We "
+                     "disagree about everything. It's wonderful.",
+            "marisol": "(blush)Marisol's bakery has the best light at dawn. "
+                       "And the best bread. Both reasons are legitimate.",
+            "dmitri": "Dmitri and I stay up late. He looks at stars, I look at "
+                      "shadows. We don't talk much. It's restful.",
+            "agnes": "(cross)Agnes said my painting looked 'unfinished.' It "
+                     "was finished. It was a minimalist piece. ...It wasn't "
+                     "finished.",
+        },
+        "gift": {"love": "(happy)Oh. This is... I'm going to paint this. "
+                         "Thank you.",
+                 "like": "(happy)Thank you. Thoughtful.",
+                 "neutral": "Hm. Thank you.",
+                 "dislike": "Ah. That's... a texture.",
+                 "hate": "(cross)Please don't. Take it away."},
+        "unknown": "I don't know. I only know about light and colour and "
+                   "ruining canvases.",
+        "scenes": {
+            2: ["*Silas is at his easel by the river, glaring at a canvas.",
+                "It's wrong. The water's wrong. It looks like soup.",
+                ("?", "He offers you the brush.",
+                 [("Let me try.", 40,
+                   "(laugh)That's... a duck? You've painted a duck. In the "
+                   "middle of my river. I love it. I'm keeping it."),
+                  ("It looks fine to me.", 20,
+                   "Fine? FINE? ...You're right. I'm being dramatic. It looks "
+                   "like soup, but fine soup.")])],
+            4: ["*Silas sits on his studio step, a letter unopened in his "
+                "lap.",
+                "(sad)It's from my father. First one in three years.",
+                ("?", "He hasn't opened it.",
+                 [("Open it together?", 50,
+                   "(sad)'Saw your painting in the city gallery. It was good, "
+                   "son.' ...That's all. That's... a lot, from him."),
+                  ("You don't have to read it.", 30,
+                   "(happy)No. I don't. ...I will. Tomorrow. Thank you for "
+                   "sitting with me.")])],
+            6: ["*Silas's studio. A canvas turned to the wall. He won't let "
+                "you see it.",
+                "(blush)It's the portrait. The one I said I wasn't doing.",
+                "*He turns it round. It's you, in your fields, at sunset.",
+                ("?", "He watches your face.",
+                 [("It's beautiful.", 60,
+                   "(blush)It's not even close. You're harder to paint than "
+                   "any sky."),
+                  ("Is that really how you see me?", 40,
+                   "(blush)Every day. That's the problem.")])],
+            8: ["*Silas meets you on the bridge at dusk, paint on his hands, "
+                "no scarf for once.",
+                "(blush)I've been trying to paint this feeling for weeks. "
+                "I've ruined eleven canvases.",
+                "So I'll just say it, plainly, like a person instead of a "
+                "painter. I love you, {name}.",
+                "(happy)...There. That was easier than the sky."],
+        },
+        "date": ["*You and Silas sit on the hill above the valley as he "
+                 "sketches the sunset.",
+                 "(happy)Look. Right there. That's the exact moment. It only "
+                 "lasts a minute.",
+                 "(blush)I'm glad I got to see it with you."],
+        "dating": ["(blush)I've stopped painting storms entirely. Rusty says "
+                   "it's a crisis. I say it's you.",
+                   "(happy)There's a sketch of you in every notebook I own "
+                   "now."],
+        "spouse": ["(happy)Morning. I painted the sunrise from the window. "
+                   "You're in it, asleep.",
+                   "(blush)Our home has better light than any studio.",
+                   "I got paint on the kitchen table. It's art now."],
+        "sched": {"day": [(600, "studio.2"), (900, "studio.1"),
+                          (1200, "out.bench2"), (1400, "out.riverbank2"),
+                          (1800, "studio.3"), (2000, "inn.7"),
+                          (2300, "studio.2")],
+                  "rest_s": [(600, "studio.2"), (1000, "out.woods2"),
+                             (1400, "out.bluff"), (1800, "studio.3"),
+                             (2000, "inn.7"), (2300, "studio.2")],
+                  "rain_s": [(600, "studio.2"), (900, "studio.1"),
+                             (1800, "studio.3"), (2300, "studio.2")]},
+        "shop": None,
+    },
+    "dmitri": {
+        "name": "Dmitri Orlov", "short": "Dmitri", "romance": True,
+        "job": "the valley's ASTRONOMER. I keep the observatory, chart the "
+               "stars, and write very long letters to very short journals",
+        "look": {"face": "M", "body": "M", "skin": 0, "hair": "#1e1a1a",
+                 "style": "short", "eyes": "#6a7080", "shirt": "#2a2a3a",
+                 "pants": "#2a2a3a", "bg": "#3a4a7a",
+                 "extras": ("glasses", "coat"), "coatc": "#4a4a6a"},
+        "birthday": (3, 27), "home": "observatory", "rest": 0,
+        "loves": ["tea", "book of poems", "golden carp"],
+        "likes": ["coffee", "blueberry", "snow yam", "winter root",
+                  "chocolate"],
+        "dislikes": ["daffodil", "salad"],
+        "hates": ["energy tonic", "dandelion"],
+        "intro": "Mm? Ah. Hello. Dmitri Orlov. I keep the observatory. You'll "
+                 "forgive me, I've been up all night. I'm always up all night. "
+                 "Stars don't come out in the day.",
+        "greet": [["Good... morning? Evening? Hello.",
+                   "Ah. Hello. Forgive me, I'm half asleep."],
+                  ["(happy){name}. Hello. Did you see the moon last night?",
+                   "Hello, {name}. You look well. Well-rested. I envy you."],
+                  ["(happy){name}. I found a comet and thought of you. That's "
+                   "not normal, is it.", "(happy)Ah, {name}. Good."],
+                  ["(blush){name}. The stars are dimmer than you. I've checked."]],
+        "chat": [["Jupiter is very bright this month. It's the one that "
+                  "doesn't twinkle.",
+                  "I sleep until noon. The village thinks I'm lazy. I'm "
+                  "nocturnal. There's a difference.",
+                  "Silas and I are the only two people awake at three in the "
+                  "morning. We nod at each other. It's a friendship."],
+                 ["(happy)On a clear night you can see the Milky Way from the "
+                  "bluff. Most people have never really seen it.",
+                  "The observatory telescope is a hundred years old. It "
+                  "squeaks. I've named it Grigori.",
+                  "(laugh)Benji asked if I could see the man in the moon. I "
+                  "said he waved. Now Benji waves at the moon every night."],
+                 ["(sad)I left a job at a big university. Too many people, "
+                  "too much light. I couldn't see anything up there.",
+                  "(happy)I've named a small asteroid. I'm not allowed to say "
+                  "what. It's pending. It might be something about you.",
+                  "Do you know the light from some stars left before anyone "
+                  "lived here? We're looking at the past, every night."],
+                 ["(happy)You're my favourite thing in the sky, {name}. And "
+                  "you're not even in it."]],
+        "season": ["Spring. The nights shorten. Fewer stars, more birds.",
+                   "Summer. Meteor showers. Come to the bluff one night.",
+                   "Fall. Crisp air, clear skies. My favourite season for "
+                   "looking up.",
+                   "(happy)Winter. Long nights. The best stars of the year. I "
+                   "barely sleep."],
+        "rain": "(sad)Clouds. No stars tonight. I'll read. I always read.",
+        "topics": {
+            "astronomer": "I chart variable stars. Stars that change "
+                          "brightness. Like people, but slower.",
+            "observatory": "(happy)It was built by an eccentric old lady a "
+                           "century ago. She left it to whoever would look "
+                           "after the telescope. That's me.",
+            "comet": "(happy)There's a faint one in the east before dawn. "
+                     "It'll be gone in a week. Some things you have to see "
+                     "while you can.",
+            "university": "(sad)Twelve years in the city. Brilliant people, "
+                          "orange sky. I hadn't seen a real star in a decade.",
+        },
+        "opinions": {
+            "silas": "Silas understands the night. We don't talk. It's the "
+                     "most comfortable silence I know.",
+            "juniper": "(happy)Juniper orders star atlases for me. She reads "
+                       "them first. I don't mind.",
+            "benji": "(laugh)Benji wants to be an astronaut. Or a knight. "
+                     "Possibly a space knight.",
+            "amy": "Amy and I exchange puzzles. Hers are harder. I've never "
+                   "told her.",
+        },
+        "gift": {"love": "(happy)Oh. Oh, that's... thank you. Truly.",
+                 "like": "(happy)Thank you, that's kind.",
+                 "neutral": "Thank you.",
+                 "dislike": "Ah. Hm. Thank you, I suppose.",
+                 "hate": "(cross)Ah. No. Sorry. No."},
+        "unknown": "I'm afraid that's not in the sky, so I don't know.",
+        "scenes": {
+            2: ["*Dmitri is on the bluff at midnight, his old telescope "
+                "pointed east.",
+                "Ah! Perfect timing. Look. There. That smudge.",
+                ("?", "You look through the eyepiece.",
+                 [("Is that a comet?", 40,
+                   "(happy)It is! Seventy-six years since it last passed. "
+                   "You'll be old next time. So will I."),
+                  ("I just see a blur.", 20,
+                   "(laugh)That blur is a ball of ice a billion miles away. "
+                   "Blurs are underrated.")])],
+            4: ["*Dmitri sits on the observatory steps at dusk, a letter in "
+                "his hand.",
+                "(sad)The university wants me back. More money. More "
+                "telescopes. More orange sky.",
+                ("?", "He folds the letter carefully.",
+                 [("Will you go?", 40,
+                   "(sad)...No. I can see the stars here. And other things I "
+                   "didn't know I was missing."),
+                  ("We'd miss you.", 50,
+                   "(happy)Would you? ...Then I'll stay. Grigori would sulk "
+                   "if I left anyway.")])],
+            6: ["*Dmitri shows you a star chart covered in tiny handwriting.",
+                "(blush)I found a new star. Very faint. It's mine to name.",
+                "I've been calling it by your name. In my notes. Just in my "
+                "notes.",
+                ("?", "He won't look up from the chart.",
+                 [("Make it official.", 60,
+                   "(blush)...All right. There'll be a star with your name. "
+                   "For a few thousand years at least."),
+                  ("Why my name?", 40,
+                   "(blush)Because it's the brightest thing I've seen in a "
+                   "long time. Both of them are.")])],
+            8: ["*Dmitri meets you on the bluff under the full sky, no "
+                "telescope for once.",
+                "(blush)I've spent my whole life looking up. I've just "
+                "realised I'd rather look at you.",
+                "I love you, {name}. I've checked my calculations. They're "
+                "correct.",
+                "(happy)...Please say something. My heart is doing things "
+                "that aren't in any textbook."],
+        },
+        "date": ["*You and Dmitri lie on a blanket on the bluff, counting "
+                 "shooting stars.",
+                 "(happy)That's eleven. Twelve! Did you make a wish?",
+                 "(blush)I didn't need to. Mine's already here."],
+        "dating": ["(blush)I keep forgetting to look at the sky. I'm looking "
+                   "at the path to your farm instead.",
+                   "(happy)I've taken to sleeping at night. Some nights. "
+                   "Grigori is scandalised."],
+        "spouse": ["(happy)Good morning. I stayed up and watched the dawn come "
+                   "in on you.",
+                   "(blush)Our house has the best stars. They're all in the "
+                   "kitchen. I mean you.",
+                   "I made tea. And breakfast. And charted Venus."],
+        "sched": {"day": [(600, "observatory.2"), (1200, "observatory.1"),
+                          (1500, "library.4"), (1800, "observatory.3"),
+                          (1930, "inn.9"), (2100, "out.bluff"),
+                          (2600, "observatory.2")],
+                  "rest_s": [(600, "observatory.2"), (1300, "out.bench1"),
+                             (1600, "observatory.3"), (2100, "out.stargaze"),
+                             (2600, "observatory.2")],
+                  "rain_s": [(600, "observatory.2"), (1200, "observatory.1"),
+                             (1500, "library.4"), (1900, "inn.9"),
+                             (2200, "observatory.3")]},
+        "shop": None,
+    },
+    "jonah": {
+        "name": "Jonah Brooks", "short": "Jonah", "romance": True,
+        "job": "a SHEPHERD. I keep the flock up on the east hill. Forty "
+               "sheep, one bad-tempered goat, and me",
+        "look": {"face": "M", "body": "M", "skin": 4, "hair": "#1e1a1a",
+                 "style": "short", "eyes": "#5a3a1e", "shirt": "#6a8a4a",
+                 "pants": "#5a4a3a", "bg": "#c8e0b0",
+                 "extras": ("beard", "hat"), "hatc": "#8a6a3a",
+                 "hat": "#8a6a3a",
+                 "band": "#5a3a2a"},
+        "birthday": (1, 8), "home": "jonah", "rest": 6,
+        "loves": ["wool scarf", "apple pie", "corn"],
+        "likes": ["bread", "stew", "hazelnut", "pea", "kind:crop"],
+        "dislikes": ["coral", "sheet music"],
+        "hates": ["eel", "energy tonic"],
+        "intro": "Oh. Hello. Didn't hear you come up. Jonah Brooks. I keep "
+                 "the sheep on the hill. ...I'm not much of a talker. Sorry. "
+                 "The sheep don't mind.",
+        "greet": [["Oh. Hello.", "Hello. ...Nice day."],
+                  ["(happy){name}. Good to see you.",
+                   "(happy)Hello, {name}. The sheep say hello too."],
+                  ["(happy){name}! I was hoping you'd come by.",
+                   "(happy)There you are. I saved you a spot on the wall."],
+                  ["(blush){name}. ...Hello. I'm very glad you're here."]],
+        "chat": [["Sheep are smarter than people think. Not much smarter. "
+                  "But a bit.",
+                  "My goat's called Duchess. She hates me. She hates "
+                  "everyone. It's nothing personal.",
+                  "Agnes says I should talk more. I said 'Mm.' She wasn't "
+                  "impressed."],
+                 ["(happy)I know every sheep by name. Forty names. I forget "
+                  "people's names. Not sheep.",
+                  "(laugh)Benji rode one of my sheep last week. The sheep was "
+                  "more surprised than Benji.",
+                  "Bea comes up to check the flock. She talks enough for both "
+                  "of us. It's nice."],
+                 ["(sad)My mother kept these sheep. And her father. I'm the "
+                  "last Brooks on the hill. Sometimes that's heavy.",
+                  "(happy)I sheared the softest fleece of the year and kept it "
+                  "back. Don't know why. ...I might know why.",
+                  "When it's lambing season I sleep in the barn with them. "
+                  "Best nights of the year. Cold, but good."],
+                 ["(happy)I used to think the hill was the whole world. Now "
+                  "I'd walk down it every day for you."]],
+        "season": ["(happy)Spring. Lambs. Best time of year. Come see them.",
+                   "Summer. Shearing. Hot work. The sheep don't like it "
+                   "either.",
+                   "Fall. Bringing them down off the high pasture before the "
+                   "cold.",
+                   "Winter. Hay and frozen water troughs. Long days. Warm "
+                   "sheep, though."],
+        "rain": "Rain. The sheep don't mind. I mind a little. Not much.",
+        "topics": {
+            "shepherd": "I'm up at dawn, count them, move them to fresh grass, "
+                        "count them again. There's always one missing. It's "
+                        "always the same one.",
+            "duchess": "(laugh)The goat. She ate my hat once. And my other "
+                       "hat. I'm on my third hat.",
+            "wool": "(happy)I send the fleece to the mill in the city. The "
+                    "best one I keep. Rusty spins it into something "
+                    "beautiful.",
+            "lambs": "(happy)Spring, every year. The first one always comes at "
+                     "three in the morning in the rain. Every year.",
+        },
+        "opinions": {
+            "bea": "(happy)Bea's the best vet in three valleys. Talks the "
+                   "whole time. The sheep love her.",
+            "agnes": "Agnes thinks I'm rude. I'm just quiet. She's kind "
+                     "underneath. Very far underneath.",
+            "rusty": "(happy)Rusty makes things from my wool. Scarves, coats. "
+                     "She calls me 'Shepherd Darling.'",
+            "otto": "(laugh)Otto shod Duchess once. Duchess kicked him into "
+                    "the trough. They're friends now.",
+        },
+        "gift": {"love": "(happy)Oh. That's... thank you. I'll keep it.",
+                 "like": "(happy)Thank you. That's kind.",
+                 "neutral": "Mm. Thank you.",
+                 "dislike": "Oh. Thanks. ...The goat might eat it.",
+                 "hate": "(cross)...No. Sorry. No."},
+        "unknown": "Mm. Don't know. Sorry.",
+        "scenes": {
+            2: ["*Jonah is on the hill, holding a tiny shivering lamb.",
+                "Born early. Her mother won't take her. I'm feeding her by "
+                "hand.",
+                ("?", "He holds out the bottle.",
+                 [("Can I feed her?", 40,
+                   "(happy)Gently. Like that. ...She likes you. She doesn't "
+                   "like anyone. You should name her."),
+                  ("She's so small.", 30,
+                   "(sad)She is. She'll grow. They always surprise you.")])],
+            4: ["*Jonah sits on the stone wall at the top of the hill, "
+                "looking at the empty pasture.",
+                "(sad)My mother walked this wall every morning. Thirty years. "
+                "She'd have liked you.",
+                ("?", "He's quiet a long while.",
+                 [("Tell me about her.", 50,
+                   "(happy)She sang to the sheep. Terrible voice. They loved "
+                   "it. ...I can't sing. I talk to them instead."),
+                  ("You're not alone up here.", 40,
+                   "(happy)No. I suppose I'm not. Not anymore.")])],
+            6: ["*Jonah is waiting by your farm gate with a folded bundle.",
+                "(blush)The softest fleece of the year. Rusty helped me make "
+                "it into a scarf. For you.",
+                ("?", "He holds it out, not quite meeting your eye.",
+                 [("I'll wear it every day.", 60,
+                   "(blush)...Even in summer? ...You don't have to. But I'd "
+                   "like that."),
+                  ("You kept the best one for me?", 40,
+                   "(blush)Kept it back all spring. Didn't know why. I know "
+                   "now.")])],
+            8: ["*Jonah meets you on the hill at sunset, the whole flock "
+                "grazing around you.",
+                "(blush)I've been practising this for a week. Out loud. To "
+                "the sheep.",
+                "I love you, {name}. That's it. That's all I practised.",
+                "(happy)...Duchess bit me during the practice. I think it "
+                "means she approves."],
+        },
+        "date": ["*You and Jonah sit on the hill wall as the sheep settle "
+                 "down for the night.",
+                 "(happy)Listen. That's all forty of them breathing. Best "
+                 "sound I know.",
+                 "(blush)Second best. You laughing is first."],
+        "dating": ["(blush)I named the lamb after you. She follows me "
+                   "everywhere. Like I follow you.",
+                   "(happy)Agnes says I've been talking more. I said 'Mm.' "
+                   "But I smiled."],
+        "spouse": ["(happy)Morning. Fed the flock, and the hens. And you, "
+                   "there's porridge.",
+                   "(blush)Coming home to you beats coming down the hill to "
+                   "an empty house.",
+                   "Duchess followed me here. She's in the garden. Sorry."],
+        "sched": {"day": [(600, "jonah.1"), (700, "out.pasture"),
+                          (1200, "out.pasture2"), (1300, "out.pasture"),
+                          (1800, "jonah.2"), (1930, "inn.8"),
+                          (2130, "jonah.1")],
+                  "rest_s": [(600, "jonah.1"), (900, "out.pasture"),
+                             (1300, "out.fountain_w"), (1600, "out.eastlane"),
+                             (1930, "inn.8"), (2130, "jonah.1")],
+                  "rain_s": [(600, "jonah.1"), (800, "out.pasture"),
+                             (1100, "jonah.2"), (1700, "inn.8"),
+                             (2100, "jonah.1")]},
+        "shop": None,
+    },
+    "clara": {
+        "name": "Clara Ashford", "short": "Clara", "romance": False,
+        "job": "the POSTMISTRESS. Letters in, letters out, eight till five, "
+               "and every bit of news in between",
+        "look": {"face": "F", "body": "F", "skin": 2, "hair": "#8a4a22",
+                 "style": "bun", "eyes": "#3a8a4a", "shirt": "#4a5a8a",
+                 "collar": "#e8e0d0", "pants": "#3a3a4a", "bg": "#d8d0e8",
+                 "extras": ("glasses",), "glassc": "#7a5a3a"},
+        "birthday": (2, 5), "home": "postoffice", "rest": 5,
+        "loves": ["coffee", "wool scarf", "apple pie"],
+        "likes": ["tea", "rose", "chocolate", "sweet pea", "book of poems"],
+        "dislikes": ["fish supper", "fiber"],
+        "hates": ["eel", "holly"],
+        "intro": "Good morning. Clara Ashford, postmistress. Your mail comes "
+                 "through me, so I already know you've got a letter from your "
+                 "aunt. Don't worry. I never read them. Much.",
+        "greet": [["Good day.", "Morning. No parcels for you today."],
+                  ["(happy){name}. Good to see you.",
+                   "(happy)Hello, {name}. Benji's been asking about you."],
+                  ["(happy){name}! Sit, sit, I'll put the kettle on.",
+                   "(happy)There you are. I was just saying to Benji..."],
+                  ["(happy){name}! You're family now. That means you get the "
+                   "good biscuits."]],
+        "chat": [["Every letter tells a story. Usually a boring one. Bills, "
+                  "mostly.",
+                  "(laugh)Benji wants to deliver the post. On a sheep. I've "
+                  "said no forty times.",
+                  "If you want to send anything to the city, bring it by "
+                  "before four. The cart leaves at five sharp."],
+                 ["(happy)Benji's dad was the postman before me. I took over "
+                  "when he passed. Benji says I do it 'almost as well.'",
+                  "Mabel thinks she knows all the gossip. Mabel doesn't sort "
+                  "the mail.",
+                  "(laugh)Agnes sends a complaint to the city council every "
+                  "week. About her neighbour's hedge. Her neighbour is Bea."],
+                 ["(sad)Some nights, after Benji's asleep, I write letters to "
+                  "Thomas. I don't send them. Where would I send them?",
+                  "(happy)Benji's started reading everything. Labels, signs, "
+                  "my letters. I've had to hide my diary.",
+                  "Thank you for being kind to Benji. He talks about you all "
+                  "the time. 'The farmer says this, the farmer says that.'"],
+                 ["(happy)I'm glad you came to this valley, {name}. We both "
+                  "are. Benji and me."]],
+        "season": ["Spring. Everyone writes to their relatives in spring. I "
+                   "don't know why.",
+                   "Summer. Postcards. Hundreds of postcards. Everyone's "
+                   "somewhere lovely except me.",
+                   "Fall. Back-to-school letters. Benji's dreading it.",
+                   "(happy)Winter. Cards! Everybody sends cards. I love "
+                   "winter."],
+        "rain": "Rain. The mail gets soggy. I spend the day drying letters on "
+                "the stove.",
+        "topics": {
+            "postmistress": "I sort, stamp and send. The cart comes from the "
+                            "city twice a week. I know everyone's handwriting "
+                            "in the valley.",
+            "benji": "(happy)My son. Eight. Wants to be a knight. Or a "
+                     "postman. Or a knight who delivers post.",
+            "thomas": "(sad)Benji's father. He was the postman. Four years "
+                      "ago. Pneumonia. I still look for his handwriting.",
+            "gossip": "(laugh)I never read the post. I just notice who gets "
+                      "a lot of pink envelopes.",
+        },
+        "opinions": {
+            "benji": "(happy)My boy. My whole world. He's going to be taller "
+                     "than me by spring.",
+            "mabel": "(laugh)Mabel and I trade news. She tells me what people "
+                     "say. I tell her what people send.",
+            "agnes": "Agnes is very particular about her stamps. Very. "
+                     "Particular.",
+            "dmitri": "Dmitri gets the most post of anyone. All journals. All "
+                      "about stars. He's never once had a postcard.",
+        },
+        "gift": {"love": "(happy)Oh, how lovely! Thank you, really.",
+                 "like": "(happy)That's kind. Thank you.",
+                 "neutral": "Thank you, dear.",
+                 "dislike": "Oh. Well. Thank you anyway.",
+                 "hate": "(cross)Oh, no. No, thank you."},
+        "unknown": "Not sure. Write to someone and ask. I'll send it.",
+        "scenes": {
+            2: ["*Clara is in the post office, surrounded by spilled "
+                "letters. Benji is under the counter, giggling.",
+                "(cross)Benji! You can't hide in the mail sack! ...Oh, hello. "
+                "Don't mind us.",
+                ("?", "Letters everywhere.",
+                 [("Let me help you sort.", 40,
+                   "(happy)Bless you. A to M in that pile, N to Z in this. "
+                   "Benji, you can do 'unreadable.'"),
+                  ("Is he all right in there?", 30,
+                   "(laugh)He's fine. He's 'guarding the treasure.' The "
+                   "treasure is Agnes's seed catalogue.")])],
+            5: ["*Clara sits on the post office step at dusk, a stack of "
+                "unsent letters in her lap.",
+                "(sad)They're to Thomas. Benji's father. I write to him every "
+                "month. Four years now.",
+                ("?", "She holds them close.",
+                 [("Do they help?", 40,
+                   "(sad)They do. It's like he's still at the end of a postal "
+                   "route somewhere. Just a very long one."),
+                  ("He'd be proud of you both.", 50,
+                   "(happy)...Thank you. I needed someone to say that. "
+                   "Benji's lucky to have friends like you.")])],
+        },
+        "sched": {"day": [(600, "postoffice.2"), (800, "postoffice.1"),
+                          (1300, "out.fountain_s"), (1400, "postoffice.1"),
+                          (1700, "out.eastgreen"), (1900, "postoffice.2")],
+                  "rest_s": [(600, "postoffice.2"), (1000, "out.beach2"),
+                             (1300, "store.3"), (1600, "out.eastgreen"),
+                             (1900, "postoffice.2")],
+                  "rain_s": [(600, "postoffice.2"), (800, "postoffice.1"),
+                             (1700, "postoffice.2")]},
+        "shop": None,
+    },
+    "benji": {
+        "name": "Benji Ashford", "short": "Benji", "romance": False,
+        "job": "a KNIGHT. In training. Also I go to school. In the library. "
+               "With Pip. Mostly I'm a knight",
+        "look": {"face": "M", "body": "C", "age": "child", "skin": 2,
+                 "hair": "#8a4a22", "style": "messy", "eyes": "#3a8a4a",
+                 "shirt": "#c04a3a", "pants": "#3a4a6a", "bg": "#f0e0a0",
+                 "extras": ("freckles",)},
+        "birthday": (0, 27), "home": "postoffice", "rest": 6,
+        "loves": ["chocolate", "honey cake", "seashell"],
+        "likes": ["apple", "pancakes", "strawberry", "blackberry",
+                  "kind:fish"],
+        "dislikes": ["salad", "coffee"],
+        "hates": ["eggplant", "tea"],
+        "intro": "HALT! Who goes there? ...Oh, you're the farmer. I'm Benji! "
+                 "I'm eight! I'm a knight! Well, in training. Mum says I "
+                 "can't have a real sword till I'm twenty.",
+        "greet": [["HALT! Oh, it's you. Hello!", "Hi! Are you a dragon? No? "
+                   "OK."],
+                  ["(laugh){name}! I mean, Sir {name}!",
+                   "(happy)Hi! Want to see my shield? It's a pan lid."],
+                  ["(laugh){name}! You're my best grown-up friend! After Mum!",
+                   "(happy)I've been guarding your farm! From dragons!"],
+                  ["(happy){name}! I'm going to make you a knight! An honorary "
+                   "one!"]],
+        "chat": [["Pip says he's an explorer. I'm a knight. Knights are "
+                  "better. Pip says explorers are better. We're fighting "
+                  "about it.",
+                  "(laugh)I rode one of Jonah's sheep! It was SO fast! Then it "
+                  "stopped and I didn't!",
+                  "Mum says I can't have a horse. I asked for a sheep instead. "
+                  "She said no to that too."],
+                 ["(happy)Dmitri showed me Saturn through his telescope! It "
+                  "has a hat! A RING hat!",
+                  "I'm not allowed to take pies off Marisol's windowsill. I "
+                  "never did. A raccoon did. A raccoon called... not me.",
+                  "Gus says there's a fish in the lake as big as a cart. I'm "
+                  "going to catch it. Then I'll be a knight AND a fisherman."],
+                 ["(sad)My dad was the postman. He died when I was four. I "
+                  "don't remember him much. Mum does. She gets sad.",
+                  "(happy)When I'm a real knight, I'll protect the whole "
+                  "valley. And Mum. And you.",
+                  "I made you a medal. It's out of a bottle cap. It says "
+                  "BRAVEST. Because you are."],
+                 ["(happy)You're like my big brother. Or sister. Or uncle. "
+                  "Or something. The best one."]],
+        "season": ["(happy)Spring! Puddles! Puddles are moats!",
+                   "(laugh)Summer! No school! Beach! Sandcastles! Real ones "
+                   "with knights!",
+                   "(sad)Fall. School again. Juniper makes us do sums.",
+                   "(laugh)Winter! Snowball fights! I always win! Mostly!"],
+        "rain": "(happy)Rain! Mum says I have to stay in. I'm building a "
+                "castle out of the post sacks.",
+        "topics": {
+            "knight": "(laugh)Knights are brave and kind and fight dragons. "
+                      "There aren't any dragons here. I checked. I'm still "
+                      "ready.",
+            "mum": "(happy)My mum's the postmistress. She knows everyone. "
+                   "She's the best. Don't tell her I said.",
+            "pip": "(laugh)Pip's my best friend. And my enemy. Sometimes "
+                   "both in one day.",
+            "dragon": "(surprised)Have you SEEN one? Where? ...Oh. It was "
+                      "just Duchess the goat again, wasn't it.",
+        },
+        "opinions": {
+            "pip": "(laugh)Pip's my best friend! He's eleven! He knows "
+                   "EVERYTHING! Except he doesn't!",
+            "clara": "(happy)My mum! She's the best mum! She lets me lick the "
+                     "stamps!",
+            "dmitri": "(happy)Dmitri knows all the stars! He said one's "
+                      "called the Big Dipper! Like a spoon!",
+            "jonah": "(laugh)Jonah lets me help with the sheep! I'm the best "
+                     "at counting! I got to forty-six once!",
+        },
+        "gift": {"love": "(laugh)WOW! For me?! You're the BEST!",
+                 "like": "(happy)Cool! Thanks!",
+                 "neutral": "Oh. Thanks!",
+                 "dislike": "Ew. ...I mean, thank you.",
+                 "hate": "(cross)YUCK! No! Get it away!"},
+        "unknown": "Dunno! Ask Mum, she knows everything!",
+        "scenes": {
+            2: ["*Benji is guarding the bridge with a stick and a pan lid.",
+                "HALT! None shall pass without the password!",
+                ("?", "He looks at you very sternly.",
+                 [("Is it 'dragons'?", 40,
+                   "(laugh)YES! How did you know?! You must be a knight "
+                   "too! You may pass, Sir Farmer!"),
+                  ("I'll fight you for it!", 50,
+                   "(laugh)EN GARDE! ...You let me win! Did you let me win? "
+                   "Don't tell me!")])],
+            5: ["*Benji is sitting alone by the lake, very quiet.",
+                "(sad)Today's my dad's day. The day he... Mum's crying in the "
+                "kitchen. I came here.",
+                ("?", "He throws a pebble in the water.",
+                 [("Want to skip stones?", 50,
+                   "(happy)...OK. Dad taught Mum and Mum taught me. ...Look, "
+                   "four! He'd have said four was good."),
+                  ("Your mum needs a hug.", 40,
+                   "(sad)...Yeah. I'll go back. Knights look after people. "
+                   "Thanks.")])],
+        },
+        "sched": {"day": [(600, "postoffice.3"), (830, "library.4"),
+                          (1500, "out.eastgreen"), (1700, "out.board"),
+                          (1830, "postoffice.4"), (2000, "postoffice.3")],
+                  "rest_s": [(600, "postoffice.3"), (900, "out.beach"),
+                             (1200, "out.pasture"), (1500, "out.bridge"),
+                             (1800, "postoffice.4"), (2000, "postoffice.3")],
+                  "rain_s": [(600, "postoffice.3"), (830, "library.4"),
+                             (1500, "postoffice.4"), (2000, "postoffice.3")]},
+        "shop": None,
+    },
+    "gus": {
+        "name": "Gus Pemberton", "short": "Gus", "romance": False,
+        "job": "a FISHERMAN. Sixty years on this lake. Best fisherman in the "
+               "valley, whatever that Fairweather boy says",
+        "look": {"face": "M", "body": "M", "skin": 1, "hair": "#eeeeee",
+                 "style": "bald", "eyes": "#3a6ac0", "shirt": "#c8b890",
+                 "pants": "#3a3a4a", "bg": "#a8c8d8",
+                 "extras": ("beard", "hat", "wrinkles"), "hatc": "#3a4a6a",
+                 "hat": "#3a4a6a",
+                 "band": "#2a3a5a", "beardc": "#eeeeee"},
+        "birthday": (1, 23), "home": "boathouse", "rest": 3,
+        "loves": ["fish supper", "pike", "coffee"],
+        "likes": ["stew", "bread", "kind:fish", "fishing lure"],
+        "dislikes": ["rose", "sweet pea"],
+        "hates": ["salad", "chocolate"],
+        "intro": "Hmph. You'll be the new farmer. Gus Pemberton. I fish. Have "
+                 "done for sixty years. If Theo Fairweather tells you he's "
+                 "the best fisherman here, he's a liar.",
+        "greet": [["Hmph.", "Farmer."],
+                  ["(happy)Ah. It's you. Good.",
+                   "Morning, {name}. Fish are biting."],
+                  ["(happy){name}! Sit down, I'll tell you about the one that "
+                   "got away.", "(happy)There's my favourite landlubber."],
+                  ["(happy){name}. You're the closest thing I've got to "
+                   "family. Don't tell anyone I said that."]],
+        "chat": [["Fish don't like noise. People don't like quiet. That's why "
+                  "I fish.",
+                  "(cross)Theo uses fancy lures. In MY day we used a bent pin "
+                  "and patience.",
+                  "There's a pike in that lake as big as a horse. I've seen "
+                  "it twice. Nobody believes me."],
+                 ["(laugh)Benji wants to catch the big pike. I told him it ate "
+                  "my first boat. Now he's terrified and thrilled.",
+                  "Marisol gives me bread. I give her fish heads. She doesn't "
+                  "want fish heads. I keep bringing them.",
+                  "I taught Theo to fish when he was six. He's never forgiven "
+                  "me for being better."],
+                 ["(sad)My Edna and I fished this lake together forty years. "
+                  "Gone ten now. I still bring two rods.",
+                  "(happy)Theo's not bad. Don't tell him. He'd be insufferable.",
+                  "On still mornings the mist comes off the lake like ghosts. "
+                  "You should see it. Come out with me one day."],
+                 ["(happy)You're a good one, {name}. The valley's lucky. I'm "
+                  "lucky."]],
+        "season": ["Spring. Trout running. Busy days.",
+                   "Summer. Tourists on the beach. Scaring the fish. Hmph.",
+                   "Fall. Best fishing of the year. Cold water, hungry fish.",
+                   "Winter. Ice on the edges. Fish go deep. I go to the inn."],
+        "rain": "Rain! Best fishing weather there is. The fish don't know "
+                "they're wet.",
+        "topics": {
+            "fisherman": "Up before dawn, out on the water, home when the "
+                         "fish say so. Sixty years. Never once bored.",
+            "theo": "(cross)Fairweather! Fancy rods and fancy talk. ...He's "
+                    "a good lad. Don't you dare tell him.",
+            "pike": "(surprised)Big as a horse, I swear. Green as a pond. Eyes "
+                    "like lanterns. I'll catch her before I die.",
+            "edna": "(sad)My wife. Best caster I ever saw. She'd outfish me "
+                    "every time and never let me forget it.",
+        },
+        "opinions": {
+            "theo": "(cross)That boy thinks he invented fishing. I taught him "
+                    "to tie his first knot.",
+            "benji": "(happy)Benji's a good lad. Asks a hundred questions. "
+                     "Reminds me of me.",
+            "marisol": "(happy)Marisol feeds me. I'd be skin and bones "
+                       "otherwise.",
+            "rose": "(happy)Rose and I were sweethearts at fifteen. Then she "
+                    "met Harold and I met Edna. Worked out all right.",
+        },
+        "gift": {"love": "(happy)Well, now! That's a fine thing. Thank you.",
+                 "like": "(happy)Hmph. That's good. Thanks.",
+                 "neutral": "Hmph. Thanks.",
+                 "dislike": "Bah. What am I meant to do with this?",
+                 "hate": "(cross)Get that away from me."},
+        "unknown": "Don't know. Don't care. Ask me about fish.",
+        "scenes": {
+            2: ["*Gus is at the end of the dock in the grey dawn, two rods "
+                "propped up.",
+                "Sit down. Quiet. They can hear you think.",
+                ("?", "One of the rods twitches.",
+                 [("Is that a bite?", 40,
+                   "(laugh)Steady... steady... THERE! A fine trout! Beginner's "
+                   "luck. Mine, not yours."),
+                  ("Whose is the second rod?", 30,
+                   "(sad)...Edna's. My wife. I keep it out for her. Old habit. "
+                   "You can hold it, if you like.")])],
+            5: ["*Gus is mending a net on his boathouse step, slower than "
+                "usual.",
+                "(sad)Doctor says my hands are going. Arthritis. Another year "
+                "of fishing, maybe two.",
+                ("?", "He looks at his hands.",
+                 [("Teach me everything you know.", 50,
+                   "(happy)...You mean it? All right. Tomorrow at dawn. Don't "
+                   "be late. Fish don't wait."),
+                  ("You could teach Benji.", 40,
+                   "(happy)The boy? ...Aye. He'd like that. And Theo could use "
+                   "the competition.")])],
+        },
+        "sched": {"day": [(600, "boathouse.2"), (700, "out.dock_end"),
+                          (1200, "out.beach2"), (1300, "out.dock_end"),
+                          (1700, "boathouse.3"), (1900, "inn.3"),
+                          (2100, "boathouse.2")],
+                  "rest_s": [(600, "boathouse.2"), (1000, "boathouse.1"),
+                             (1300, "out.bench2"), (1600, "bakery.3"),
+                             (1900, "inn.3"), (2100, "boathouse.2")],
+                  "rain_s": [(600, "boathouse.2"), (700, "out.dock_end"),
+                             (1300, "boathouse.1"), (1800, "inn.3"),
+                             (2100, "boathouse.2")]},
+        "shop": None,
+    },
+    "agnes": {
+        "name": "Agnes Whitlock", "short": "Agnes", "romance": False,
+        "job": "retired. I taught at the village school for forty-one years. "
+               "Now I grow ROSES and keep standards",
+        "look": {"face": "F", "body": "F", "skin": 0, "hair": "#9a9a9a",
+                 "style": "bun", "eyes": "#6a7080", "shirt": "#7a4a6a",
+                 "pants": "#4a3a4a", "bg": "#e8c8d8",
+                 "extras": ("wrinkles", "glasses", "necklace"),
+                 "glassc": "#c8a040"},
+        "birthday": (2, 27), "home": "whitlock", "rest": 0,
+        "loves": ["rose", "tea", "book of poems"],
+        "likes": ["sweet pea", "daffodil", "crocus", "honey cake",
+                  "apple pie"],
+        "dislikes": ["fish supper", "coffee", "seashell"],
+        "hates": ["dandelion", "stone"],
+        "intro": "Hm. You're the farmer. Stand up straight, dear. Agnes "
+                 "Whitlock. I taught half this village to read. The other "
+                 "half I'm still working on.",
+        "greet": [["Good day. Posture, dear.", "Hm. Good morning."],
+                  ["(happy)Ah, {name}. Better.",
+                   "Good afternoon, {name}. You've washed. Good."],
+                  ["(happy){name}, dear. Come and see the roses.",
+                   "(happy)There you are. I've made scones."],
+                  ["(happy){name}. You were always my favourite pupil. You "
+                   "were never my pupil. You'd have been my favourite."]],
+        "chat": [["Roses need three things: sun, water, and a firm hand. So "
+                  "do children.",
+                  "(cross)Bea leaves her boots in the hall. Every day. "
+                  "Thirty-two years old.",
+                  "Mabel thinks she knows everything that happens here. Mabel "
+                  "doesn't have a front window facing the square."],
+                 ["(happy)I taught Edmund to spell. He still spells 'necessary' "
+                  "with two c's. I've given up.",
+                  "My Crimson Majesty rose has won the Harvest Fair nine years "
+                  "running. Ten, this year. Mark my words.",
+                  "(laugh)Benji Ashford put a frog in my watering can. Thomas "
+                  "did the same when he was eight. Like father, like son."],
+                 ["(sad)I never married. Never wanted to. I had my pupils. "
+                  "Forty-one years of other people's children. Now there's "
+                  "just Bea.",
+                  "(happy)You've done marvels with that farm. Your grandmother "
+                  "would be proud. She was a terrible speller, mind.",
+                  "I keep a scrapbook of every pupil I ever had. Two hundred "
+                  "and twelve. I could tell you about every one."],
+                 ["(happy)You're a credit to this valley, {name}. Gold star. "
+                  "I haven't given one in eleven years."]],
+        "season": ["(happy)Spring. The roses wake. I'm out at dawn with the "
+                   "secateurs.",
+                   "Summer. Greenfly. War. I take no prisoners.",
+                   "(happy)Fall. The Harvest Fair. I shall win. Again.",
+                   "Winter. Roses sleep. So do I, more than I'd admit."],
+        "rain": "Rain. Good for the roses. Bad for my knees. I'll allow it.",
+        "topics": {
+            "roses": "(happy)Forty bushes. Twelve varieties. The Crimson "
+                     "Majesty is my pride. Don't touch her.",
+            "school": "Forty-one years. The library schoolroom used to be mine. "
+                      "Juniper does well. I check her spelling.",
+            "bea": "(happy)My niece. The vet. She'd rather talk to a cow than "
+                   "a person. I raised her. She turned out splendidly.",
+            "standards": "Somebody in this valley has to have them, dear. It "
+                         "may as well be me.",
+        },
+        "opinions": {
+            "bea": "(happy)My niece. Too loud, too muddy, and too kind. I "
+                   "couldn't be prouder.",
+            "mabel": "(cross)Mabel Pike talks too much. ...We have tea every "
+                     "Tuesday. We talk too much together.",
+            "edmund": "Edmund was a dreadful pupil. He's not a bad mayor. "
+                      "He still can't spell.",
+            "silas": "Silas paints like a child who's been given too many "
+                     "colours. ...I bought one of his paintings. Don't tell "
+                     "him.",
+        },
+        "gift": {"love": "(happy)Oh! How thoughtful. Gold star, dear.",
+                 "like": "(happy)Very kind. Thank you.",
+                 "neutral": "Thank you, dear.",
+                 "dislike": "Hm. Well. It's the thought.",
+                 "hate": "(cross)I beg your pardon? No."},
+        "unknown": "I'm afraid that's not a subject I taught.",
+        "scenes": {
+            2: ["*Agnes is in her rose garden, scowling at a bush covered in "
+                "greenfly.",
+                "(cross)Look at this. An invasion. My Crimson Majesty!",
+                ("?", "She hands you a spray bottle.",
+                 [("I'll help you fight them.", 40,
+                   "(happy)Good. Leaves underneath, mind. Gently. ...You'd "
+                   "have done well in my class."),
+                  ("Could you just let the ladybirds eat them?", 30,
+                   "(surprised)...Hm. Bea said the same. Perhaps I'll try it. "
+                   "Don't tell her I listened.")])],
+            5: ["*Agnes is on her porch with an enormous scrapbook.",
+                "(happy)Two hundred and twelve pupils. Look. Edmund at nine. "
+                "Thomas Ashford at eight. That frog.",
+                ("?", "She turns a page and goes quiet.",
+                 [("Who's this?", 40,
+                   "(sad)Bea. Her first day at school. After her parents "
+                   "died, I took her in. She held my hand the whole day."),
+                  ("You loved them all.", 50,
+                   "(happy)Every single one. Even Edmund. ...Especially "
+                   "Edmund, I suppose. He needed it most.")])],
+        },
+        "sched": {"day": [(600, "whitlock.1"), (800, "out.flowerbed"),
+                          (1000, "whitlock.3"), (1300, "out.bench1"),
+                          (1500, "store.3"), (1700, "whitlock.3"),
+                          (2000, "whitlock.1")],
+                  "rest_s": [(600, "whitlock.1"), (900, "out.eastgreen"),
+                             (1200, "whitlock.3"), (1500, "library.2"),
+                             (1800, "whitlock.3"), (2000, "whitlock.1")],
+                  "rain_s": [(600, "whitlock.1"), (900, "whitlock.3"),
+                             (1400, "library.2"), (1700, "whitlock.3"),
+                             (2000, "whitlock.1")]},
+        "shop": None,
+    },
+    "bea": {
+        "name": "Bea Whitlock", "short": "Bea", "romance": False,
+        "job": "the VET. Sheep, cows, hens, goats, the occasional "
+               "unreasonable cat. If it has legs and complains, I treat it",
+        "look": {"face": "F", "body": "F", "skin": 5, "hair": "#1e1a1a",
+                 "style": "curly", "eyes": "#5a3a1e", "shirt": "#e8d8a0",
+                 "pants": "#4a6a8a", "bg": "#c8e8d0",
+                 "extras": ("overalls",)},
+        "birthday": (0, 3), "home": "whitlock", "rest": 2,
+        "loves": ["pancakes", "egg", "blackberry"],
+        "likes": ["apple", "corn", "stew", "kind:forage", "coffee"],
+        "dislikes": ["sheet music", "rose"],
+        "hates": ["energy tonic", "eel"],
+        "intro": "(laugh)Oh, hi! You're the farmer! Bea Whitlock, I'm the vet! "
+                 "If you ever get animals, I'll look after them! If you "
+                 "already have animals, are they all right? Let me see.",
+        "greet": [["(happy)Hi! How are you? How are your animals?",
+                   "Oh, hello!"],
+                  ["(laugh){name}! Hi! Guess what I saw today. A two-headed "
+                   "calf. No, really.", "(happy)Hey, {name}!"],
+                  ["(laugh){name}! My favourite! After the sheep. Kidding! "
+                   "Mostly!", "(happy)There you are! Sit, I'll talk at you."],
+                  ["(happy){name}! You're the only person I like as much as "
+                   "animals. That's a big deal."]],
+        "chat": [["Do you know a cow has four stomachs? People always say that. "
+                  "It's actually one stomach with four parts. I'm fun at "
+                  "parties.",
+                  "(laugh)Duchess the goat bit me again. That's eleven times "
+                  "this year. We're very close.",
+                  "Aunt Agnes says I talk too much. I say she listens too "
+                  "little. We get on great."],
+                 ["(happy)I helped deliver three of Jonah's lambs this spring. "
+                  "At three in the morning. In the rain. Best night ever.",
+                  "If your hens look droopy, give them grit and a bit of "
+                  "sun. And talk to them. They like that.",
+                  "(laugh)Mabel's cat Biscuit has seen me nine times. Nothing "
+                  "wrong with her. She just likes the attention."],
+                 ["(sad)My parents were vets too. In the city. I lost them "
+                  "when I was six. Aunt Agnes took me in. She's all "
+                  "starch and roses, but she sat up with me every night.",
+                  "(happy)Your animals are the healthiest in the valley. That's "
+                  "you, that is. I just check their teeth.",
+                  "Sometimes I think animals are easier than people. Then I "
+                  "meet someone like you and I'm not sure."],
+                 ["(happy)You're my best friend, {name}. Don't tell Duchess. "
+                  "She'd be furious."]],
+        "season": ["(happy)Spring! Lambs and calves and chicks! I don't sleep "
+                   "for a month!",
+                   "Summer. Flies. Everything has flies. I have flies.",
+                   "Fall. Checkups before winter. Teeth, hooves, feathers, the "
+                   "lot.",
+                   "Winter. Frozen water troughs. I break the ice every "
+                   "morning all over the valley."],
+        "rain": "Rain! Mud! I live in mud. It's practically a uniform.",
+        "topics": {
+            "vet": "(happy)I go round every farm in the valley. Jonah's sheep, "
+                   "your animals, Mabel's cat. Felix lets me use his clinic for "
+                   "the hard cases.",
+            "duchess": "(laugh)The goat! She's brilliant. Evil, but brilliant. "
+                       "She can open any gate. I've watched her.",
+            "agnes": "(happy)My aunt. Proper, strict, and secretly soft as "
+                     "butter. She knits jumpers for Jonah's lambs.",
+            "animals": "(happy)Animals don't lie. If they're hurting, they "
+                       "show you. If they love you, they show you. Simple.",
+        },
+        "opinions": {
+            "agnes": "(happy)Aunt Agnes! She raised me. She pretends she "
+                     "doesn't hug. She hugs.",
+            "jonah": "(happy)Jonah's sheep are the happiest sheep I've ever "
+                     "met. That's all him. He just doesn't say so.",
+            "felix": "Felix lets me borrow his clinic. He sighs a lot when I "
+                     "bring a goat in. Fair enough.",
+            "gus": "(laugh)Gus asked me to look at his hands once. I said I "
+                   "treat animals. He said 'close enough.'",
+        },
+        "gift": {"love": "(laugh)Oh my gosh! I love it! Thank you!",
+                 "like": "(happy)Ooh, nice! Thanks!",
+                 "neutral": "Oh, thanks!",
+                 "dislike": "Oh. Hm. Duchess might eat it.",
+                 "hate": "(cross)Ugh, no. Sorry. No."},
+        "unknown": "No idea! Ask me about animals instead!",
+        "scenes": {
+            2: ["*Bea is kneeling in the mud on Jonah's hill, a sheep in her "
+                "arms.",
+                "(happy)Hold her head for me? Gently. She's got a thorn in her "
+                "hoof. Brave girl.",
+                ("?", "The sheep bleats.",
+                 [("Like this?", 40,
+                   "(laugh)Perfect! You're a natural! ...There. Thorn out. "
+                   "She'll be dancing by teatime."),
+                  ("Is she going to kick me?", 20,
+                   "(laugh)Probably! Hold on anyway! ...See? Only a little "
+                   "kick. You're fine.")])],
+            5: ["*Bea sits outside Whitlock House at night, unusually quiet.",
+                "(sad)Lost one today. Old Gerald, Benji's favourite sheep. "
+                "Nothing I could do. Nineteen years old.",
+                ("?", "She wipes her eyes on her sleeve.",
+                 [("You gave him a good life.", 50,
+                   "(sad)Jonah did. I just helped at the end. ...Thank you. "
+                   "I'll tell Benji in the morning."),
+                  ("Do you want company?", 40,
+                   "(happy)...Yeah. Stay a bit. Aunt Agnes will bring tea. "
+                   "She always knows.")])],
+        },
+        "sched": {"day": [(600, "whitlock.2"), (800, "out.farm_gate"),
+                          (1100, "clinic.3"), (1400, "out.pasture"),
+                          (1700, "out.eastgreen"), (1900, "inn.a"),
+                          (2200, "whitlock.2")],
+                  "rest_s": [(600, "whitlock.2"), (1000, "out.pasture2"),
+                             (1300, "out.beach"), (1600, "whitlock.4"),
+                             (1900, "inn.a"), (2200, "whitlock.2")],
+                  "rain_s": [(600, "whitlock.2"), (800, "clinic.3"),
+                             (1400, "out.pasture"), (1700, "whitlock.4"),
+                             (2200, "whitlock.2")]},
+        "shop": None,
+    },
+    "nell": {
+        "name": "Nell Garrow", "short": "Nell", "romance": False,
+        "job": "the CLOCKMAKER. And tinker. If it ticks, whirs, or has "
+               "stopped doing either, bring it to me",
+        "look": {"face": "F", "body": "F", "skin": 1, "hair": "#a83a1e",
+                 "style": "ponytail", "eyes": "#8a6a2a", "shirt": "#5a4a3a",
+                 "pants": "#3a3a3a", "bg": "#e0c8a8",
+                 "extras": ("bandana", "freckles"), "bandc": "#e0a020"},
+        "birthday": (3, 8), "home": "workshop", "rest": 3,
+        "loves": ["fine tools", "coffee", "silver ring"],
+        "likes": ["stone", "chocolate", "corn", "coral", "pancakes"],
+        "dislikes": ["rose", "tea"],
+        "hates": ["holly", "salad"],
+        "intro": "Hm? Oh. Hold this. No, by the edge. ...Thanks. Nell Garrow, "
+                 "clockmaker. You're the farmer. Your well pump squeaks. I "
+                 "can hear it from here. I'll fix it. Don't argue.",
+        "greet": [["Hm. Hi.", "Oh. Hey."],
+                  ["(happy){name}. Good timing. Hold this.",
+                   "Hey, {name}. Something of yours is broken. I can tell."],
+                  ["(happy){name}! Come look at this. It's a gear. A really "
+                   "good gear.", "(happy)Hey. I fixed your gate. You're "
+                   "welcome."],
+                  ["(happy){name}. You're the only person who doesn't glaze "
+                   "over when I talk about escapements."]],
+        "chat": [["Every clock in the valley runs slow. Except mine. And the "
+                  "inn's, because I fixed it at two in the morning.",
+                  "(laugh)Otto and I argue about metal. He thinks hammering "
+                  "fixes everything. It doesn't. ...Usually.",
+                  "I'm building a mechanical bird. It flaps. It doesn't fly. "
+                  "Yet."],
+                 ["(happy)My gran built the clock in the square. It hasn't "
+                  "lost a minute in fifty years. I check it every Sunday.",
+                  "If anything on your farm squeaks, rattles or clunks, tell "
+                  "me. It hurts my ears.",
+                  "(laugh)Benji brought me a 'broken' sword. It was a stick. I "
+                  "fixed it anyway. It has a hilt now."],
+                 ["(sad)People think I don't like people. I do. I just don't "
+                  "know what to do with my hands when they're talking.",
+                  "(happy)The mechanical bird flew. Six feet. Then into a "
+                  "wall. Best six feet of my life.",
+                  "Gran said a good clock is one you forget about. It just "
+                  "keeps going, quietly. I think about that a lot."],
+                 ["(happy)You're like a good clock, {name}. Reliable. Steady. "
+                  "That's the best thing I can say about anyone."]],
+        "season": ["Spring. Damp gets in the gears. Busy season.",
+                   "Summer. Metal expands. Clocks run slow. Everyone blames "
+                   "me.",
+                   "Fall. I build things for the Harvest Fair. Mostly things "
+                   "that whirr.",
+                   "(happy)Winter. Long nights in the workshop. Perfect."],
+        "rain": "Rain. Rust weather. I'll be oiling hinges all over town.",
+        "topics": {
+            "clockmaker": "Clocks, watches, music boxes, pumps, hinges. If it "
+                          "moves, I can make it move better.",
+            "bird": "(happy)Brass and tin. Wings with forty-two joints. It "
+                    "flew six feet once. I'll get it to the fountain.",
+            "gran": "(sad)Gran Garrow. She built the square clock. Taught me "
+                    "everything. I've still got her eyeglass.",
+            "otto": "(laugh)Otto hits things. I fiddle with things. We're "
+                    "very different smiths. We like each other anyway.",
+        },
+        "opinions": {
+            "otto": "(laugh)Otto thinks a bigger hammer fixes anything. He's "
+                    "wrong, but he's fun to be wrong at.",
+            "rowan": "(happy)Rowan carves. I tinker. We sit in the smithy and "
+                     "don't talk. It's perfect.",
+            "dmitri": "I fixed Dmitri's telescope. Grigori. It squeaked. Now it "
+                      "doesn't. He was oddly sad about it.",
+            "benji": "(laugh)Benji's going to be an engineer. He doesn't know "
+                     "it yet. He thinks he's a knight.",
+        },
+        "gift": {"love": "(happy)Oh. Oh, nice. That's... really nice. Thanks.",
+                 "like": "(happy)Huh. Useful. Thanks.",
+                 "neutral": "Thanks.",
+                 "dislike": "Hm. Not sure what to do with that.",
+                 "hate": "(cross)Nope. No. Take it back."},
+        "unknown": "Don't know. Is it mechanical? No? Then I don't know.",
+        "scenes": {
+            2: ["*Nell's workshop. A small brass bird sits on the bench, "
+                "wings spread.",
+                "Watch. ...Watch. Come on. Come ON.",
+                ("?", "The bird twitches, flaps, and falls over.",
+                 [("It flapped! That's progress!", 40,
+                   "(laugh)It IS progress! Forty-two joints and one of them "
+                   "works! You're right. You're annoyingly right."),
+                  ("Maybe it needs a name.", 30,
+                   "(happy)...Huh. Maybe. I'll call it Tick. Come back when "
+                   "Tick flies.")])],
+            5: ["*Nell is in the square at dawn, up a ladder against the big "
+                "clock.",
+                "(sad)It stopped. Gran's clock. Fifty years and it stopped "
+                "last night.",
+                ("?", "She stares at the still hands.",
+                 [("You can fix it.", 50,
+                   "(happy)...Yeah. I can. Hand me the eyeglass. Gran's. "
+                   "...There. It's ticking. She'd have laughed at me for "
+                   "panicking."),
+                  ("Maybe it just needed a rest.", 40,
+                   "(laugh)A rest! Clocks don't rest! ...Gran would've liked "
+                   "you.")])],
+        },
+        "sched": {"day": [(600, "workshop.2"), (800, "workshop.1"),
+                          (1200, "out.eastbench"), (1300, "workshop.1"),
+                          (1700, "smithy.2"), (1900, "inn.4"),
+                          (2300, "workshop.2")],
+                  "rest_s": [(600, "workshop.2"), (1000, "out.square_n"),
+                             (1300, "workshop.3"), (1700, "smithy.2"),
+                             (1900, "inn.4"), (2300, "workshop.2")],
+                  "rain_s": [(600, "workshop.2"), (800, "workshop.1"),
+                             (1800, "workshop.3"), (2300, "workshop.2")]},
+        "shop": None,
+    },
 }
 
 ROMANCE = [k for k, v in VILLAGERS.items() if v["romance"]]
@@ -3834,6 +5089,8 @@ SHOP_STOCK = {
             ("honey cake", 140), ("stew", 150), ("fish supper", 180),
             ("apple pie", 200)],
     "clinic": [("energy tonic", 200), ("checkup", 0)],
+    "bakery": [("bread", 50), ("pancakes", 90), ("honey cake", 130),
+               ("apple pie", 180), ("chocolate", 80)],
     "smithy": [("sprinkler", 400), ("fine tools", 350),
                ("silver ring", 500), ("copper can", 800),
                ("blossom pendant", 2000)],
@@ -3865,7 +5122,7 @@ FESTIVALS = {   # (season, day): name, start, end, where, what you do
 # square, with the woods to the north and the lake to the south.  It is the
 # same in every game; only the farm's debris is dealt anew.
 
-VW, VH = 100, 72
+VW, VH = 124, 72
 FARM = (3, 3, 40, 48)               # the fence: x0, y0, x1, y1
 RIVER = (44, 46)
 LAKE_Y = 58
@@ -3888,6 +5145,15 @@ BUILDINGS = {
     "shack": (86, 43, 6, 5, "blue", "wood", "Theo's Shack"),
     "coop": (25, 21, 5, 4, "red", "wood", "your chicken coop"),
     "barn": (26, 8, 8, 5, "red", "wood", "your barn"),
+    # the east quarter
+    "bakery": (99, 21, 7, 5, "red", "brick", "Vega's Bakery"),
+    "postoffice": (107, 21, 7, 5, "blue", "white", "the Post Office"),
+    "workshop": (115, 21, 7, 5, "slate", "wood", "Garrow's Workshop"),
+    "studio": (99, 33, 7, 5, "green", "white", "Silas's Studio"),
+    "whitlock": (107, 33, 7, 5, "pink", "brick", "Whitlock House"),
+    "jonah": (115, 33, 7, 5, "thatch", "log", "Jonah's Cottage"),
+    "boathouse": (99, 45, 7, 5, "blue", "wood", "Gus's Boathouse"),
+    "observatory": (107, 45, 7, 5, "purple", "stone", "the Observatory"),
     "amy": (55, 9, 7, 5, "thatch", "wood", "Amy's Cottage"),
     "rusty": (76, 42, 7, 5, "purple", "white", "Rusty's Studio"),
 }
@@ -3909,14 +5175,19 @@ OUT_SPOTS = {
     "woods2": (88, 6), "carpentry_yard": (79, 6), "dock": (80, 55),
     "dock_end": (81, 61), "beach": (66, 54), "beach2": (92, 55),
     "stargaze": (70, 56), "farm_gate": (42, 27), "farmyard": (14, 26),
+    "eastgreen": (110, 30), "eastbench": (102, 30), "pasture": (118, 13),
+    "pasture2": (110, 12), "bluff": (110, 54), "eastlane": (118, 42),
 }
 FEST_SPOTS = {
     "square": [(71, 23), (74, 23), (77, 23), (80, 23), (71, 27), (79, 27),
                (72, 29), (78, 29), (74, 29), (76, 29), (70, 25), (80, 25),
-               (69, 27), (81, 27)],
+               (69, 27), (81, 27), (70, 29), (80, 29), (69, 23), (81, 23),
+               (73, 21), (77, 21), (73, 30), (77, 30), (70, 20), (80, 20)],
     "beach": [(50, 53), (53, 54), (56, 53), (59, 54), (62, 53), (65, 54),
               (68, 53), (71, 54), (74, 53), (77, 54), (84, 53), (87, 54),
-              (90, 53), (47, 54)],
+              (90, 53), (47, 54), (93, 54), (96, 53), (99, 54), (102, 53),
+              (105, 54), (108, 53), (111, 54), (114, 53), (117, 54),
+              (120, 53)],
 }
 
 
@@ -3968,10 +5239,15 @@ def make_valley(seed, built=()):
                 g[y][x] = ("pine" if r < 0.13 else "tree" if r < 0.22 else
                            "bush" if r < 0.26 else "tallgrass" if r < 0.5
                            else "meadow")
-            elif x > 94 and y < BEACH_Y:
+            elif 94 < x < 99 and y < BEACH_Y:
                 r = rng.random()
                 g[y][x] = "pine" if r < 0.3 else "tree" if r < 0.45 \
                     else "meadow"
+            elif x >= 99 and y < BEACH_Y:       # the east quarter
+                r = rng.random()
+                g[y][x] = ("tree" if r < 0.04 else "pine" if r < 0.07 else
+                           "meadow" if r < 0.25 else "flowers" if r < 0.28
+                           else "grass")
             elif rng.random() < 0.05:
                 g[y][x] = "meadow"
     # the lake, the beach, the river
@@ -4237,6 +5513,70 @@ ROOMS["rusty"] = ("floor", "W", (
     "W....3....W",
     "WTT...rr..W",
     "Whh.P.rr.PW",
+    "WWWWWxWWWWW"))
+ROOMS["bakery"] = ("tile", "W", (
+    "WWwWWWWWwWW",
+    "WOOR..S.B.W",
+    "W.1.....2.W",
+    "WCCCC.....W",
+    "W......3..W",
+    "WT.T..P..PW",
+    "WWWWWxWWWWW"))
+ROOMS["postoffice"] = ("floor", "W", (
+    "WWwWWWWWwWW",
+    "WSS.M..B.bW",
+    "W.1...2..3W",
+    "WCCC......W",
+    "W.....4...W",
+    "WP..rrr..PW",
+    "WWWWWxWWWWW"))
+ROOMS["workshop"] = ("boards", "W", (
+    "WWwWWWWWwWW",
+    "WXAc.L..B.W",
+    "W.1....2..W",
+    "Wcc.T.....W",
+    "W...h..3..W",
+    "WR.....P.RW",
+    "WWWWWxWWWWW"))
+ROOMS["studio"] = ("boards", "W", (
+    "WWwWWWWWwWW",
+    "WE.E.P..B.W",
+    "W.1.....2.W",
+    "W....3....W",
+    "WTT...rr..W",
+    "Whh.P.rr.PW",
+    "WWWWWxWWWWW"))
+ROOMS["whitlock"] = ("floor", "W", (
+    "WWwWWWWWwWW",
+    "WBP.F..P.BW",
+    "W.1.....2.W",
+    "W.TT.3....W",
+    "W.hh.4....W",
+    "WP..rrr..PW",
+    "WWWWWxWWWWW"))
+ROOMS["jonah"] = ("logfloor", "l", (
+    "llwllllwlll",
+    "lO..F...B.l",
+    "l.......1.l",
+    "l.TT..2...l",
+    "l.hh......l",
+    "lR..rrr..Pl",
+    "lllllxlllll"))
+ROOMS["boathouse"] = ("boards", "W", (
+    "WWwWWWWWwWW",
+    "WNN.R..b..W",
+    "W.1....2..W",
+    "W...T.....W",
+    "W...h..3..W",
+    "WR..c..R.PW",
+    "WWWWWxWWWWW"))
+ROOMS["observatory"] = ("stone_floor", "W", (
+    "WWwWWWWWwWW",
+    "WSS.T..B..W",
+    "W.1.....2.W",
+    "W....3....W",
+    "WSS....P..W",
+    "WP.......PW",
     "WWWWWxWWWWW"))
 ROOMS["coop"] = ("straw", "l", (
     "llwllwll",
@@ -5170,7 +6510,7 @@ Ivy builds chicken coops and Mabel sells hens; each hen
 lays an egg a night.  Walk into a hen to pet or rename her.
 Go to bed before 2 am.
 
-Someone in your way?  Talk to them and ask them PAST.
+Someone in your way?  Talk to them: SQUEEZE PAST.
 Talk every day, and give gifts (two a week each).  At
 some heart levels a friend shares a moment with you.  A
 Blossom Bouquet at 8 hearts asks someone to go steady; a
@@ -7133,11 +8473,18 @@ class Game:
         self.end_turn(TOOL_COST + 2)
 
     def apply_felled(self):
-        """Felled trees, onto a freshly built valley."""
+        """Felled trees, onto a freshly built valley (forgetting any that
+        no longer stand there, if the valley has changed since)."""
         g = self.areas["valley"].grid
-        for k in self.st.get("felled", {}):
+        st = self.st
+        for k in list(st.get("felled", {})):
             x, y = map(int, k.split(","))
-            g[y][x] = "grass"
+            if 0 <= x < VW and 0 <= y < VH and g[y][x] in CHOPPABLE:
+                g[y][x] = "grass"
+            else:
+                del st["felled"][k]
+                if st["debris"].get(k) == "stump":
+                    del st["debris"][k]
 
     def regrow_trees(self):
         """Felled trees grow back after a season, where there's room."""
@@ -7368,7 +8715,8 @@ class Game:
         return {"#1e1a1a": "black", "#221a18": "black", "#4a4040": "black",
                 "#5a3a1e": "brown", "#8a4a22": "brown",
                 "#a83a1e": "ginger", "#d0502a": "ginger",
-                "#e4641c": "ginger"}.get(hair, "spotted")
+                "#e4641c": "ginger", "#2a1a14": "black"}.get(hair,
+                                                            "spotted")
 
     def cowify(self, n):
         """The cowify spell: a cow like the ones Mabel sells, going about
@@ -7537,6 +8885,8 @@ class Game:
         if not c.get("vid"):
             items.append(("Give her a new name",
                           lambda: self.start_naming(i, "cows")))
+        items.append(("Squeeze past",
+                      lambda: self.edge_past(i, "cows")))
         items.append(("Leave her be", lambda: None))
         self.open_menu("%s, a %s cow (%s; %d pail%s of milk)" % (
             c["name"], c["colour"], "new today" if age == 0 else
@@ -7719,7 +9069,8 @@ class Game:
                 "#5a3a1e": "brown", "#8a4a22": "brown", "#a83a1e": "brown",
                 "#d0502a": "brown", "#e8c870": "speckled",
                 "#9a9a9a": "speckled", "#eeeeee": "white",
-                "#e4641c": "brown", "#221a18": "black"}.get(hair,
+                "#e4641c": "brown", "#221a18": "black",
+                "#2a1a14": "black"}.get(hair,
                                                               "white")
 
     def look_of(self, vid):
@@ -7874,7 +9225,47 @@ class Game:
             ("Pet %s" % c["name"], lambda: self.pet_chicken(i))] + (
             [] if c.get("vid") else
             [("Give her a new name", lambda: self.start_naming(i))]) +
-            [("Leave her be", lambda: None)])
+            [("Squeeze past", lambda: self.edge_past(i, "chickens")),
+             ("Leave her be", lambda: None)])
+
+    def edge_past(self, i, pen):
+        """Swap squares with a hen or cow standing in your way."""
+        c = self.st[pen][i]
+        squares = self.coop_squares() if pen == "chickens" else \
+            self.barn_squares()
+        here = self.pos()
+        entry = self.areas["coop" if pen == "chickens" else "barn"].entry
+        to = here if here in squares and here != entry else (
+            self.free_coop_square() if pen == "chickens" else
+            self.free_barn_square())
+        if to is None:
+            self.say("There's no room to get round %s." % c["name"], "info")
+            self.render()
+            return
+        x, y = c["x"], c["y"]
+        c["x"], c["y"] = to
+        self.st["pos"] = [x, y]
+        if c.get("vid") and c["vid"] in self.npcs:
+            n = self.npcs[c["vid"]]
+            n.x, n.y = to
+        if pen == "chickens":
+            self.say(random.choice((
+                "You scoop %s up, step past and set her down behind you. "
+                "She clucks, offended.",
+                "%s flaps aside with a squawk and you slip past.")) %
+                c["name"], "info")
+            if [x, y] in self.st["eggs"]:
+                self.st["eggs"].remove([x, y])
+                self.give("egg")
+                self.sound.play("pick")
+                self.say("You pick up a fresh egg. Still warm.", "good")
+        else:
+            self.say(random.choice((
+                "You put a shoulder to %s and lean. Eventually, grudgingly, "
+                "she shuffles round and you squeeze past.",
+                "\"Shift over, %s.\" She does, with a long-suffering moo.")) %
+                c["name"], "info")
+        self.end_turn(WALK_COST)
 
     def pet_chicken(self, i):
         c = self.st["chickens"][i]
@@ -8866,7 +10257,7 @@ class Game:
             words.insert(1, "KISS")
         if self.swapped(vid) or self.maid(vid):
             words.append("CHANGE")
-        words += ["NAME", "JOB", "NEWS", "ABOUT...", "PAST"]
+        words += ["NAME", "JOB", "NEWS", "ABOUT...", "SQUEEZE PAST"]
         return words
 
     def talk_menu(self):
@@ -8931,7 +10322,7 @@ class Game:
             self.end_talk()
             self.end_turn(1)
             return
-        if w[:4] in ("past", "move", "excu", "scoo", "swap"):
+        if w[:4] in ("sque", "past", "move", "excu", "scoo", "swap"):
             if self.squeeze_past(self.npcs[vid]):
                 self.say("%s: %s" % (v["short"], random.choice(
                     PAST_LINES)), "talk")
@@ -10906,6 +12297,8 @@ OPEN_HOURS = {
     "carpentry": "Open nine to five, closed Wednesdays.",
     "library": "Open eight to four, closed Sundays.",
     "inn": "Open eight till midnight.",
+    "bakery": "Open seven till three, closed Thursdays.",
+    "postoffice": "Open eight to five, closed Saturdays.",
 }
 WEATHER_TEXT = {"sun": "The sky is clear.",
                 "rain": "It's raining. The crops are watered.",
@@ -10962,6 +12355,12 @@ ACCEPT = {
     "amy": "(blush)...Yes. Three letters: yes. I mean yes. I mean... yes.",
     "rusty": "(laugh)YES! Oh, darling, yes! I'm going to faint! Catch me! "
              "...You didn't catch me. Still yes!",
+    "marisol": "(laugh)Yes! Yes, yes, yes! I'm baking a cake the size of the "
+               "bakery!",
+    "silas": "(blush)...Yes. I'll paint this moment. It'll take years. Yes.",
+    "dmitri": "(blush)Yes. Statistically, this was the best possible outcome. "
+              "Yes.",
+    "jonah": "(blush)...Yes. Mm. Yes. ...Sorry. Yes!",
 }
 PROPOSAL = {
     "rowan": "(blush)...Yes. I'll make the rings. Iron and gold. They'll "
@@ -10978,6 +12377,12 @@ PROPOSAL = {
            "it twice. I'm sure of this.",
     "rusty": "(blush)Yes. YES! I'm making the dress myself. And yours. Don't "
              "argue.",
+    "marisol": "(blush)Yes! I'll bake the wedding cake myself. Seven layers. "
+               "No, eight.",
+    "silas": "(blush)Yes. Every painting I make from now on is going to be "
+             "about you.",
+    "dmitri": "(blush)Yes. I'll name the brightest star for our wedding day.",
+    "jonah": "(blush)Yes. I'll bring the whole flock. They'll want to see.",
 }
 VOWS = {
     "rowan": "(blush)I'm not good with words. So: I'll make you things. "
@@ -10998,6 +12403,15 @@ VOWS = {
     "rusty": "(blush)I've spent my whole life on a stage. With you I don't "
              "have to perform. Every act, every encore, every quiet night. "
              "All of it. All of me.",
+    "marisol": "(blush)I promise you fresh bread every morning, and a warm "
+               "kitchen every night, and my whole heart, all the days in "
+               "between.",
+    "silas": "(blush)I've painted a thousand skies. You're the only view I "
+             "never want to finish. I'm yours.",
+    "dmitri": "(blush)There are a hundred billion stars in the sky. I'd trade "
+              "every one for this. I love you.",
+    "jonah": "(blush)I'm not a talker. But I'll be here. Every day. Every "
+             "season. Always.",
 }
 SCENE_GIFTS = {("rose", 2): "apple pie", ("rose", 5): "wool scarf"}
 
@@ -11154,6 +12568,64 @@ def maid_look(look):
 
 
 SWAP_LINES = {   # liked it, hated it, glad to be back, sorry to be back
+    "marisol": ("(laugh)Look at these arms! I could knead for a week! Oh, "
+                "I like this.",
+                "(cross)My apron doesn't fit! Change me back before the "
+                "bread burns!",
+                "(happy)Ah, thank you. The bread missed me.",
+                "(sad)Oh. I'd only just got used to reaching the top shelf."),
+    "silas": ("(surprised)...Interesting. Different bones, different light. "
+              "I need to paint this face. It's mine.",
+              "(cross)Change me back. I don't recognise my own reflection, "
+              "and I paint reflections for a living.",
+              "Thank you. I'll paint the experience. Abstractly.",
+              "(sad)Already? I hadn't finished the self-portrait."),
+    "dmitri": ("(surprised)Fascinating. A complete transformation, and the "
+               "stars look exactly the same. I rather like it.",
+               "(cross)Please reverse this. My glasses don't sit right and "
+               "I can't see Jupiter.",
+               "Thank you. Observation complete. Fascinating, but complete.",
+               "(sad)Oh. I'd begun a journal entry about it."),
+    "jonah": ("(blush)...Huh. The sheep don't mind. I don't mind either. "
+              "It's nice.",
+              "(cross)The sheep don't recognise me. Duchess bit me twice. "
+              "Change me back.",
+              "Thanks. The flock'll settle now.",
+              "(sad)Oh. I was getting used to it."),
+    "clara": ("(laugh)Well! Benji's going to have questions. I quite like it.",
+              "(cross)I have a post office to run! Change me back, please!",
+              "(happy)Thank you. Benji was very confused.",
+              "(sad)Oh. Benji had just started calling me 'Dad-Mum.'"),
+    "benji": ("(laugh)WHOA! I'm a girl knight! Girl knights are the BEST! "
+              "Like in the stories!",
+              "(cross)Change me back! Pip's laughing at me!",
+              "(happy)Thanks! But it was kind of cool.",
+              "(sad)Aww! I was going to be Dame Benji!"),
+    "gus": ("(laugh)Ha! Edna always said I'd make a handsome woman. She was "
+            "right!",
+            "(cross)What have you done? Theo'll never let me hear the end of "
+            "it! Change me back!",
+            "(happy)There's the old me. Thank you.",
+            "(sad)Hmph. I was going to fish like this. See if the fish could "
+            "tell."),
+    "agnes": ("(laugh)Good heavens! I look just like my father! He was a very "
+              "handsome man. How extraordinary.",
+              "(cross)This is most irregular! Reverse it at once, young "
+              "person!",
+              "Thank you. Most educational. Gold star for the reversal.",
+              "(sad)Oh. I'd begun a lesson plan on it."),
+    "bea": ("(laugh)Oh, wow! The animals don't care at all! Neither do I! "
+            "This is great!",
+            "(cross)Change me back! Duchess doesn't recognise me and she's "
+            "been biting me ALL DAY!",
+            "(happy)Thanks! The animals were confused.",
+            "(sad)Aww. I was just getting the hang of it."),
+    "nell": ("(surprised)Huh. Different mechanism, same function. I'm "
+             "fine with this.",
+             "(cross)Change me back. My hands are a different size. I can't "
+             "hold my tweezers properly.",
+             "Thanks. Back to normal settings.",
+             "(sad)Oh. I'd just recalibrated."),
     "amy": ("(surprised)...Huh. I look like my uncle. The bees won't mind. "
             "I think I don't mind either.",
             "(cross)Change me back. The bees are confused and so am I.",
@@ -11256,6 +12728,19 @@ TREE_SCREAMS = [
     "{who} screams again, the whole trunk shuddering. Leaves rain down "
     "on you. \"STOP! PLEASE!\""]
 TREE_CHOPPED = {   # chopped out of being a tree
+    "marisol": "(cross)You CHOPPED me! With an AXE! I'm going to tell "
+               "everyone at the bakery!",
+    "silas": "(cross)An axe. You took an axe to me. I'm going to paint this. "
+             "It won't be flattering.",
+    "dmitri": "(cross)I felt every swing. I need a very long time alone.",
+    "jonah": "(cross)...You chopped me down. I don't want to talk.",
+    "clara": "(cross)You chopped me down! In front of BENJI!",
+    "benji": "(sad)...",
+    "gus": "(cross)Felled! Like an old oak! Get out of my sight, you lubber!",
+    "agnes": "(cross)Assault! With an axe! I am writing to the council!",
+    "bea": "(cross)You chopped me! I'm a VET! I know exactly what that did!",
+    "nell": "(cross)You chopped me down. I'm going to the workshop to bang "
+            "things until I feel better.",
     "amy": "(cross)You chopped me down. The bees saw. I don't want to talk "
            "to you. I may never want to talk to you.",
     "rusty": "(cross)You chopped me DOWN! With an AXE! I am covered in "
@@ -11285,6 +12770,35 @@ TREE_CHOPPED = {   # chopped out of being a tree
                "would you do that to me?",
 }
 TREE_BACK = {   # uprooted: sorry to be walking again, glad of it
+    "marisol": ("(laugh)I grew lemons! Real lemons! I'm making a tart!",
+                "(cross)I couldn't bake! I couldn't do anything but stand "
+                "there!"),
+    "silas": ("(happy)I watched the light change for days. I finally "
+              "understand dusk.",
+              "(cross)A dog. A DOG. On my trunk. I'm going to lie down."),
+    "dmitri": ("(happy)I watched the stars every night without blinking. "
+               "Wonderful.",
+               "(cross)Birds nested in my branches and sang all night. I "
+               "couldn't concentrate."),
+    "jonah": ("(happy)The sheep sheltered under me in the rain. That was "
+              "nice.",
+              "(cross)Duchess ate my bark. MY BARK."),
+    "clara": ("(happy)So peaceful. No post. No deadlines. Just sun.",
+              "(cross)Benji built a treehouse in me! He used NAILS!"),
+    "benji": ("(laugh)I was a TREE! A squirrel lived in me! Can I do it again?",
+              "(cross)Pip climbed me! He climbed all over me!"),
+    "gus": ("(laugh)Ha! Best fishing spot on the bank, and I was standing "
+            "on it!",
+            "(cross)Theo tied his boat to me! To ME!"),
+    "agnes": ("(happy)I had blossoms! Better than my roses. Don't tell my "
+              "roses.",
+              "(cross)Somebody carved initials in me! I'll find out who!"),
+    "bea": ("(laugh)Birds and squirrels and beetles! I was a whole zoo!",
+            "(cross)I couldn't help anyone! Jonah's ewe was lambing and I "
+            "was a TREE!"),
+    "nell": ("(happy)Trees are clever. Water up, sugar down. Brilliant "
+             "mechanism.",
+             "(cross)No hands. A whole week with no hands."),
     "amy": ("(happy)The bees visited me every day. I had blossoms. I was "
             "useful and nobody talked to me. Bliss.",
             "(cross)I couldn't read. I couldn't write. I couldn't even "
@@ -11411,6 +12925,8 @@ GOSSIP_KIN = {   # (speaker, about) -> what they call them
     ("wren", "bernard"): "Dad", ("bernard", "wren"): "my Wren",
     ("ivy", "pip"): "my little brother", ("pip", "ivy"): "my sister",
     ("otto", "rowan"): "my apprentice", ("rose", "edmund"): "dear Edmund",
+    ("clara", "benji"): "my Benji", ("benji", "clara"): "my mum",
+    ("agnes", "bea"): "my niece", ("bea", "agnes"): "Aunt Agnes",
 }
 LOO_BUSINESS = ["You do your business.",
                 "You do your business. Nature's call, answered.",
@@ -11446,6 +12962,28 @@ LOO_OUT = ["{who} comes out of the outhouse, whistling.",
            "The outhouse door creaks, and out comes {who}, very "
            "casually."]
 LOO_BACK = {   # turned back: sorry about it, glad of it
+    "marisol": ("(laugh)Everybody who came in smelled like my bread! I was "
+                "so proud!",
+                "(cross)Gus came in! GUS! With a FISH!"),
+    "silas": ("(happy)People read in there. Contemplation. I respect it.",
+              "(cross)A painter. A painter, reduced to a privy."),
+    "dmitri": ("(happy)There was a gap in the roof. I watched the stars all "
+               "night.",
+               "(cross)Nobody closed the door. Ever. I'm traumatised."),
+    "jonah": ("(happy)Quiet. Useful. Nobody expected me to talk.",
+              "(cross)Duchess got in. Don't ask."),
+    "clara": ("(laugh)I heard more gossip in a day than in a year at the post "
+              "office!",
+              "(cross)Benji wanted to put a mailbox on my door!"),
+    "gus": ("(laugh)Ha! Best seat in the valley, finally!",
+            "(cross)Theo read a fishing magazine in me. For an HOUR."),
+    "agnes": ("(happy)I kept it spotless. A credit to the valley.",
+              "(cross)Edmund came in. Edmund! He still can't spell the "
+              "graffiti."),
+    "bea": ("(laugh)Everyone was so nice to me! I was a very popular loo!",
+            "(cross)A sheep got in. I don't know how. I don't want to know."),
+    "nell": ("(happy)I had a perfect door hinge. Perfect.",
+             "(cross)My hinges squeaked the whole time. The whole time."),
     "amy": ("(happy)Everybody brought something to read. I listened to "
             "people solve my crossword. Out loud. Badly. It was wonderful.",
             "(cross)Rusty came in. Rusty TALKED the whole time. I'm going "
@@ -11508,6 +13046,51 @@ MAID_CHORES = {   # what you can tell a maid to do: menu, and in her words
     "rest": ("Just rest", "rest. Just rest. If you say so"),
 }
 MAID_LINES = {   # liked it, hated it, glad to be back, sorry to be back
+    "marisol": ("(laugh)A kitchen I don't have to own! I'll bake you the "
+                "best breakfast of your life!",
+                "(cross)I have my own bakery to run! ...Fine. What needs "
+                "doing?",
+                "(happy)Back to my ovens. Thank you.",
+                "(sad)Oh. I'd only just reorganised your pantry."),
+    "silas": ("(happy)Domestic order. Clean lines. Folded linen. It's very "
+              "Vermeer. I don't hate it.",
+              "(cross)An apron. Frills. I'll do it. I'll just do it "
+              "mournfully.",
+              "Thank you. I'm going back to my paint.",
+              "(sad)I'd just learned to iron a perfect crease."),
+    "dmitri": ("(happy)Quiet chores, regular hours. Quite restful, actually.",
+               "(cross)I'm meant to be asleep. ...Very well. What do you need?",
+               "Thank you. Back to the stars.",
+               "(sad)Oh. I'd catalogued your teaspoons."),
+    "jonah": ("(blush)...It's quiet work. I like quiet work. This is fine.",
+              "(cross)Who's watching the flock? ...Fine. What do you want "
+              "done.",
+              "Thanks. Back to the sheep.",
+              "(sad)Oh. I'd only just got the hang of the duster."),
+    "clara": ("(happy)Oh, a tidy house that isn't mine! Bliss!",
+              "(cross)Who's minding the post? And Benji? ...Fine. Tell me "
+              "what's needed.",
+              "(happy)Thank you. Benji's been eating cereal for dinner.",
+              "(sad)Oh. I'd just alphabetised your letters."),
+    "gus": ("(laugh)Ha! Sixty years on a boat, I can scrub a deck. Your "
+            "floor's a deck!",
+            "(cross)Frills! On me! ...Fine. What d'you want done.",
+            "(happy)Back to the lake. Thank you.",
+            "(sad)Hmph. I'd just got the floor shining."),
+    "agnes": ("(happy)Order! Cleanliness! At last, a household run properly.",
+              "(cross)This is a gross indignity. Nevertheless, I shall do it "
+              "properly. What is required?",
+              "Thank you. My roses need me.",
+              "(sad)Oh. I'd only just whipped your kitchen into shape."),
+    "bea": ("(laugh)Oh, this is fun! Can I look after your animals too?",
+            "(cross)I've got sick sheep! ...Fine! What do you need, quickly?",
+            "(happy)Thanks! The sheep missed me.",
+            "(sad)Aww, I'd made friends with your mice."),
+    "nell": ("(happy)Your house has eleven squeaky hinges. I fixed them all. "
+             "This is great.",
+             "(cross)An apron. Fine. I'll do it. But I'm oiling everything.",
+             "Thanks. Back to the workshop.",
+             "(sad)Oh. I'd nearly fixed your clock."),
     "amy": ("(blush)A tidy house, a quiet routine, nobody asking me to "
             "chat. ...This is fine. This is very fine.",
             "(cross)I have bees to tend. And now an apron. I'll do it. I'll "
@@ -11661,6 +13244,28 @@ MOO_ANGRY = ["The cow that is {who} lowers her head and moos angrily.",
              "{who} the cow turns her back and swats you with her tail.",
              "{who} gives you a moo that's clearly a swear word."]
 COW_BACK = {   # turned back: sorry to be human again, glad of it
+    "marisol": ("(laugh)Fresh milk! On demand! I'm making a cream cake!",
+                "(cross)I was MILKED. A baker. Milked!"),
+    "silas": ("(happy)I stood in a field all day watching the light. A cow's "
+              "life is a painter's life.",
+              "(cross)Flies. Everywhere. No hands to swat them."),
+    "dmitri": ("(happy)Grass, sky, peace. And I slept at night. Remarkable.",
+               "(cross)A cow cannot use a telescope. I tried."),
+    "jonah": ("(happy)The sheep were very respectful. A cow among sheep. "
+              "Nice.",
+              "(cross)Duchess. Duchess was very disrespectful."),
+    "clara": ("(laugh)Benji brushed me every day! I've never been so well "
+              "groomed!",
+              "(cross)I couldn't fit through the post office door!"),
+    "gus": ("(laugh)Ha! Four stomachs! I could eat Marisol's whole bakery!",
+            "(cross)Theo asked if he could milk me. I'll never forgive him."),
+    "agnes": ("(happy)A calm and stately beast. I approve.",
+              "(cross)I was milked! A retired schoolmistress! Milked!"),
+    "bea": ("(laugh)Being a cow is BRILLIANT! I understand them so much "
+            "better now!",
+            "(cross)I couldn't do a single checkup! Not one!"),
+    "nell": ("(happy)Fascinating digestive engineering. Truly.",
+             "(cross)Hooves. Hooves, and a whole workshop of tiny screws."),
     "rowan": ("(blush)...Grass, sun, nobody talking. Honestly? Best week of "
               "my life.",
               "(cross)Otto tried to shoe me. SHOE me, {name}."),
@@ -11705,6 +13310,37 @@ COW_BACK = {   # turned back: sorry to be human again, glad of it
               "describe the trauma."),
 }
 CHICKEN_BACK = {   # turned back: sorry to be human again, glad of it
+    "marisol": ("(laugh)I laid an egg! A perfect egg! I'm putting it in a "
+                "cake!",
+                "(cross)I couldn't reach the ovens! I couldn't do ANYTHING! "
+                "Never again!"),
+    "silas": ("(happy)I saw colours chickens see. Ultraviolet. I'll never "
+              "paint the same way again.",
+              "(cross)A crow chased me. A crow. I'm going to lie down."),
+    "dmitri": ("(happy)Chickens sleep at sunset. I slept a whole night. "
+               "First time in years.",
+               "(cross)I couldn't see the stars. Chickens have terrible night "
+               "vision."),
+    "jonah": ("(happy)The sheep let me walk right among them. They thought I "
+              "was one of them. Nice.",
+              "(cross)Duchess chased me round the pasture for an hour."),
+    "clara": ("(laugh)Benji fed me grain! He was so careful. Sweet boy.",
+              "(cross)Benji tried to post me! In a sack! To the city!"),
+    "benji": ("(laugh)THAT WAS THE BEST! I was a CHICKEN KNIGHT!",
+              "(cross)Pip tried to catch me! With a NET!"),
+    "gus": ("(laugh)Ha! Fish heads taste better as a chicken!",
+            "(cross)Theo laughed! He LAUGHED, the whelp!"),
+    "agnes": ("(happy)Remarkably restful. One could get used to scratching "
+              "about.",
+              "(cross)A hen! A HEN! Forty-one years of teaching and I was "
+              "reduced to clucking!"),
+    "bea": ("(laugh)I got to see how chickens think! It's mostly about bugs! "
+            "Brilliant!",
+            "(cross)I couldn't treat anyone! A sick sheep and I was a "
+            "CHICKEN!"),
+    "nell": ("(happy)Chicken legs are fascinating. Brilliant mechanism. Very "
+             "springy.",
+             "(cross)No thumbs. No tools. No thank you."),
     "amy": ("(happy)Hens are calm. Nobody expected a crossword from me. I "
             "could get used to it.",
             "(cross)The bees chased me. My own bees. I'm going to sit down."),
@@ -11880,6 +13516,23 @@ STATUE_PHRASES = [
     "You straighten the statue's golden collar.",
 ]
 UNSTATUE = {
+    "marisol": "(surprised)Gold! My bread! Is my bread burning?! Oh, thank "
+               "goodness, you're back. I mean, I'm back.",
+    "silas": "(surprised)...Gold. I was gold. Did the light look good on me?",
+    "dmitri": "(surprised)Fascinating. Time stopped. I missed a whole night "
+              "of observations. Do you know what the moon did?",
+    "jonah": "(surprised)...Was I gold? The sheep were confused. I was too.",
+    "clara": "(surprised)Gold! Oh, the post! The post must be piling up! "
+             "Benji, have you been sorting?",
+    "benji": "(surprised)WHOA! Was I GOLD?! Was I treasure?! I was TREASURE!",
+    "gus": "(surprised)Hmph. Gold, was I? Worth more as a statue than I ever "
+           "was alive.",
+    "agnes": "(surprised)Good heavens. I appear to have been a statue. Most "
+             "irregular. Did anyone touch my roses?",
+    "bea": "(surprised)Whoa! Gold! Did the birds sit on me? I bet the birds "
+           "sat on me.",
+    "nell": "(surprised)Gold. Pure gold. Do you know what I could make with "
+            "that much gold? Oh. Right. Me.",
     "amy": "(surprised)...I was gold. The bees thought I was a flower. "
            "That's actually quite flattering.",
     "rusty": "(surprised)Gold! I was GOLD! Darling, was I shiny? Tell me I "

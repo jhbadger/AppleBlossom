@@ -5,8 +5,8 @@
 Your grandmother Lily has left you her farm at the edge of Apple Blossom
 Village. It has stood empty for years: the fields are full of weeds, stones
 and fallen branches, but her tools are still good and the shipping bin by the
-door still works. Clear the land, grow crops, and get to know the fourteen
-people of the village. Eight of them might come to love you.
+door still works. Clear the land, grow crops, and get to know the
+twenty-four people of the village. Twelve of them might come to love you.
 
 It's one executable script on the tilerpgs engine: a map of squares, people
 you talk to by keyword, shops, and tiles, portraits and music all drawn in
@@ -85,8 +85,9 @@ the coop while you're there.
 - **Eggs:** every hen lays an egg each night, somewhere on the coop floor.
   Walk over an egg to pick it up. Eggs sell for 50g, give 15 energy eaten,
   and Bernard and Granny Rose like them as gifts.
-- **Your hens:** walk into a hen to pet her (once a day) or to give her a new
-  name. Type the name in the bar under the map and press Return; Esc keeps
+- **Your hens:** walk into a hen to pet her (once a day), give her a new
+  name, or **squeeze past** her when she's in your way (she's set down where you
+  were standing, or in a free corner if you were in the doorway). Type the name in the bar under the map and press Return; Esc keeps
   the old one. The Friends list (F) shows your hens and which you've petted
   today.
 
@@ -100,8 +101,9 @@ black or ginger), and wanders the barn while you're there.
 
 - **Milk:** with the pail in hand, use it on a cow, or walk into her and
   choose Milk, once a day each. Milk sells for 125g and gives 25 energy.
-- **Your cows:** walk into a cow to pet her (once a day), rename her or
-  milk her. The Friends list shows your cows.
+- **Your cows:** walk into a cow to pet her (once a day), rename her,
+  milk her, or **squeeze past** her when she's blocking the way (like hens, she
+  never ends up in the doorway). The Friends list shows your cows.
 
 ## The magic wand
 
@@ -229,6 +231,17 @@ up to eight squares until it hits someone or something solid.
 | Rose's Cottage | Granny Rose Applewood | your grandmother's cousin, and pie |
 | Amy's Cottage | Amy Hartwell | the beekeeper, who sets the Gazette crossword |
 | Rusty's Studio | Rusty Quinn | the seamstress and costume-maker, who puts on the play at the inn |
+| Vega's Bakery | Marisol Vega | bread, pancakes, honey cake, pie and chocolate, seven till three |
+| Silas's Studio | Silas Reed | the painter |
+| The Observatory | Dmitri Orlov | the astronomer, up all night on the bluff |
+| Jonah's Cottage | Jonah Brooks | the shepherd, with his flock on the east hill (and Duchess the goat) |
+| The Post Office | Clara Ashford (and her son Benji) | the post, and all the news |
+| Gus's Boathouse | Gus Pemberton | the old fisherman, Theo's rival |
+| Whitlock House | Agnes Whitlock (and her niece Bea) | the retired schoolmistress's roses, and the valley's vet |
+| Garrow's Workshop | Nell Garrow | the clockmaker and tinker |
+
+Past the woods on the east side of the village is the **east quarter**, a
+newer neighbourhood of eight houses along the roads, with its own green.
 
 Everyone keeps a daily schedule. They open their shops, take lunch by the
 fountain, fish, read on benches, visit each other, gather at the inn in the
@@ -244,8 +257,8 @@ festival notices and news.
 Walk into someone to talk. Their **portrait** appears beside what they say,
 and it smiles, blushes, frowns or looks surprised as they talk. Choose a word
 from the menu or type one: everyone knows CHAT, GIFT, NAME, JOB and NEWS, and
-ABOUT... asks what they think of the others, and PAST asks them to step aside
-so you can squeeze by, if they're standing in a doorway. Words in CAPITALS are worth
+ABOUT... asks what they think of the others, and SQUEEZE PAST asks them to
+step aside so you can get by, if they're standing in a doorway. Words in CAPITALS are worth
 asking about. Each villager has their own topics, opinions, secrets and
 sense of humour.
 
@@ -266,7 +279,8 @@ you whether they do. Family use their own names: Wren calls Bernard "Dad."
   often with a choice to make. Rowan's wooden fox, Felix's dying lavender,
   Mabel's thieving cat, Pip's treasure hunt, and more.
 
-**Romance.** Rowan, Felix, Theo, Juniper, Wren, Ivy, Amy and Rusty can become more than
+**Romance.** Rowan, Felix, Theo, Juniper, Wren, Ivy, Amy, Rusty, Marisol, Silas,
+Dmitri and Jonah can become more than
 friends, whoever your farmer is. Each has four heart scenes leading up to a
 confession at eight hearts.
 
