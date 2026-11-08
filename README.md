@@ -119,6 +119,17 @@ fleece of white, cream, brown or black.
   shows your cows and sheep, which have been milked today, and which are
   woolly.
 
+### Cats and dogs
+
+Mabel sells **cats** (600g) and **dogs** (800g), up to four pets in all.
+Each comes with a name (Whiskers, Marmalade, Smudge… or Rex, Scout,
+Bramble…) and a coat: black, ginger, grey, white or tabby for a cat; brown,
+black, golden or white for a dog, who wears a red collar. Cats wander
+your cabin; dogs wander the farmyard in front of it. Walk into one to pet
+her (once a day), give her a new name, or squeeze past. The Friends list
+shows your pets. Villagers turned into cats and dogs can become pets too:
+see the magic wand.
+
 ### Machines
 
 Nell at **Garrow's Workshop** builds machines that turn what your farm
@@ -209,6 +220,16 @@ up to eight squares until it hits someone or something solid.
   Other spells sink into her fleece (petrify makes a golden sheep), and
   sheepify won't take on a cow, hen, statue, maid, tree or outhouse, or on
   the children.
+- **Catify** and **dogify** turn whoever they hit (children too) into a
+  cat or a dog, in a coat to suit their hair, and like the other animals
+  she goes on with her day: walk into her and she purrs or hisses, wags or
+  growls, depending on whether she likes it. Put the **leash** on her and
+  lead her into your **cabin**: if she likes being a cat or dog she
+  becomes one of your pets, just like the ones Mabel sells (a cat curls up
+  in the cabin, a dog goes out to guard the farmyard), and petting her
+  each day counts as a gift she likes. If she doesn't, she slips the leash
+  and bolts back to her own routine. Cast the same spell again, at home or
+  out, to bring her back. Other spells slide off her fur.
 - **Maidify** turns whoever it hits into a maid: a young woman in a black
   dress, a white apron and a frilled cap, whoever they were before. She
   moves into your cabin and stops keeping shop. Ask her about her **CHORE**
@@ -283,7 +304,7 @@ up to eight squares until it hits someone or something solid.
 
 | Place | Who | What's there |
 | --- | --- | --- |
-| Pike's General Store | Mabel Pike | seeds for the season, hens, cows, sheep, a milk pail, shears, a leash, gifts, the Blossom Bouquet |
+| Pike's General Store | Mabel Pike | seeds for the season, hens, cows, sheep, cats and dogs, a milk pail, shears, a leash, gifts, the Blossom Bouquet |
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
 | Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, the copper watering can, fine gifts, the Blossom Pendant |
