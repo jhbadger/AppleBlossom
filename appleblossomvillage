@@ -1189,7 +1189,7 @@ ITEMS = {
     "pancakes": (60, 40, "food"), "salad": (50, 30, "food"),
     "energy tonic": (0, 80, "food"), "chocolate": (40, 10, "food"),
     "honey cake": (90, 35, "food"), "egg": (50, 15, "animal"),
-    "milk": (125, 25, "animal"),
+    "milk": (125, 25, "animal"), "wool": (160, 0, "animal"),
     "book of poems": (0, 0, "gift"), "sketchbook": (0, 0, "gift"),
     "silver ring": (0, 0, "gift"), "wool scarf": (0, 0, "gift"),
     "fishing lure": (0, 0, "gift"), "fine tools": (0, 0, "gift"),
@@ -1237,13 +1237,14 @@ FISH = {   # where -> season -> fish, the first the likeliest
 }
 
 TOOLS = ("hoe", "watering can", "axe", "pickaxe", "scythe", "fishing rod",
-         "magic wand", "leash", "milk pail")
+         "magic wand", "leash", "milk pail", "shears")
 TOOL_KEYS = {"hoe": "Hoe", "watering can": "Can", "axe": "Axe",
              "pickaxe": "Pick", "scythe": "Scythe", "fishing rod": "Rod",
-             "magic wand": "Wand", "leash": "Leash", "milk pail": "Pail"}
+             "magic wand": "Wand", "leash": "Leash", "milk pail": "Pail",
+             "shears": "Shears"}
 TOOL_ENERGY = {"hoe": 2, "watering can": 1, "axe": 3, "pickaxe": 3,
                "scythe": 1, "fishing rod": 4, "magic wand": 2, "leash": 0,
-               "milk pail": 1}
+               "milk pail": 1, "shears": 2}
 WAND_RANGE = 8                  # how far a spell flies
 SPELLS = {   # the wand's spells: what each one does, for the menu
     "petrify": "turns someone to gold, and back",
@@ -1253,6 +1254,7 @@ SPELLS = {   # the wand's spells: what each one does, for the menu
     "treeify": "turns someone into a tree, and back",
     "looify": "turns someone into an outhouse, and back (outdoors only)",
     "cowify": "turns someone into a cow, and back",
+    "sheepify": "turns someone into a sheep, and back",
 }
 CHOPPABLE = {"tree": 8, "pine": 8}   # trees you can fell, and their wood
 CHOPS = 3                       # swings to fell one
@@ -2910,7 +2912,7 @@ VILLAGERS = {
                  "lips": "#b06070"},
         "birthday": (2, 23), "home": "rose", "rest": 6,
         "loves": ["apple", "daffodil", "honey cake", "wool scarf"],
-        "likes": ["tea", "cranberry", "wild plum", "blackberry", "egg",
+        "likes": ["wool", "tea", "cranberry", "wild plum", "blackberry", "egg",
                   "kind:crop", "kind:forage"],
         "dislikes": ["energy tonic", "coffee"],
         "hates": [],
@@ -4265,7 +4267,7 @@ VILLAGERS = {
                  "band": "#5a3a2a"},
         "birthday": (1, 8), "home": "jonah", "rest": 6,
         "loves": ["wool scarf", "apple pie", "corn"],
-        "likes": ["bread", "stew", "hazelnut", "pea", "kind:crop"],
+        "likes": ["wool", "bread", "stew", "hazelnut", "pea", "kind:crop"],
         "dislikes": ["coral", "sheet music"],
         "hates": ["eel", "energy tonic"],
         "intro": "Oh. Hello. Didn't hear you come up. Jonah Brooks. I keep "
@@ -5080,6 +5082,7 @@ ROMANCE = [k for k, v in VILLAGERS.items() if v["romance"]]
 # What the shops sell: (item, price), with "seeds" meaning this season's.
 SHOP_STOCK = {
     "store": ["seeds", ("chicken", 800), ("cow", 1500), ("milk pail", 300),
+              ("sheep", 1000), ("shears", 300),
               ("leash", 250), ("bread", 60),
               ("chocolate", 80), ("rose", 100),
               ("sketchbook", 200), ("book of poems", 250),
@@ -5594,7 +5597,9 @@ ROOMS["barn"] = ("straw", "l", (
     "l.........l",
     "lU........l",
     "lllllxlllll"))
-BARN_ROOM = 6                   # cows it holds
+BARN_ROOM = 10                  # cows and sheep it holds, together
+SHEEP_MILK_DAYS = 2             # a sheep gives milk every other day
+SHEAR_DAYS = 3                  # and grows a fleece to shear in three
 EXTRA_ROOMS = {   # rooms that aren't buildings in the valley
     "loo": ("boards", "l", (     # inside whichever outhouse you're in
         "lllll",
@@ -6159,6 +6164,26 @@ class Sound:
             env = min(1.0, t / 0.04) * min(1.0, (dur - t) / 0.3)
             buf[k] += (v * 0.5 + lo * 0.9) * env * gain
 
+    @staticmethod
+    def baa(buf, dur=0.7, gain=0.3):
+        """A sheep's bleat: a nasal, buzzy note with a fast goat-ish
+        tremble, sliding down at the end."""
+        rng = random.Random(3)
+        n = int(dur * RATE)
+        buf.extend([0.0] * max(0, n - len(buf)))
+        ph = 0.0
+        for k in range(n):
+            t = k / RATE
+            u = t / dur
+            f = 330 + 40 * math.sin(math.pi * min(1.0, u * 2)) - 90 * u * u
+            ph += f / RATE
+            if ph >= 1.0:
+                ph -= 1.0
+            v = (2 * ph - 1) * 0.6 + math.sin(2 * math.pi * ph * 3) * 0.3
+            trem = 0.6 + 0.4 * math.sin(2 * math.pi * 23 * t)
+            env = min(1.0, t / 0.05) * min(1.0, (dur - t) / 0.2)
+            buf[k] += (v + rng.uniform(-0.08, 0.08)) * trem * env * gain
+
     def write(self, name, buf, path=None):
         path = path or os.path.join(self.dir, name + ".wav")
         pcm = array.array("h", (int(max(-1.0, min(1.0, v)) * 32000)
@@ -6290,6 +6315,14 @@ class Sound:
         b = []
         self.scream(b)
         self.write("scream", b)
+        b = []
+        self.baa(b)
+        self.write("baa", b)
+        b = []
+        for i in range(3):
+            noise(b, i * 0.11, 0.05, 6000, 0.22)
+            tone(b, i * 0.11, 2400, 0.03, "square", 0.04)
+        self.write("snip", b)
         self.synthesize_music()
 
     def synthesize_music(self):
@@ -6524,17 +6557,19 @@ lives in your cabin and does the CHORE you give her every
 morning (and whom you may KISS twice a day); treeify, into a
 tree you can water (or chop, if you can bear the screaming);
 looify (outdoors, with room for a door), into an outhouse
-you can use; cowify, into a cow.  Cast the same spell again
-to undo it.
+you can use; cowify, into a cow; sheepify, into a sheep.
+Cast the same spell again to undo it.
 
 The axe fells trees (three swings) for wood; they grow
 back in a season.
 
-Mabel's leash leads a villager you've chickenfied or
-cowified; lead her into your coop (a hen) or barn (a cow)
-and she's one of your animals until the same spell turns
-her back.  Any tool on her lets her go.  Ivy builds a barn;
-Mabel sells cows and the milk pail to milk them daily.
+Mabel's leash leads a villager you've chickenfied, cowified
+or sheepified; lead her into your coop (a hen) or barn (a
+cow or sheep) and she's one of your animals until the same
+spell turns her back.  Any tool on her lets her go.  Ivy
+builds a barn; Mabel sells cows and sheep, the milk pail
+(cows daily, sheep every other day) and shears (a sheep
+is woolly enough to shear every third day).
 
 Tap a square to walk there, next to you to step or use
 your tool there, yourself to use it ahead.
@@ -6629,10 +6664,14 @@ class Game:
                               bd=1)
         self.entry.pack(side="left", fill="x", expand=True, padx=(0, 8),
                         pady=4)
-        self.entry.bind("<Return>", self.on_entry)
-        self.entry.bind("<Escape>", lambda e: self.end_naming()
-                        if getattr(self, "naming", None) is not None
-                        else self.end_talk())
+        # "break": the key is spent here, and mustn't go on to on_key,
+        # where (the talk just over) Return would mean "use what's ahead"
+        # and start the conversation all over again
+        self.entry.bind("<Return>", lambda e: self.on_entry(e) or "break")
+        self.entry.bind("<KP_Enter>", lambda e: self.on_entry(e) or "break")
+        self.entry.bind("<Escape>", lambda e: (
+            self.end_naming() if getattr(self, "naming", None) is not None
+            else self.end_talk()) or "break")
         self.canvas = tk.Canvas(left, bg="black", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
 
@@ -6805,6 +6844,7 @@ class Game:
                 if lvl and name.startswith(("v_", "s_", "vx_", "sx_",
                                             "vm_", "sm_", "tv_", "lh_",
                                             "shen_", "cow_", "scow_",
+                                            "sheep", "ssheep",
                                             "hen_")):
                     continue
                 img = tk.PhotoImage(width=16, height=16)
@@ -7138,6 +7178,7 @@ class Game:
             "statues": [], "swapped": [], "chickens": [], "eggs": [],
             "chickenfied": [], "maids": {}, "trees": [], "loos": [],
             "felled": {}, "leashed": None, "cows": [], "cowified": [],
+            "sheepified": [],
             "loo_in": None,
             "topics": [], "secret": None, "stats": {"shipped": 0,
                                                     "harvested": 0,
@@ -7199,6 +7240,7 @@ class Game:
         st.setdefault("leashed", None)
         st.setdefault("cows", [])
         st.setdefault("cowified", [])
+        st.setdefault("sheepified", [])
         for vid in VILLAGERS:
             st["friends"].setdefault(vid, {
                 "pts": 0, "talked": -1, "week": 0, "gift_day": -1,
@@ -7706,8 +7748,10 @@ class Game:
                                     y - self.pos()[1]) is not None
         if h == "milk pail" and a.key == "barn":
             i = self.cow_at(x, y)
-            return i is not None and \
-                self.st["cows"][i].get("milked") != self.st["day"]
+            return i is not None and self.milk_ready(self.st["cows"][i])
+        if h == "shears" and a.key == "barn":
+            i = self.cow_at(x, y)
+            return i is not None and self.shear_ready(self.st["cows"][i])
         n = self.npc_at(x, y)
         if n and self.tree(n.vid) and h in ("axe", "watering can"):
             return True
@@ -7849,17 +7893,20 @@ class Game:
                      "%s the hen glares at you." % name, "info")
             self.end_turn(TOOL_COST)
             return
-        if self.barned(vid) and spell != "cowify":
-            self.say("The spell fizzles in the straw. The cows shuffle, "
-                     "and %s the cow gives you a long look." % name, "info")
+        if self.barned(vid) and spell != BEASTS[self.beast(vid)]["spell"]:
+            self.say("The spell fizzles in the straw. The animals shuffle, "
+                     "and %s the %s gives you a long look." % (
+                         name, self.beast(vid)), "info")
             self.end_turn(TOOL_COST)
             return
         if spell == "cowify":
-            self.cowify(n)
+            self.beastify(n, "cow")
             return
-        if self.is_cow(vid) and spell != "petrify":
-            self.say("The spell bounces off the cow's hide. Cows are cows.",
-                     "info")
+        if spell == "sheepify":
+            self.beastify(n, "sheep")
+            return
+        if self.hoofed(vid) and spell != "petrify":
+            self.say(BEASTS[self.beast(vid)]["bounce"], "info")
             self.end_turn(TOOL_COST)
             return
         if self.loo(vid):
@@ -7896,12 +7943,16 @@ class Game:
         if spell == "chickenfy":
             self.chickenfy(n)
             return
-        if self.statue(vid) and self.chicken(vid):
+        if self.statue(vid) and (self.chicken(vid) or self.hoofed(vid)):
             self.st["statues"].remove(vid)
             n.goal, n.path, n.stuck = None, [], 0
-            self.say("Gold flakes away like falling leaves, and the hen "
-                     "that is %s shakes out her feathers and clucks." % name,
-                     "quest")
+            self.say("Gold flakes away like falling leaves, and the %s "
+                     "that is %s %s." % (
+                         self.beast(vid) or "hen", name, {
+                             "cow": "blinks and gives a long, slow moo",
+                             "sheep": "shakes out her fleece and bleats"}.get(
+                             self.beast(vid), "shakes out her feathers and "
+                             "clucks")), "quest")
             self.end_turn(TOOL_COST)
         elif self.statue(vid):
             self.st["statues"].remove(vid)
@@ -7935,6 +7986,9 @@ class Game:
             return ("shen_" if gold else "hen_") + self.hen_colour(vid)
         if self.is_cow(vid):
             return ("scow_" if gold else "cow_") + self.cow_colour(vid)
+        if self.is_sheep(vid):
+            return ("ssheep_" if gold else "sheepf_") + \
+                self.sheep_colour(vid)
         if self.maid(vid):
             return ("s" if gold else "v") + "m_" + vid
         return ("s" if gold else "v") + ("x" if self.swapped(vid) else
@@ -8112,8 +8166,8 @@ class Game:
                    self.statue(vid) else
                    "The spell slides off the hen's feathers. She shakes "
                    "herself and clucks." if self.chicken(vid) else
-                   "The spell bounces off the cow's hide. Cows are cows."
-                   if self.is_cow(vid) else
+                   BEASTS[self.beast(vid)]["bounce"]
+                   if self.hoofed(vid) else
                    "The spell glances off %s's starched apron. A maid "
                    "stays a maid until the spell that made her is undone."
                    % name if self.maid(vid) else None)
@@ -8186,8 +8240,8 @@ class Game:
             elif self.chicken(vid):
                 why = ("The spell slides off the hen's feathers. She shakes "
                        "herself and clucks.")
-            elif self.is_cow(vid):
-                why = "The spell bounces off the cow's hide. Cows are cows."
+            elif self.hoofed(vid):
+                why = BEASTS[self.beast(vid)]["bounce"]
             elif self.maid(vid):
                 why = ("The spell glances off %s's starched apron. A maid "
                        "stays a maid until the spell that made her is "
@@ -8707,16 +8761,19 @@ class Game:
                 if n else "found no eggs", "your hen" if len(hens) == 1
                 else "all %d hens" % len(hens))
         if chore == "milk":
-            cows = [c for c in st["cows"] if c.get("milked") != st["day"]]
+            cows = [c for c in st["cows"] if self.milk_ready(c)]
             if not cows:
                 return None
             for c in cows:
                 c["milked"] = st["day"]
                 c["milk"] = c.get("milk", 0) + 1
             self.give("milk", len(cows))
+            kinds = {c.get("kind", "cow") for c in cows}
             return "milked %s (%d milk for your bag)" % (
-                "your cow" if len(cows) == 1 else "all %d cows" % len(cows),
-                len(cows))
+                ("your " + kinds.pop()) if len(cows) == 1 else
+                "%d %s" % (len(cows), "cows" if kinds == {"cow"} else
+                           "sheep" if kinds == {"sheep"} else
+                           "cows and sheep"), len(cows))
         if chore == "cook":
             food = random.choice(("pancakes", "bread", "honey cake",
                                   "stew"))
@@ -8728,7 +8785,7 @@ class Game:
         return self.st.get("leashed") == vid
 
     def leashable(self, vid):
-        return (self.chicken(vid) or self.is_cow(vid)) and \
+        return (self.chicken(vid) or self.hoofed(vid)) and \
             not self.statue(vid)
 
     def kept(self, vid):
@@ -8737,6 +8794,26 @@ class Game:
 
     def is_cow(self, vid):
         return vid in self.st.setdefault("cowified", [])
+
+    def is_sheep(self, vid):
+        return vid in self.st.setdefault("sheepified", [])
+
+    def beast(self, vid):
+        """What barn animal the wand has made of somebody, or None."""
+        return "cow" if self.is_cow(vid) else "sheep" if \
+            self.is_sheep(vid) else None
+
+    def hoofed(self, vid):
+        return self.beast(vid) is not None
+
+    def sheep_colour(self, vid):
+        """The fleece somebody grows, by the colour of their hair."""
+        return {"black": "black", "brown": "brown",
+                "ginger": "cream"}.get(self.cow_colour(vid), "white")
+
+    def beast_colour(self, vid, kind):
+        return self.cow_colour(vid) if kind == "cow" else \
+            self.sheep_colour(vid)
 
     def barned(self, vid):
         return any(c.get("vid") == vid for c in self.st.get("cows", ()))
@@ -8750,23 +8827,28 @@ class Game:
                 "#e4641c": "ginger", "#2a1a14": "black"}.get(hair,
                                                             "spotted")
 
-    def cowify(self, n):
-        """The cowify spell: a cow like the ones Mabel sells, going about
-        the villager's day; cast again, and back they come."""
+    def beastify(self, n, kind):
+        """The cowify and sheepify spells: a barn animal like the ones
+        Mabel sells, going about the villager's day; cast the same spell
+        again, and back they come."""
+        b = BEASTS[kind]
+        spell = b["spell"]
         vid = n.vid
         name = VILLAGERS[vid]["short"]
         st = self.st
         flags = st["flags"]
-        if not self.is_cow(vid):
+        mine = vid in st[b["list"]]
+        if not mine:
             why = None
             if VILLAGERS[vid]["look"].get("age") == "child":
-                why = ("%s moos with delight, but the spell won't stick. "
-                       "Some things are best left to grown-ups." % name)
+                why = b["child"] % name
             elif self.statue(vid):
-                why = "The spell skids off the gold. Gold doesn't moo."
+                why = b["gold"]
             elif self.chicken(vid):
                 why = ("The spell slides off the hen's feathers. A hen can "
                        "only be so much bigger.")
+            elif self.hoofed(vid):
+                why = BEASTS[self.beast(vid)]["bounce"]
             elif self.maid(vid):
                 why = ("The spell glances off %s's starched apron. A maid "
                        "stays a maid until the spell that made her is "
@@ -8781,43 +8863,43 @@ class Game:
                 return
         if self.talk:
             self.end_talk()
-        likes = self.likes_change(vid, "cowify")
-        if not self.is_cow(vid):
-            st["cowified"].append(vid)
+        likes = self.likes_change(vid, spell)
+        if not mine:
+            st[b["list"]].append(vid)
             n.goal, n.path, n.stuck = None, [], 0
-            self.say("With a sound like a contented sigh, %s grows, and "
-                     "grows, and there stands a %s cow, %s." % (
-                         name, self.cow_colour(vid), "mooing happily" if
-                         likes else "lowing indignantly"), "quest")
+            if kind == "sheep":
+                self.sound.play("baa")
+            self.say(b["grow"] % (name, self.beast_colour(vid, kind),
+                                  b["happy"] if likes else b["cross"]),
+                     "quest")
             if likes:
-                pts = 0 if "cowliked:" + vid in flags else 150
-                flags.append("cowliked:" + vid)
+                pts = 0 if kind + "liked:" + vid in flags else 150
+                flags.append(kind + "liked:" + vid)
             else:
                 pts = -200
             if pts:
                 self.befriend(vid, pts, quiet=True)
-                self.say("(%s %s.)" % (name, "seems to enjoy being a cow"
+                self.say("(%s %s.)" % (name, "seems to enjoy being a " + kind
                                        if pts > 0 else "is upset with you"),
                          "heart" if pts > 0 else "bad")
             self.end_turn(TOOL_COST)
             return
-        st["cowified"].remove(vid)
+        st[b["list"]].remove(vid)
         n.goal, n.path, n.stuck = None, [], 0
         if self.leashed(vid):
             st["leashed"] = None
         self.unbarn(vid)
-        self.say("A last long moo, and %s is back on two feet, brushing "
-                 "straw off." % name, "quest")
+        self.say(b["unmade"] % name, "quest")
         if likes:
             pts = -80
         else:
-            pts = 0 if "cowfixed:" + vid in flags else 120
-            flags.append("cowfixed:" + vid)
+            pts = 0 if kind + "fixed:" + vid in flags else 120
+            flags.append(kind + "fixed:" + vid)
         self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
                      "text": ""}
         self.talkbar.pack(side="bottom", fill="x", before=self.log)
         self.friend(vid)["met"] = True
-        self.speak(vid, COW_BACK[vid][0 if likes else 1])
+        self.speak(vid, b["back"][vid][0 if likes else 1])
         if pts:
             self.befriend(vid, pts)
             self.say("(%s %s.)" % (name, "likes you more for it" if pts > 0
@@ -8840,17 +8922,24 @@ class Game:
             n.x, n.y = self.free_spot("barn", *self.pos(), taken)
             return
         st["leashed"] = None
+        kind = self.beast(vid)
         x, y = self.free_barn_square() or self.barn_squares()[0]
-        st["cows"].append({"name": name, "colour": self.cow_colour(vid),
-                           "x": x, "y": y, "petted": -1, "milked": -1,
-                           "day": st["day"], "milk": 0, "vid": vid})
+        c = {"name": name, "colour": self.beast_colour(vid, kind),
+             "x": x, "y": y, "petted": -1, "milked": -9,
+             "day": st["day"], "milk": 0, "vid": vid}
+        if kind == "sheep":
+            c.update(kind="sheep", shorn=st["day"] - SHEAR_DAYS, wool=0)
+        st["cows"].append(c)
         n.where, n.x, n.y, n.hidden = "barn", x, y, True
         n.goal, n.path, n.visit = None, [], None
-        self.say("You unclip the leash, and %s the cow ambles into a stall "
-                 "and starts on the hay. She's one of your cows now. (%s)" % (
-                     name, "She looks very content." if self.likes_change(
-                         vid, "cowify") else "She does not look pleased."),
-                 "quest")
+        self.say("You unclip the leash, and %s the %s %s. She's one of "
+                 "your %s now. (%s)" % (
+                     name, kind, "ambles into a stall and starts on the hay"
+                     if kind == "cow" else "trots in and settles in the "
+                     "straw", "cows" if kind == "cow" else "sheep",
+                     "She looks very content." if self.likes_change(
+                         vid, BEASTS[kind]["spell"]) else
+                     "She does not look pleased."), "quest")
         self.render()
 
     def unbarn(self, vid):
@@ -8894,6 +8983,36 @@ class Game:
             self.render()
         return c
 
+    def add_sheep(self):
+        used = {c["name"] for c in self.st["cows"]}
+        names = [n for n in SHEEP_NAMES if n not in used] or SHEEP_NAMES
+        x, y = self.free_barn_square() or self.barn_squares()[0]
+        c = {"name": random.choice(names), "kind": "sheep",
+             "colour": random.choice(SHEEP_COLOURS), "x": x, "y": y,
+             "petted": -1, "milked": -9, "shorn": self.st["day"] -
+             SHEAR_DAYS, "day": self.st["day"], "milk": 0, "wool": 0}
+        self.st["cows"].append(c)
+        if self.area.key == "barn":
+            self.render()
+        return c
+
+    def milk_ready(self, c):
+        """A cow gives milk every day, a sheep every other day."""
+        if c.get("kind") == "sheep":
+            return self.st["day"] - c.get("milked", -9) >= SHEEP_MILK_DAYS
+        return c.get("milked") != self.st["day"]
+
+    def shear_ready(self, c):
+        """A sheep's woolly enough to shear three days after the last."""
+        return c.get("kind") == "sheep" and \
+            self.st["day"] - c.get("shorn", -9) >= SHEAR_DAYS
+
+    def barn_tile(self, c):
+        if c.get("kind") == "sheep":
+            return ("sheepf_" if self.shear_ready(c) else "sheep_") + \
+                c["colour"]
+        return "cow_" + c["colour"]
+
     def cow_minute(self):
         a = self.areas["barn"]
         for c in self.st["cows"]:
@@ -8907,26 +9026,42 @@ class Game:
                 c["x"], c["y"] = x, y
 
     def cow_menu(self, i):
+        """Walking into one of your barn animals: a cow or a sheep."""
         c = self.st["cows"][i]
+        sheep = c.get("kind") == "sheep"
         age = self.st["day"] - c.get("day", 0)
-        milked = c.get("milked") == self.st["day"]
         items = [("Pet %s" % c["name"], lambda: self.pet_cow(i))]
         if "milk pail" in self.p["tools"]:
-            items.append(("Milk %s%s" % (c["name"], " (done today)" if milked
-                                         else ""), lambda: self.milk_cow(i)))
+            items.append(("Milk %s%s" % (c["name"], "" if self.milk_ready(c)
+                                         else " (done today)" if
+                                         c.get("milked") == self.st["day"]
+                                         else " (tomorrow)"),
+                          lambda: self.milk_cow(i)))
+        if sheep and "shears" in self.p["tools"]:
+            wait = SHEAR_DAYS - (self.st["day"] - c.get("shorn", -9))
+            items.append(("Shear %s%s" % (c["name"], "" if wait <= 0 else
+                                          " (in %d day%s)" % (
+                                              wait, "s" if wait > 1
+                                              else "")),
+                          lambda: self.shear(i)))
         if not c.get("vid"):
             items.append(("Give her a new name",
                           lambda: self.start_naming(i, "cows")))
         items.append(("Squeeze past",
                       lambda: self.edge_past(i, "cows")))
         items.append(("Leave her be", lambda: None))
-        self.open_menu("%s, a %s cow (%s; %d pail%s of milk)" % (
-            c["name"], c["colour"], "new today" if age == 0 else
+        m = c.get("milk", 0)
+        self.open_menu("%s, a %s%s %s (%s; %d pail%s of milk%s)" % (
+            c["name"], "woolly " if self.shear_ready(c) else "",
+            c["colour"], "sheep" if sheep else "cow",
+            "new today" if age == 0 else
             "%d day%s with you" % (age, "s" if age > 1 else ""),
-            c.get("milk", 0), "" if c.get("milk", 0) == 1 else "s"), items)
+            m, "" if m == 1 else "s", "; %d wool" % c.get("wool", 0)
+            if sheep else ""), items)
 
     def pet_cow(self, i):
         c = self.st["cows"][i]
+        sheep = c.get("kind") == "sheep"
         self.flash(c["x"], c["y"], "heart")
         vid = c.get("vid")
         if c.get("petted") == self.st["day"]:
@@ -8934,28 +9069,37 @@ class Game:
                      "you." % c["name"], "info")
         elif vid:
             c["petted"] = self.st["day"]
-            if self.likes_change(vid, "cowify"):
-                self.say("You scratch %s behind the ears. She moos softly "
-                         "and leans into you." % c["name"], "good")
+            if self.likes_change(vid, "sheepify" if sheep else "cowify"):
+                self.say(("You ruffle %s's wool. She bleats softly and "
+                          "leans into you." if sheep else
+                          "You scratch %s behind the ears. She moos softly "
+                          "and leans into you.") % c["name"], "good")
                 self.befriend(vid, GIFT_POINTS["like"])
             else:
-                self.say("You pat %s's flank. She puts up with it, chewing "
-                         "pointedly." % c["name"], "info")
+                self.say(("You pat %s. She puts up with it, chewing "
+                          "pointedly.") % c["name"], "info")
         else:
             c["petted"] = self.st["day"]
-            self.say(random.choice(COW_PETS) % c["name"], "good")
+            if sheep:
+                self.sound.play("baa")
+            self.say(random.choice(SHEEP_PETS if sheep else COW_PETS) %
+                     c["name"], "good")
         self.end_turn(1)
 
     def milk_cow(self, i):
-        """Once a day a cow gives a pail of milk, if you've the pail."""
+        """A cow gives a pail of milk once a day, a sheep every other day,
+        if you've the pail."""
         c = self.st["cows"][i]
+        sheep = c.get("kind") == "sheep"
         if "milk pail" not in self.p["tools"]:
             self.say("You'll need a milk pail. Mabel sells them.", "info")
             self.render()
             return
-        if c.get("milked") == self.st["day"]:
-            self.say("%s's been milked today. She gives you a look that "
-                     "says so." % c["name"], "info")
+        if not self.milk_ready(c):
+            self.say(("%s's been milked today. She gives you a look that "
+                      "says so." if c.get("milked") == self.st["day"] else
+                      "%s's still got none to give. Sheep need a day "
+                      "between milkings.") % c["name"], "info")
             self.render()
             return
         if not self.spend("milk pail"):
@@ -8965,12 +9109,56 @@ class Game:
         self.give("milk")
         self.sound.play("pour")
         vid = c.get("vid")
-        if vid and not self.likes_change(vid, "cowify"):
+        if vid and not self.likes_change(vid, "sheepify" if sheep else
+                                         "cowify"):
             self.say("You milk %s, who stamps a hoof the whole time. (+1 "
                      "milk)" % c["name"], "good")
+        elif sheep:
+            self.say("You milk %s. It takes a while; sheep are small. "
+                     "Rich, creamy milk. (+1 milk)" % c["name"], "good")
         else:
             self.say("You milk %s. Warm, sweet milk froths into the pail. "
                      "(+1 milk)" % c["name"], "good")
+        self.end_turn(TOOL_COST)
+
+    def shear(self, i):
+        """Every third day a sheep has grown enough wool to shear."""
+        c = self.st["cows"][i]
+        if c.get("kind") != "sheep":
+            self.say("%s doesn't need a haircut. She's a cow." % c["name"],
+                     "info")
+            self.render()
+            return
+        if "shears" not in self.p["tools"]:
+            self.say("You'll need shears. Mabel sells them.", "info")
+            self.render()
+            return
+        if not self.shear_ready(c):
+            wait = SHEAR_DAYS - (self.st["day"] - c.get("shorn", -9))
+            self.say("%s's fleece is still short. Give it %d more day%s." %
+                     (c["name"], wait, "s" if wait > 1 else ""), "info")
+            self.render()
+            return
+        if not self.spend("shears"):
+            return
+        c["shorn"] = self.st["day"]
+        c["wool"] = c.get("wool", 0) + 1
+        self.give("wool")
+        self.sound.play("snip")
+        vid = c.get("vid")
+        if vid and not self.likes_change(vid, "sheepify"):
+            self.say("You shear %s, who bleats indignantly through every "
+                     "snip and then stands there, shivering and furious. "
+                     "(+1 wool)" % c["name"], "good")
+        elif vid:
+            self.say("You shear %s, who holds very still and then skips "
+                     "about, light as anything. (+1 wool)" % c["name"],
+                     "good")
+        else:
+            self.say("Snip, snip, snip: the fleece comes away in one soft "
+                     "piece, and %s trots off looking half the size. (+1 "
+                     "wool)" % c["name"], "good")
+        self.flash(c["x"], c["y"], "heart")
         self.end_turn(TOOL_COST)
 
     def cooped(self, vid):
@@ -8981,7 +9169,7 @@ class Game:
         vid = n.vid
         name = VILLAGERS[vid]["short"]
         st = self.st
-        if not (self.chicken(vid) or self.is_cow(vid)):
+        if not (self.chicken(vid) or self.hoofed(vid)):
             self.say("You can't put a leash on %s. Well, you could. You "
                      "shouldn't." % name, "info")
         elif self.statue(vid):
@@ -8992,7 +9180,12 @@ class Game:
         else:
             st["leashed"] = vid
             n.goal, n.path, n.stuck, n.visit = None, [], 0, None
-            if self.is_cow(vid):
+            if self.is_sheep(vid):
+                self.say("You clip the leash on. %s the sheep %s" % (
+                    name, "bleats happily and skips after you." if
+                    self.likes_change(vid, "sheepify") else "bleats "
+                    "crossly, but trots along. She has no choice."), "good")
+            elif self.is_cow(vid):
                 self.say("You clip the leash on. %s the cow %s" % (
                     name, "moos happily and plods after you." if
                     self.likes_change(vid, "cowify") else "lows crossly, "
@@ -9012,7 +9205,9 @@ class Game:
         if not quiet:
             self.say(("You unclip the leash. %s the cow flicks her tail "
                       "and ambles off about her day." if self.is_cow(n.vid)
-                      else "You unclip the leash. %s the hen shakes out her "
+                      else "You unclip the leash. %s the sheep gives a "
+                      "little skip and trots off about her day." if
+                      self.is_sheep(n.vid) else "You unclip the leash. %s the hen shakes out her "
                       "feathers and potters off about her day.") %
                      VILLAGERS[n.vid]["short"], "info")
             self.end_turn(1)
@@ -9024,27 +9219,27 @@ class Game:
         st = self.st
         vid = st.get("leashed")
         n = self.npcs[vid]
-        if not (self.chicken(vid) or self.is_cow(vid)) or self.kept(vid):
+        if not (self.chicken(vid) or self.hoofed(vid)) or self.kept(vid):
             st["leashed"] = None
             return
         if self.statue(vid):
             st["leashed"] = None
             self.say("The leash slips off the golden %s." % (
-                "cow" if self.is_cow(vid) else "hen"), "info")
+                self.beast(vid) or "hen"), "info")
             return
         area, pos = before
         here = self.area.key
         if here == "coop" and area != "coop" and self.chicken(vid):
             self.coop_hen(vid)
             return
-        if here == "barn" and area != "barn" and self.is_cow(vid):
+        if here == "barn" and area != "barn" and self.hoofed(vid):
             self.barn_cow(vid)
             return
-        if here != area and here == "coop" and self.is_cow(vid):
+        if here != area and here == "coop" and self.hoofed(vid):
             self.say("%s won't fit through the coop door. She waits "
                      "outside, chewing." % VILLAGERS[vid]["short"], "info")
             return
-        if n.where == "valley" and here == "coop" and self.is_cow(vid):
+        if n.where == "valley" and here == "coop" and self.hoofed(vid):
             return
         if n.where != here or area != here:
             taken = {(m.where, m.x, m.y) for m in self.npcs.values()
@@ -9402,7 +9597,20 @@ class Game:
             if i is not None:
                 self.milk_cow(i)
             else:
-                self.say("Use the pail on a cow.", "info")
+                self.say("Use the pail on a cow or a sheep.", "info")
+            return
+        if h == "shears" and a.key == "barn":
+            i = self.cow_at(x, y)
+            if i is not None:
+                self.shear(i)
+            else:
+                self.say("Use the shears on a sheep.", "info")
+            return
+        n = self.npc_at(x, y)
+        if h == "shears" and n and self.is_sheep(n.vid) and \
+                not self.leashed(n.vid):
+            self.say("%s won't stand still for shearing out here. Lead her "
+                     "into your barn." % VILLAGERS[n.vid]["short"], "info")
             return
         n = self.npc_at(x, y)
         if n and self.leashed(n.vid):
@@ -10210,6 +10418,17 @@ class Game:
                 self.say("She ambles aside and lets you by.", "info")
             self.end_turn(1)
             return
+        if self.is_sheep(vid):
+            self.walking = None
+            self.sound.play("baa")
+            self.say(random.choice(
+                BAA_HAPPY if self.likes_change(vid, "sheepify") else
+                BAA_ANGRY).replace("{who}", VILLAGERS[vid]["short"]),
+                "info")
+            if self.squeeze_past(n):
+                self.say("She trots aside and lets you by.", "info")
+            self.end_turn(1)
+            return
         if self.chicken(vid):
             self.walking = None
             self.say(random.choice(
@@ -10503,6 +10722,7 @@ class Game:
         None."""
         for kind, test in (("loo", self.loo), ("tree", self.tree),
                            ("chicken", self.chicken), ("cow", self.is_cow),
+                           ("sheep", self.is_sheep),
                            ("statue", self.statue),
                            ("maid", self.maid), ("swapped", self.swapped)):
             if test(vid):
@@ -10522,7 +10742,8 @@ class Game:
         if kind != "statue":
             spell = {"loo": "looify", "tree": "treeify", "chicken":
                      "chickenfy", "maid": "maidify",
-                     "cow": "cowify"}.get(kind, "genderswap")
+                     "cow": "cowify", "sheep": "sheepify"}.get(
+                         kind, "genderswap")
             likes = self.likes_change(other, spell)
             line += " " + random.choice(GOSSIP_HINTS[kind][0 if likes
                                                           else 1])
@@ -10804,12 +11025,12 @@ class Game:
                         out.append((c + " seeds", crop(c, "seed")))
                 continue
             name, price = entry
-            if name in ("fishing rod", "leash", "milk pail") and \
+            if name in ("fishing rod", "leash", "milk pail", "shears") and \
                     name in self.p["tools"]:
                 continue
             if name == "barn" and "barn" in self.built():
                 continue
-            if name == "cow" and ("barn" not in self.built() or len(
+            if name in ("cow", "sheep") and ("barn" not in self.built() or len(
                     self.st["cows"]) >= BARN_ROOM):
                 continue
             if name == "copper can" and self.p["can"] > 20:
@@ -10886,12 +11107,18 @@ class Game:
         for n, c in extra.items():
             self.take(n, c)
         self.sound.play("gold")
-        if name in ("fishing rod", "leash", "milk pail"):
+        if name in ("fishing rod", "leash", "milk pail", "shears"):
             p["tools"].append(name)
             p["hand"] = name
+            if name == "shears":
+                self.speak(vid, "(happy)Good sharp shears. A sheep's ready "
+                                "for a trim every third day; you'll see "
+                                "her go all fluffy.")
+                return
             if name == "milk pail":
                 self.speak(vid, "(happy)A good pail. Once a day per cow, "
-                                "mind. Cows have opinions about that.")
+                                "every other day for a sheep, mind. They "
+                                "have opinions about that.")
                 return
             if name == "leash":
                 self.speak(vid, "(laugh)A leash? For a chicken? Well, it's "
@@ -10908,11 +11135,19 @@ class Game:
                             "%s. Milk her once a day and she'll be happy "
                             "as anything." % c["name"])
             return
+        elif name == "sheep":
+            c = self.add_sheep()
+            self.sound.play("baa")
+            self.speak(vid, "(happy)She's in your barn with the others. "
+                            "Her name's %s. Milk her every other day, and "
+                            "shear her when she's gone all fluffy, every "
+                            "third day or so." % c["name"])
+            return
         elif name == "barn":
             self.build_barn()
             self.speak(vid, "(happy)There. A proper barn, up by your fields. "
-                            "Room for six cows. Mabel sells them, and the "
-                            "pail to milk them.")
+                            "Room for ten cows and sheep. Mabel sells "
+                            "them, and the pail and shears.")
             return
         elif name == "chicken coop":
             self.build_coop()
@@ -11636,7 +11871,7 @@ class Game:
                 people[(hen["x"], hen["y"])] = "hen_" + hen["colour"]
         if a.key == "barn":
             for cow in st["cows"]:
-                people[(cow["x"], cow["y"])] = "cow_" + cow["colour"]
+                people[(cow["x"], cow["y"])] = self.barn_tile(cow)
         lit = {}
         if lvl and a.outdoor:
             for lx, ly in self.lamps + [(px, py)]:
@@ -12006,13 +12241,18 @@ class Game:
                 "%s%s" % (c["name"], " \u2665" if c.get("petted") ==
                           self.st["day"] else "") for c in hens) +
                 ".  (\u2665 petted today)", 64)
-        cows = self.st.get("cows", [])
-        if cows:
-            lines += [""] + wrap("Your cows: " + ", ".join(
-                "%s%s%s" % (c["name"], " \u2665" if c.get("petted") ==
-                            self.st["day"] else "", " (milked)" if
-                            c.get("milked") == self.st["day"] else "")
-                for c in cows) + ".", 64)
+        for kind, label in (("cow", "Your cows: "), ("sheep",
+                                                     "Your sheep: ")):
+            herd = [c for c in self.st.get("cows", [])
+                    if c.get("kind", "cow") == kind]
+            if herd:
+                lines += [""] + wrap(label + ", ".join(
+                    "%s%s%s%s" % (c["name"], " \u2665" if c.get("petted") ==
+                                  self.st["day"] else "", " (milked)" if
+                                  c.get("milked") == self.st["day"] else "",
+                                  " (woolly)" if self.shear_ready(c)
+                                  else "")
+                    for c in herd) + ".", 64)
         lines.append("(Any key closes.)")
         self.show_text("\n".join(lines))
 
@@ -12927,7 +13167,20 @@ GOSSIP["cow"] = [
     "think they're happy?",
     "Do you suppose {who} still thinks like a person, under all that? Or "
     "just about grass?"]
+GOSSIP["sheep"] = [
+    "(surprised)Is that sheep by the fence really {who}? I keep wondering "
+    "whether they like it.",
+    "(sad)I almost counted {who} trying to get to sleep last night. Do you "
+    "think they're happy, being a sheep?",
+    "Do you suppose {who} still thinks like a person, under all that wool? "
+    "Or just about clover?"]
 GOSSIP_HINTS = {   # kind -> (they like it, they don't)
+    "sheep": (["They frisked about like a spring lamb when they saw me.",
+               "I saw them asleep in the sun, a little cloud of "
+               "contentment."],
+              ["They butted me in the knee. Deliberately.",
+               "They glared at me through their fringe and baaed something "
+               "very rude."]),
     "cow": (["They mooed at me ever so warmly.",
              "I saw them lying in the sun, chewing, the picture of peace."],
             ["They stamped a hoof at me. Twice.",
@@ -13096,7 +13349,7 @@ MAID_CHORES = {   # what you can tell a maid to do: menu, and in her words
     "weed": ("Clear the fields", "clear the weeds and stones and branches"),
     "water": ("Water the crops", "water the crops"),
     "eggs": ("Collect the eggs", "collect the eggs and see to the hens"),
-    "milk": ("Milk the cows", "milk the cows"),
+    "milk": ("Milk the animals", "milk the cows and sheep"),
     "cook": ("Cook breakfast", "cook you breakfast"),
     "rest": ("Just rest", "rest. Just rest. If you say so"),
 }
@@ -13364,6 +13617,108 @@ COW_BACK = {   # turned back: sorry to be human again, glad of it
               "(cross)No liner, no lipstick, and HOOVES. I can't even "
               "describe the trauma."),
 }
+SHEEP_BACK = {   # turned back: sorry to be human again, glad of it
+    "marisol": ("(laugh)So soft! I was a walking proving cloth! The dough "
+                "would have LOVED me!",
+                "(cross)Somebody tried to knit with me. While I was "
+                "standing there."),
+    "silas": ("(happy)Up on the hill, all day, just watching the clouds "
+              "watch me back. I understand white now.",
+              "(cross)Wool in my eyes for a week. A painter. Blind with "
+              "wool."),
+    "dmitri": ("(happy)I counted sheep, and for once I WAS one. I slept like "
+               "a stone.",
+               "(cross)Sheep cannot see straight up. The whole sky, gone. "
+               "Gone!"),
+    "jonah": ("(happy)...Flock took me in. Didn't even ask. Good sheep.",
+              "(cross)Duchess herded me. The goat. Herded ME."),
+    "clara": ("(laugh)Benji wanted to keep me! He made me a little bed out "
+              "of mailbags!",
+              "(cross)I got mixed up in Jonah's flock and nobody could "
+              "find me for a DAY."),
+    "gus": ("(laugh)Ha! Warmest I've been in sixty winters! Should've done "
+            "it years ago!",
+            "(cross)Theo said I looked like his gran's tea cosy. I'll get "
+            "him."),
+    "agnes": ("(happy)A placid, sensible creature. I was very well "
+              "behaved, I'm sure.",
+              "(cross)I was FOLLOWED. By other sheep. As if I were their "
+              "leader. Ridiculous."),
+    "bea": ("(laugh)Being a sheep is SO cosy! I'm going to be so much "
+            "nicer at shearing time!",
+            "(cross)I couldn't give a single injection! The lambs were "
+            "laughing at me!"),
+    "nell": ("(happy)Lanolin! It's a wonderful lubricant. My gears will "
+             "never squeak again.",
+             "(cross)I got wool caught in every cog of the workshop. "
+             "Every. Single. Cog."),
+    "rowan": ("(blush)...Nobody expects anything of a sheep. It was really "
+              "nice.",
+              "(cross)I was so HOT. Do you know how hot that is in the "
+              "smithy, {name}?"),
+    "felix": ("(happy)My blood pressure has never been so low. Grazing is "
+              "very good for you.",
+              "(cross)I was sheared, {name}. Sheared. In public."),
+    "theo": ("(laugh)Dude, I was SO fluffy! I floated! Like, almost!",
+             "(cross)I fell in the river and weighed about a ton. Wet wool, "
+             "dude. Wet. Wool."),
+    "juniper": ("(blush)I just stood in the sun and felt soft all over. "
+                "It was the nicest thing.",
+                "(sad)Everyone kept patting me. I can't say no when I'm a "
+                "person, let alone a sheep."),
+    "wren": ("(laugh)I bleated in harmony with the whole flock! Jonah said "
+             "it was the best they'd ever sounded!",
+             "(cross)Baa! Baa! That's all I could sing! For DAYS!"),
+    "ivy": ("(laugh)Huh. Butting things is fun. I butted a fence post flat.",
+            "(cross)Pip tried to use me as a pillow. In school."),
+    "edmund": ("(happy)The wool trade is the backbone of a valley! I "
+               "experienced it personally!",
+               "(cross)I gave a speech and the sheep FOLLOWED me. Home. "
+               "Into the hall!"),
+    "rose": ("(laugh)Oh, I was so warm, dear. Like being knitted into a "
+             "cardigan. A lovely one.",
+             "(sad)Oh, sweetheart. The thought of being knitted into "
+             "somebody's scarf..."),
+    "mabel": ("(surprised)Free wool! I could sell it in the store! I could "
+              "sell ME in the store!",
+              "(cross)Biscuit made a nest in my fleece. My own cat!"),
+    "otto": ("(laugh)HA! A ram! I butted the anvil and the ANVIL lost!",
+             "(cross)Fluffy! I was FLUFFY! A blacksmith! Fluffy!"),
+    "bernard": ("(happy)Oh! I have a new respect for my wool supplier too. "
+                "And my jumper.",
+                "(sad)Oh dear, oh dear. Somebody asked if I was the stew."),
+    "amy": ("(happy)Nobody tried to talk to me for days. I just grazed and "
+            "thought about crosswords. Bliss.",
+            "(cross)Rusty brushed me for an hour and called me her poodle. "
+            "I need a lie-down."),
+    "rusty": ("(laugh)Darling, the VOLUME! I've never had hair like it in "
+              "my life!",
+              "(cross)They SHEARED me, darling. Do you know how long it "
+              "took to grow that?"),
+}
+BEASTS = {   # what cowify and sheepify make of somebody, and what they say
+    "cow": {"spell": "cowify", "list": "cowified", "back": COW_BACK,
+            "bounce": "The spell bounces off the cow's hide. Cows are cows.",
+            "child": "%s moos with delight, but the spell won't stick. "
+                     "Some things are best left to grown-ups.",
+            "gold": "The spell skids off the gold. Gold doesn't moo.",
+            "grow": "With a sound like a contented sigh, %s grows, and "
+                    "grows, and there stands a %s cow, %s.",
+            "happy": "mooing happily", "cross": "lowing indignantly",
+            "unmade": "A last long moo, and %s is back on two feet, "
+                      "brushing straw off."},
+    "sheep": {"spell": "sheepify", "list": "sheepified", "back": SHEEP_BACK,
+              "bounce": "The spell sinks into the sheep's fleece and is "
+                        "lost. Sheep are sheep.",
+              "child": "%s baas with delight, but the spell won't stick. "
+                       "Some things are best left to grown-ups.",
+              "gold": "The spell skids off the gold. Gold doesn't baa.",
+              "grow": "With a soft whumph of wool, %s drops to all fours, "
+                      "and there stands a fluffy %s sheep, %s.",
+              "happy": "bleating happily", "cross": "bleating crossly",
+              "unmade": "A last plaintive baa, the wool falls away like "
+                        "dandelion fluff, and %s is back on two feet."},
+}
 CHICKEN_BACK = {   # turned back: sorry to be human again, glad of it
     "marisol": ("(laugh)I laid an egg! A perfect egg! I'm putting it in a "
                 "cake!",
@@ -13550,6 +13905,76 @@ def cow_art(colour):
     return px
 
 
+SHEEP_COLOURS = ("white", "cream", "brown", "black")
+SHEEP_NAMES = ["Woolly", "Fluff", "Dumpling", "Snowball", "Lambkin",
+               "Clementine", "Nutmeg", "Cotton", "Pippa", "Biscuit Two",
+               "Marshmallow", "Fleecy", "Poppet", "Tumble", "Bramble",
+               "Shortbread"]
+SHEEP_PETS = ["You sink your fingers into %s's wool. It's warm all the "
+              "way down.",
+              "%s leans on your legs and says \"Baa\" in a very small "
+              "voice.",
+              "You scratch %s under the chin. Her eyes half close.",
+              "%s nibbles your sleeve, then your other sleeve."]
+BAA_HAPPY = ["The sheep that is {who} gives a bright, happy \"Baa!\"",
+             "{who} the sheep frisks in a little circle, all wool.",
+             "{who} bleats and nuzzles your hand.",
+             "{who} the sheep leans against you, soft as a cloud."]
+BAA_ANGRY = ["The sheep that is {who} stamps a tiny hoof and bleats "
+             "crossly.",
+             "{who} gives you a \"Baa\" with real venom in it.",
+             "{who} the sheep turns and butts you in the knee.",
+             "{who} glares at you through her fringe of wool."]
+
+
+def sheep_art(colour, fluffy):
+    """A sheep side on, facing right: a cloud of wool when she's ready to
+    shear, a trim little body when she's just been shorn."""
+    wool, shade, curl = {"white": ("#f2efe6", "#cfc8b8", "#ffffff"),
+                         "cream": ("#ecdcb6", "#c6b084", "#faf0d8"),
+                         "brown": ("#8a6242", "#62442e", "#ae8462"),
+                         "black": ("#3c3842", "#24212a", "#5e5866")}[colour]
+    face = "#2e2628" if colour != "black" else "#1a1618"
+    pal = {"w": wool, "W": shade, "f": face, "i": face, "e": "#f0e8c8",
+           "l": face, "k": "#141010", "s": wool, "S": shade,
+           "h": curl}
+    if fluffy:
+        rows = ("................",
+                "................",
+                "....h..h..h.....",
+                "...whw.hw.whw...",
+                "..wwwhwwwhwww.i.",
+                ".whwwwwhwwwhwfff",
+                "wwwwhwwwwhwwwfef",
+                "hwwwwwhwwwwhwfff",
+                "wwhwwwwwhwwww.ff",
+                ".wwwhwwwwwhww...",
+                "wWwwwwhwwwwwW...",
+                ".W.WWwWWwWW.W...",
+                "...ll....ll.....",
+                "...ll....ll.....",
+                "...ll....ll.....",
+                "...kk....kk.....")
+    else:
+        rows = ("................",
+                "................",
+                "................",
+                "................",
+                "............i...",
+                "...........ifff.",
+                "..S.sssssssfffef",
+                "...ssssssssffff.",
+                "...sssssssss..ff",
+                "...sssssssss....",
+                "...SsssssssS....",
+                "...SSssssSSS....",
+                "...ll....ll.....",
+                "...ll....ll.....",
+                "...ll....ll.....",
+                "...kk....kk.....")
+    return art_pixels(pal, rows)
+
+
 def egg_art():
     g = [[None] * 16 for _ in range(16)]
     for y in range(16):
@@ -13673,10 +14098,14 @@ def all_tiles(season=0):
     for colour in COW_COLOURS:
         sprites["cow_" + colour] = cow_art(colour)
         sprites["scow_" + colour] = golden(sprites["cow_" + colour])
+    for colour in SHEEP_COLOURS:
+        sprites["sheep_" + colour] = sheep_art(colour, False)
+        sprites["sheepf_" + colour] = sheep_art(colour, True)
+        sprites["ssheep_" + colour] = golden(sprites["sheepf_" + colour])
     for name, px in sprites.items():
         tiles[name] = px
         SPRITES.add(name)
-        if name.startswith(("v_", "vx_", "vm_", "hen_", "cow_")):
+        if name.startswith(("v_", "vx_", "vm_", "hen_", "cow_", "sheep")):
             tiles[name + "@1"] = px[1:] + [[None] * 16]   # a bob
     return tiles
 
@@ -13713,7 +14142,7 @@ def selftest():
                 vid not in CHICKEN_BACK or vid not in TREE_BACK or \
                 vid not in TREE_CHOPPED or (
                     (vid not in MAID_LINES or vid not in LOO_BACK or
-                     vid not in COW_BACK) and
+                     vid not in COW_BACK or vid not in SHEEP_BACK) and
                     v["look"].get("age") != "child"):
             problems.append("%s lacks spell reactions" % vid)
         for expr in EXPRESSIONS:
@@ -13801,7 +14230,7 @@ def selftest():
             if entry != "seeds" and entry[0] not in ITEMS and entry[0] not \
                     in ("checkup", "copper can", "cabin extension",
                         "chicken", "chicken coop", "leash", "barn",
-                        "cow", "milk pail",
+                        "cow", "milk pail", "sheep", "shears",
                         "fishing rod", "sprinkler"):
                 problems.append("shop %s sells unknown %s" % (kind, entry))
     for name, tune in MUSIC.items():

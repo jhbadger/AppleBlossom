@@ -59,8 +59,9 @@ the tool would do something there.
 | Axe, on a tree | three swings fell it, for 8 wood and a stump to clear (6 more); it grows back after a season |
 | Fishing rod | ask Theo about FISHING; face water and cast |
 | Magic wand | casts a spell straight ahead (see below) |
-| Leash | from Mabel's: leads a chickenfied or cowified villager, and lets her go again (see below) |
-| Milk pail | from Mabel's: milks a cow in your barn, once a day each |
+| Leash | from Mabel's: leads a chickenfied, cowified or sheepified villager, and lets her go again (see below) |
+| Milk pail | from Mabel's: milks a cow in your barn once a day, a sheep every other day |
+| Shears | from Mabel's: shears a woolly sheep in your barn, every third day each |
 
 Watered crops grow a day each night, and rain waters them for you. When a crop
 is ripe, use anything on it to pick it. Some crops (strawberries, tomatoes,
@@ -91,19 +92,32 @@ the coop while you're there.
   the old one. The Friends list (F) shows your hens and which you've petted
   today.
 
-### Cows
+### Cows and sheep
 
 Ivy will also build you a **barn** up by your fields for 4,000g, 150 wood
-and 50 stone. Once it's up, Mabel sells **cows** at 1,500g each, up to six,
-and a **milk pail** (300g, and you keep it). Each cow comes with a name
+and 50 stone. Once it's up, Mabel sells **cows** at 1,500g and **sheep** at
+1,000g, up to ten animals in all, a **milk pail** (300g) and **shears**
+(300g; you keep both). Each cow comes with a name
 (Buttercup, Clover, Bessie, Custard, and others) and a coat (spotted, brown,
-black or ginger), and wanders the barn while you're there.
+black or ginger), and wanders the barn while you're there. Each sheep has
+her own name too (Woolly, Dumpling, Snowball, Nutmeg, and others) and a
+fleece of white, cream, brown or black.
 
-- **Milk:** with the pail in hand, use it on a cow, or walk into her and
-  choose Milk, once a day each. Milk sells for 125g and gives 25 energy.
-- **Your cows:** walk into a cow to pet her (once a day), rename her,
-  milk her, or **squeeze past** her when she's blocking the way (like hens, she
-  never ends up in the doorway). The Friends list shows your cows.
+- **Milk:** with the pail in hand, use it on a cow or a sheep, or walk into
+  her and choose Milk. A cow gives milk once a day; a sheep every other day
+  (her menu says "tomorrow" in between). Milk sells for 125g and gives 25
+  energy.
+- **Wool:** a sheep grows a fleece in three days, and you can see it: a
+  woolly sheep is a big, curly cloud, and a freshly shorn one is small and
+  smooth. With the shears in hand, use them on a woolly sheep, or walk into
+  her and choose Shear (her menu counts down the days till she's ready).
+  Wool sells for 160g, and Granny Rose and Jonah like it as a gift. Sheep
+  come to you woolly.
+- **Your animals:** walk into a cow or sheep to pet her (once a day),
+  rename her, milk or shear her, or **squeeze past** her when she's blocking
+  the way (like hens, she never ends up in the doorway). The Friends list
+  shows your cows and sheep, which have been milked today, and which are
+  woolly.
 
 ## The magic wand
 
@@ -159,7 +173,17 @@ up to eight squares until it hits someone or something solid.
   once a day. She won't fit through the coop door. Cowify her again, in the
   barn or out, and she's herself, off back to her routine. Other spells
   bounce off a cow's hide (petrify makes a golden cow), cowify won't take
-  on a statue, hen, maid, tree or outhouse, and Pip is too young for it.
+  on a statue, hen, sheep, maid, tree or outhouse, and Pip is too young for
+  it.
+- **Sheepify** works just like cowify, but makes a fluffy sheep with a
+  fleece to suit their hair. She bleats happily or crossly when you walk
+  into her, follows the **leash** (and won't be shorn out in the lane), and
+  in your **barn** she's one of your sheep: pet her, milk her every other
+  day, and shear her every third day, with her opinion of each to match
+  whether she likes being a sheep. Sheepify her again to bring her back.
+  Other spells sink into her fleece (petrify makes a golden sheep), and
+  sheepify won't take on a cow, hen, statue, maid, tree or outhouse, or on
+  the children.
 - **Maidify** turns whoever it hits into a maid: a young woman in a black
   dress, a white apron and a frilled cap, whoever they were before. She
   moves into your cabin and stops keeping shop. Ask her about her **CHORE**
@@ -171,7 +195,7 @@ up to eight squares until it hits someone or something solid.
   | Clear the fields | clears up to a dozen weeds, stones and branches, and bags what they drop |
   | Water the crops | waters every crop (not needed when it rains) |
   | Collect the eggs | gathers the coop's eggs and pets every hen |
-  | Milk the cows | milks every cow in your barn that hasn't been milked |
+  | Milk the animals | milks every cow and sheep in your barn that has milk to give |
   | Cook breakfast | leaves you pancakes, bread, honey cake or stew |
   | Just rest | nothing at all |
 
