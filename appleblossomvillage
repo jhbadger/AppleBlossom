@@ -1501,6 +1501,22 @@ def person_art(look):
                 old = rows[y][x]
                 rows[y][x] = ch if ch != "." else (
                     old if old == "h" else ".")
+    if "tricorn" in extras:
+        pal["x"] = look.get("hat", "#1e1a1e")
+        pal["W"] = "#f4f0e6"
+        for x in range(6, 10):
+            rows[0][x] = "x"
+        for x in range(3, 13):
+            rows[1][x] = "x"
+            rows[2][x] = "x" if 4 <= x <= 11 else rows[2][x]
+        rows[0][3] = rows[0][12] = "x"
+        rows[1][7] = rows[1][8] = "W"
+    if "eyepatch" in extras:
+        pal["P"] = "#141414"
+        for x in range(16):
+            if rows[5][x] == "e":
+                rows[5][x] = "P"
+                break
     if "scarf" in extras:
         pal["f"] = look.get("scarfc", "#c04040")
         for x in range(4, 12):
@@ -1872,6 +1888,15 @@ def portrait(look, expr="neutral"):
         prect(g, 5, top + 2, 26, top + 3, shade(hc, 0.85))
         pdisc(g, cx, top + 1, 7, 4, hc, lambda x, y: y <= top + 2)
         prect(g, 9, top + 1, 22, top + 1, look.get("band", "#c04040"))
+    if "tricorn" in extras:
+        hc = look.get("hatc", "#1e1a1e")
+        prect(g, 4, top + 2, 27, top + 3, hc)              # the brim
+        pdisc(g, cx, top + 1, 7, 4, hc, lambda x, y: y <= top + 2)
+        for side in (-1, 1):                                # cocked up
+            pdisc(g, cx + side * 10, top, 2.2, 2.6, hc)
+        prect(g, 4, top + 3, 27, top + 3, "#c8a040")       # gold trim
+        for x, y in ((15, top - 1), (16, top - 1), (15, top), (16, top)):
+            g[y][x] = "#f4f0e6"                            # a little skull
     if "bandana" in extras:
         bc = look.get("bandc", "#c04040")
         prect(g, 8, top + 3, 23, top + 4, bc)
@@ -1906,6 +1931,12 @@ def portrait(look, expr="neutral"):
         prect(g, 17, 25, 18, 26, bc)
         g[25][15] = g[25][16] = shade(bc, 0.75)
         g[26][15] = g[26][16] = shade(bc, 0.75)
+    if "eyepatch" in extras:
+        prect(g, 10, fy - 1, 14, fy + 1, "#141414")
+        for x in range(4, 11):
+            g[fy - 1 - (10 - x) // 2][x] = "#141414"
+        for x in range(15, 27):
+            g[fy - 1 - (x - 15) // 3][x] = "#141414"
     return g
 
 # ── The people of Apple Blossom Village ─────────────────────────────────────
@@ -6726,8 +6757,8 @@ turns someone to gold; genderswap turns them into the
 other sex; chickenfy, into a hen; maidify, into a maid who
 lives in your cabin and does the CHORE you give her every
 morning (whom you may KISS twice a day, and ask what to
-WEAR: a uniform in any colour, a bikini, a shawl, a sundress
-or a yukata); treeify, into a
+WEAR: a uniform in any colour, a bikini, a shawl, a sundress,
+a yukata or a pirate costume); treeify, into a
 tree (sometimes a fruit tree) you can water (or chop, if
 you can bear the screaming);
 looify (outdoors, with room for a door), into an outhouse
@@ -9325,7 +9356,8 @@ class Game:
         c = self.st["wear"][vid][1]
         words = "%s %s" % (COLOUR_NAMES.get(c, "pretty"), {
             "shawl": "shawl over her uniform", "sundress": "sundress",
-            "yukata": "yukata"}[kind])
+            "yukata": "yukata",
+            "pirate": "pirate coat, tricorn hat and eyepatch"}[kind])
         return ("an " if words[0] in "aeiou" else "a ") + words
 
     def maid_wear(self, vid):
@@ -12208,6 +12240,9 @@ class Game:
         narr = text.startswith("*")
         if narr:
             text = text[1:]
+        elif self.maid(vid) and self.outfit(vid) == "pirate" and \
+                random.random() < 0.6:
+            text = piratify(text)
         self.talk.update(expr=expr, text=text, narr=narr)
         if log:
             if narr:
@@ -14464,6 +14499,50 @@ def cap(s):
     return s[:1].upper() + s[1:]
 
 
+PIRATE_WORDS = {"you": "ye", "your": "yer", "you're": "ye're",
+                "you'll": "ye'll", "you've": "ye've", "you'd": "ye'd",
+                "isn't": "ain't", "aren't": "ain't", "there": "thar",
+                "treasure": "treasure, arr", "sea": "briny deep",
+                "yours": "yers", "my": "me", "myself": "meself",
+                "is": "be", "are": "be", "yes": "aye", "hello": "ahoy",
+                "hi": "ahoy", "friend": "matey", "friends": "mateys",
+                "stop": "avast", "money": "doubloons", "gold": "booty",
+                "kitchen": "galley", "floor": "deck", "floors": "decks",
+                "cabin": "ship", "for": "fer"}
+PIRATE_START = ["Yarr! ", "Arr, ", "Ahoy! ", "Shiver me timbers! ",
+                "Avast! ", "Yo ho! "]
+PIRATE_END = [", matey", ", me hearty", ", ye scallywag", ", arr"]
+
+
+def piratify(text):
+    """Say it like a pirate: ye, me and aye, droppin' yer g's, and a
+    Yarr! or a matey thrown in."""
+    def swap(m):
+        w = m.group(0)
+        if w.isupper() and len(w) > 1:          # a topic word: leave it
+            return w
+        low = w.lower()
+        new = PIRATE_WORDS.get(low)
+        if new is None and low.endswith("ing") and len(low) > 4:
+            new = low[:-1] + "'"
+        if new is None:
+            return w
+        return new[:1].upper() + new[1:] if w[:1].isupper() else new
+    text = re.sub(r"[A-Za-z']+", swap, text)
+    if random.random() < 0.6:
+        start = random.choice(PIRATE_START)
+        if start.endswith(", ") and text[:1].isupper() and \
+                not text[:2].isupper() and not text.startswith("I "):
+            text = text[:1].lower() + text[1:]
+        text = start + text
+    if random.random() < 0.5:
+        m = re.search(r"[.!?]+$", text)
+        end = random.choice(PIRATE_END)
+        text = text[:m.start()] + end + text[m.start():] if m else \
+            text + end + "!"
+    return text
+
+
 def measure(item):
     """A natural amount of one of something: a pail of milk, a jar of
     jam."""
@@ -14996,6 +15075,8 @@ OUTFITS = {   # what else a maid might WEAR: menu, and the colours it comes in
                                 "#b8e0a0", "#f8f4ec")),
     "yukata": ("A yukata", ("#2a3a7a", "#c04868", "#3a8a8a", "#7a4aa0",
                             "#f0a8b8")),
+    "pirate": ("A pirate costume", ("#a82a2a", "#2a3460", "#2e5a3a",
+                                    "#5a2a5a")),
 }
 COLOUR_NAMES = {"#b04444": "red", "#4a6aa8": "blue", "#c8a040": "mustard",
                 "#6a8a4a": "moss green", "#f0ece4": "cream",
@@ -15003,6 +15084,8 @@ COLOUR_NAMES = {"#b04444": "red", "#4a6aa8": "blue", "#c8a040": "mustard",
                 "#a8d8f0": "sky blue", "#b8e0a0": "mint",
                 "#f8f4ec": "white", "#2a3a7a": "indigo",
                 "#c04868": "rose", "#3a8a8a": "teal", "#7a4aa0": "purple",
+                "#a82a2a": "crimson", "#2a3460": "navy",
+                "#2e5a3a": "bottle green", "#5a2a5a": "plum",
                 "#f0a8b8": "blossom pink"}
 
 
@@ -15029,6 +15112,11 @@ def outfit_look(look, kind, colour):
         new.update(shirt=colour, pants=colour, trim=shade(colour, 0.85),
                    collar=skin, hat="#e8c870", hatc="#e8c870",
                    shoes="#c89060")
+    elif kind == "pirate":
+        new["extras"] += ("tricorn", "eyepatch")
+        new.update(shirt=colour, pants="#2a2420", trim="#c8a040",
+                   collar="#f4f0e8", hat="#1e1a1e", hatc="#1e1a1e",
+                   shoes="#2a1a10")
     else:                                               # a yukata
         obi = "#e8b030" if colour not in ("#f0a8b8",) else "#c04868"
         new.update(shirt=colour, pants=colour, trim=obi, collar="#f4f0e8",
@@ -15872,6 +15960,11 @@ MAID_WIFE_GREET = (
      "(blush)You're home. Good. The apron's less annoying when you're "
      "here."])
 OUTFIT_LINES = {   # kind -> (she likes it, she doesn't)
+    "pirate": (["(laugh)Yarr! Now THIS be a uniform! Where's me cutlass?",
+                "(happy)Ahoy! I'll swab the decks, er, floors, with a song "
+                "in me heart, matey!"],
+               ["(cross)An eyepatch. I can only see half the dust now.",
+                "(sad)Arr. There. Happy? I'm not saying it again."]),
     "shawl": (["(happy)Oh, it's lovely and warm! Like a hug that stays.",
                "(blush)Hand-knitted, too. I feel very well looked after."],
               ["(cross)It itches. I'll wear it. It itches.",
