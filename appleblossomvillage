@@ -1511,6 +1511,11 @@ def person_art(look):
             rows[2][x] = "x" if 4 <= x <= 11 else rows[2][x]
         rows[0][3] = rows[0][12] = "x"
         rows[1][7] = rows[1][8] = "W"
+    if "sailor" in extras:
+        pal["K"] = look.get("kerchief", "#d03040")
+        for x in range(7, 9):
+            rows[8][x] = "K"
+        rows[9][7] = "K"
     if "eyepatch" in extras:
         pal["P"] = "#141414"
         for x in range(16):
@@ -1931,6 +1936,21 @@ def portrait(look, expr="neutral"):
         prect(g, 17, 25, 18, 26, bc)
         g[25][15] = g[25][16] = shade(bc, 0.75)
         g[26][15] = g[26][16] = shade(bc, 0.75)
+    if "sailor" in extras:
+        sc = look.get("sailorc", "#2a3460")
+        for y in range(25, PW):
+            for x in range(PW):
+                d = abs(x - cx)
+                if 4.5 + (y - 25) * 0.4 < d < 7.5 + (y - 24) * 1.6 and \
+                        g[y][x] in (shirt, shade(shirt, 0.8)):
+                    g[y][x] = sc
+                if abs(d - (6.5 + (y - 25) * 1.05)) < 0.5 and y > 25:
+                    g[y][x] = "#f4f2ec"                     # the stripe
+        kc = look.get("kerchief", "#d03040")
+        prect(g, 14, 27, 17, 28, kc)                        # neckerchief
+        for y in range(29, PW):
+            g[y][15] = g[y][16] = shade(kc, 0.85)
+        g[29][14] = g[29][17] = kc
     if "eyepatch" in extras:
         prect(g, 10, fy - 1, 14, fy + 1, "#141414")
         for x in range(4, 11):
@@ -6758,7 +6778,8 @@ other sex; chickenfy, into a hen; maidify, into a maid who
 lives in your cabin and does the CHORE you give her every
 morning (whom you may KISS twice a day, and ask what to
 WEAR: a uniform in any colour, a bikini, a shawl, a sundress,
-a yukata or a pirate costume); treeify, into a
+a yukata, a pirate costume or a sailor school uniform);
+treeify, into a
 tree (sometimes a fruit tree) you can water (or chop, if
 you can bear the screaming);
 looify (outdoors, with room for a door), into an outhouse
@@ -9357,7 +9378,8 @@ class Game:
         words = "%s %s" % (COLOUR_NAMES.get(c, "pretty"), {
             "shawl": "shawl over her uniform", "sundress": "sundress",
             "yukata": "yukata",
-            "pirate": "pirate coat, tricorn hat and eyepatch"}[kind])
+            "pirate": "pirate coat, tricorn hat and eyepatch",
+            "sailor": "sailor school uniform"}[kind])
         return ("an " if words[0] in "aeiou" else "a ") + words
 
     def maid_wear(self, vid):
@@ -12255,6 +12277,9 @@ class Game:
         elif self.maid(vid) and self.outfit(vid) == "pirate" and \
                 random.random() < 0.6:
             text = piratify(text)
+        elif self.maid(vid) and self.outfit(vid) == "sailor" and \
+                random.random() < 0.6:
+            text = kawaiify(text, self.p["name"] if self.p else "")
         self.talk.update(expr=expr, text=text, narr=narr)
         if log:
             if narr:
@@ -14555,6 +14580,51 @@ def piratify(text):
     return text
 
 
+KAWAII_WORDS = [   # phrase -> what a sailor-suited maid says instead
+    ("thank you", "arigatou"), ("good morning", "ohayou"),
+    ("thanks", "arigatou"), ("I'm sorry", "gomen nasai"),
+    ("cute", "kawaii"),
+    ("lovely", "kawaii"), ("pretty", "kawaii"), ("adorable", "kawaii"),
+    ("amazing", "sugoi"), ("wonderful", "sugoi"), ("great", "sugoi"),
+    ("wow", "sugoi"), ("delicious", "oishii"), ("tasty", "oishii"),
+    ("yes", "hai"), ("goodbye", "sayonara"), ("bye", "bye-bye~")]
+KAWAII_START = ["Kyaa~! ", "Ehehe~ ", "Sugoi! ", "Ano... ", "Hai! ",
+                "Uwaa~! "]
+KAWAII_END = [", senpai!", ", senpai~", "~ ehehe", " Kawaii desu!",
+              ", senpai. Notice me~"]
+
+
+def kawaiify(text, you):
+    """Say it like an anime schoolgirl: you're senpai, things are kawaii
+    and sugoi, and there's a Kyaa~! or a senpai at the end."""
+    if you:
+        text = re.sub(r"\b%s\b" % re.escape(you), "senpai", text)
+        text = re.sub(r"(^|[.!?] )senpai", lambda m: m.group(1) + "Senpai",
+                      text)
+
+    def swap(m):
+        w = m.group(0)
+        new = {k.lower(): v for k, v in KAWAII_WORDS}[w.lower()]
+        return new[:1].upper() + new[1:] if w[:1].isupper() else new
+    pattern = r"\b(%s)\b" % "|".join(re.escape(a) for a, _ in KAWAII_WORDS)
+    text = re.sub(pattern, swap, text, flags=re.I)
+    if random.random() < 0.5:
+        text = random.choice(KAWAII_START) + text
+    text = re.sub(r"(^|[.!?] )Sorry\b", lambda m: m.group(1) + "Gomen",
+                  text)
+    if "senpai" not in text.lower() or random.random() < 0.4:
+        m = re.search(r"[.!?~]+$", text)
+        end = random.choice(KAWAII_END)
+        if end.startswith(" "):                 # a sentence of its own
+            text = text + ("" if m else ".") + end
+        elif m:                                 # tucked in before the stop
+            text = text[:m.start()] + end + ("" if end[-1] in "!~" else
+                                              text[m.start():])
+        else:
+            text += end
+    return text
+
+
 def measure(item):
     """A natural amount of one of something: a pail of milk, a jar of
     jam."""
@@ -15089,6 +15159,8 @@ OUTFITS = {   # what else a maid might WEAR: menu, and the colours it comes in
                             "#f0a8b8")),
     "pirate": ("A pirate costume", ("#a82a2a", "#2a3460", "#2e5a3a",
                                     "#5a2a5a")),
+    "sailor": ("A sailor school uniform", ("#26305e", "#22222a",
+                                           "#2a4a3a", "#5a2232")),
 }
 COLOUR_NAMES = {"#b04444": "red", "#4a6aa8": "blue", "#c8a040": "mustard",
                 "#6a8a4a": "moss green", "#f0ece4": "cream",
@@ -15098,6 +15170,8 @@ COLOUR_NAMES = {"#b04444": "red", "#4a6aa8": "blue", "#c8a040": "mustard",
                 "#c04868": "rose", "#3a8a8a": "teal", "#7a4aa0": "purple",
                 "#a82a2a": "crimson", "#2a3460": "navy",
                 "#2e5a3a": "bottle green", "#5a2a5a": "plum",
+                "#26305e": "navy", "#22222a": "black",
+                "#2a4a3a": "dark green", "#5a2232": "maroon",
                 "#f0a8b8": "blossom pink"}
 
 
@@ -15124,6 +15198,12 @@ def outfit_look(look, kind, colour):
         new.update(shirt=colour, pants=colour, trim=shade(colour, 0.85),
                    collar=skin, hat="#e8c870", hatc="#e8c870",
                    shoes="#c89060")
+    elif kind == "sailor":
+        new["extras"] += ("sailor",)
+        new.update(shirt="#f4f2ec", pants=colour, trim=colour,
+                   collar=colour, sailorc=colour, shoes="#2a2028",
+                   kerchief="#d03040" if colour != "#5a2232" else
+                   "#f4c040")
     elif kind == "pirate":
         new["extras"] += ("tricorn", "eyepatch")
         new.update(shirt=colour, pants="#2a2420", trim="#c8a040",
@@ -15972,6 +16052,13 @@ MAID_WIFE_GREET = (
      "(blush)You're home. Good. The apron's less annoying when you're "
      "here."])
 OUTFIT_LINES = {   # kind -> (she likes it, she doesn't)
+    "sailor": (["(blush)Kyaa~! It's so kawaii! Do I look like a proper "
+                "student, senpai?",
+                "(laugh)Sugoi! I feel like I should be running late for "
+                "class with toast in my mouth!"],
+               ["(cross)A school uniform. At my age. Hai, hai. As you "
+                "wish, senpai.",
+                "(blush)The skirt is very short, senpai. Very short."]),
     "pirate": (["(laugh)Yarr! Now THIS be a uniform! Where's me cutlass?",
                 "(happy)Ahoy! I'll swab the decks, er, floors, with a song "
                 "in me heart, matey!"],

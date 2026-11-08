@@ -315,7 +315,11 @@ up to eight squares until it hits someone or something solid.
   a yukata with an obi, or a pirate costume (coat, tricorn hat with a
   skull, and an eyepatch). A maid dressed as a pirate talks like one, most
   of the time: "Yarr! So ye're the new one," "Aye, ye be me matey," and
-  she drops her g's while she's cleanin' the galley deck. Each new outfit comes in a colour of its own,
+  she drops her g's while she's cleanin' the galley deck. Or a **sailor
+  school uniform** (white blouse, sailor collar, red neckerchief and a
+  pleated skirt), in which you're suddenly *senpai*, and everything's
+  *kawaii* or *sugoi*: "Hai! Ohayou, senpai. The bread is oishii,
+  arigatou, senpai. Notice me~" Each new outfit comes in a colour of its own,
   and shows on her sprite and her portrait alike. Every maid likes some
   outfits and not others (dealt each game): one she likes earns
   friendship the first time; one she doesn't costs a little each time,
