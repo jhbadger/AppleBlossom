@@ -119,6 +119,20 @@ fleece of white, cream, brown or black.
   shows your cows and sheep, which have been milked today, and which are
   woolly.
 
+### Fruit trees
+
+Mabel sells **saplings** all year: cherry (1,000g), peach (1,200g), orange
+(1,400g), apple (1,200g) and pomegranate (1,400g). Hold one and use it on
+open ground on your farm to plant it. It grows from a sapling to a young
+tree, and after 28 days it's grown; from then on it blossoms every spring,
+and in its own season (cherries in spring, peaches and oranges in summer,
+apples and pomegranates in fall) it bears a fruit each morning, up to
+three. Walk into it to pick them, or to see how it's coming along; a maid
+told to pick the crops picks the trees too. Fruit sells (cherries 60g,
+peaches 110g, oranges 100g, pomegranates 140g), is good to eat, and makes
+jam in the preserves jar. The axe will chop a tree down, if you're sure,
+for wood. Trees stay put through every season, snow and all.
+
 ### Cats and dogs
 
 Mabel sells **cats** (600g) and **dogs** (800g), up to four pets in all.
@@ -273,7 +287,12 @@ up to eight squares until it hits someone or something solid.
   It stays put, day and night, until you change it back. Walk into it and it
   rustles happily or creaks crossly, depending on whether this villager
   likes being a tree (dealt each game); walk into it again to push through
-  the branches. **Water** a tree once a day: one that likes it takes it as a
+  the branches. About one time in three the spell makes a **fruit tree**
+  instead (cherry, peach, orange, apple or pomegranate): in that fruit's
+  season it's hung with fruit, a little more each morning, and walking into
+  it picks them. A villager who likes being a tree giggles that it tickles;
+  one who doesn't creaks that those are *theirs*, and likes you a little
+  less for it. **Water** a tree once a day: one that likes it takes it as a
   gift it likes, one that doesn't shakes the water off at you. You *can*
   take the axe to one: it screams at every swing, and on the third it falls,
   you get the wood, and the villager tumbles out of the trunk, whole but
@@ -300,11 +319,43 @@ up to eight squares until it hits someone or something solid.
   spells splinter against the door, looify won't take on a statue, hen,
   maid or tree, and Pip laughs too hard for it to land.
 
+  **Life in an outhouse.** Inside, beside the two holes, there's more to
+  do:
+  - The **almanac** on the bench gives tomorrow's weather and a tip for the
+    season (and the odd old joke).
+  - The **Gazette** pinned at the end of the bench has Amy's riddle of the
+    day. Answer it right, once a day, for 50g, and Amy's pleased.
+  - The **walls** are carved: initials, poems, Otto, and things that change
+    with the village: your sweetheart's name and yours in a heart, an
+    admirer's scrawl, "MABEL IS A COW NOW?!"
+  - The **seasons** come in: a bee through the moon window in spring, a
+    stifling summer, leaves under the door, and a seat so cold in winter you
+    yelp.
+
+  Every visit, yours or a villager's, leaves an outhouse a little
+  **grubbier** and its **pit** a little fuller. A filthy one draws flies
+  (you can see them, inside and out), nobody else will use it, and the
+  villager grows grumpier each day until you **clean** it. From the side,
+  you can also **empty the pit** for **fertilizer** (a sack for every three
+  visits): hold it and use it on a growing crop for a day's growth, once a
+  day per crop. Somebody who likes being an outhouse sighs with relief;
+  somebody who doesn't calls it the worst day of their life.
+
+  When an outhouse is busy, a second villager may **queue** outside,
+  tapping a foot, until it's free (or give up and find a bush). On the
+  night after the **Harvest Fair**, pranksters tip one outhouse onto its
+  side: nobody can use it until you **set it upright**, which its villager
+  is grateful for, whether they thought it was the best fun in weeks or
+  utterly mortifying. And you can **decorate** an outhouse from the side:
+  a jar of flowers on the bench, a holly wreath on the door, or cloth
+  curtains for the moon window. Each shows inside and out, and counts as a
+  gift: a liked one if they enjoy being an outhouse.
+
 ## The village
 
 | Place | Who | What's there |
 | --- | --- | --- |
-| Pike's General Store | Mabel Pike | seeds for the season, hens, cows, sheep, cats and dogs, a milk pail, shears, a leash, gifts, the Blossom Bouquet |
+| Pike's General Store | Mabel Pike | seeds for the season, fruit tree saplings, hens, cows, sheep, cats and dogs, a milk pail, shears, a leash, gifts, the Blossom Bouquet |
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
 | Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, the copper watering can, fine gifts, the Blossom Pendant |

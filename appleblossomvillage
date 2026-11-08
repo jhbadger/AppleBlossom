@@ -629,11 +629,26 @@ def draw_terrain(name, frame=0, season=0):
             disc(g, 7.5, 8, 4.5, "#c8a050")
             disc(g, 7.5, 8, 3, "#a88038")
         return g
-    if name in ("loohole", "loobench"):
+    if name == "moonwin":
+        g = draw_terrain("logwall", frame, s)
+        rect(g, 4, 3, 11, 12, "#2a3448" if s != 3 else "#c8d4e4")
+        disc(g, 7.5, 7.5, 3.2, "#f4e070")
+        disc(g, 9, 6.5, 2.8, "#2a3448" if s != 3 else "#c8d4e4")
+        return g
+    if name in ("loohole", "loobench", "loopaper", "loobend"):
         g = planks(rng, "#a07446", "#86603a")
         rect(g, 0, 3, 15, 13, "#c49460")
         rect(g, 0, 3, 15, 4, "#d8aa74")
         rect(g, 0, 13, 15, 14, "#6a4626")
+        if name == "loopaper":                    # the Gazette, on a nail
+            rect(g, 3, 4, 12, 12, "#ece6d4")
+            rect(g, 3, 4, 12, 5, "#3a3a3a")
+            for y in (7, 9, 11):
+                rect(g, 4, y, 11 if y != 11 else 8, y, "#9a9488")
+            g[3][7] = "#5a5a5a"
+            return g
+        if name == "loobend":
+            return g
         if name == "loohole":
             disc(g, 7.5, 8.5, 3.6, "#5a3a20")
             disc(g, 7.5, 8.5, 2.6, "#140c06")
@@ -1213,14 +1228,31 @@ MACHINES = {
     "beehive": [],
 }
 HIVE_DAYS = 3                   # a beehive fills every third morning
+
+# Fruit trees: fruit -> (the season it bears, fruit colour, blossom colour,
+# sapling price).  A sapling grows into a young tree, and in FRUIT_TREE_DAYS
+# into one that bears a fruit each morning of its season, up to three.
+FRUIT_TREES = {"cherry": (0, "#c41830", "#ffe0ea", 1000),
+               "peach": (1, "#f6a070", "#ffc8d0", 1200),
+               "orange": (1, "#f08a20", "#ffffff", 1400),
+               "apple": (2, "#e03030", "#ffd0e0", 1200),
+               "pomegranate": (2, "#b02040", "#f06060", 1400)}
+FRUIT_TREE_DAYS = 28
+FRUIT_TREEIFY = 0.35            # how often treeify makes a fruit tree
+ITEMS.update({"cherry": (60, 10, "fruit"), "peach": (110, 15, "fruit"),
+              "orange": (100, 15, "fruit"),
+              "pomegranate": (140, 15, "fruit")})
+for _f in FRUIT_TREES:
+    ITEMS[_f + " sapling"] = (0, 0, "sapling")
 JAM_FRUIT = ("strawberry", "blueberry", "cranberry", "melon", "apple",
              "salmonberry", "spice berry", "wild plum", "blackberry",
-             "wild grape")
+             "wild grape", "cherry", "peach", "orange", "pomegranate")
 PICKLE_VEG = ("turnip", "potato", "cauliflower", "pea", "corn", "eggplant",
               "pumpkin", "tomato", "yam", "wild leek", "winter root",
               "snow yam")
 for _m in MACHINES:
     ITEMS[_m] = (0, 0, "machine")
+ITEMS["fertilizer"] = (5, 0, "material")
 ITEMS.update({"mayonnaise": (150, 25, "artisan"),
               "cheese": (300, 50, "artisan"),
               "cloth": (420, 0, "artisan"),
@@ -5152,6 +5184,9 @@ ROMANCE = [k for k, v in VILLAGERS.items() if v["romance"]]
 SHOP_STOCK = {
     "store": ["seeds", ("chicken", 800), ("cow", 1500), ("milk pail", 300),
               ("sheep", 1000), ("shears", 300), ("cat", 600), ("dog", 800),
+              ("cherry sapling", 1000), ("peach sapling", 1200),
+              ("orange sapling", 1400), ("apple sapling", 1200),
+              ("pomegranate sapling", 1400),
               ("leash", 250), ("bread", 60),
               ("chocolate", 80), ("rose", 100),
               ("sketchbook", 200), ("book of poems", 250),
@@ -5677,14 +5712,21 @@ BARN_ROOM = 10                  # cows and sheep it holds, together
 SHEEP_MILK_DAYS = 2             # a sheep gives milk every other day
 SHEAR_DAYS = 3                  # and grows a fleece to shear in three
 PET_ROOM = 4                    # cats and dogs you can keep, together
+LOO_GRUBBY, LOO_FILTHY = 3, 6   # how much use before an outhouse is so
+PIT_PER_FERT = 3                # visits to fill a sack of fertilizer
+LOO_FLOWERS = ("daffodil", "sweet pea", "crocus", "rose", "sunflower",
+               "dandelion")
+LOO_DECOR = {"flowers": "a jar of flowers", "wreath": "a holly wreath",
+             "curtains": "curtains for the moon window"}
 EXTRA_ROOMS = {   # rooms that aren't buildings in the valley
     "loo": ("boards", "l", (     # inside whichever outhouse you're in
-        "lllll",
-        "lHjHl",
-        "l...l",
-        "llxll")),
+        "lllmlll",
+        "leHjHgl",
+        "l.....l",
+        "lllxlll")),
 }
-ROOM_TILES = {"Y": "hay", "U": "churn", "H": "loohole", "j": "loobench", "n": "nest", "q": "trough", "W": "wall", "w": "iwin", "l": "logwall", "L": "toolrack",
+ROOM_TILES = {"Y": "hay", "U": "churn", "H": "loohole", "j": "loobench",
+              "m": "moonwin", "g": "loopaper", "e": "loobend", "n": "nest", "q": "trough", "W": "wall", "w": "iwin", "l": "logwall", "L": "toolrack",
               "x": "exit", "B": "bed", "D": "bed2", "T": "table",
               "h": "chair", "C": "counter", "S": "shelf", "G": "goods",
               "K": "seeds", "O": "stove", "F": "fireplace", "X": "forge",
@@ -6658,25 +6700,30 @@ other sex; chickenfy, into a hen; maidify, into a maid who
 lives in your cabin and does the CHORE you give her every
 morning (whom you may KISS twice a day, and ask to WEAR
 a bikini instead of the uniform, or back); treeify, into a
-tree you can water (or chop, if you can bear the screaming);
+tree (sometimes a fruit tree) you can water (or chop, if
+you can bear the screaming);
 looify (outdoors, with room for a door), into an outhouse
-you can use; cowify, into a cow; sheepify, into a sheep;
+you can use, clean, decorate and empty for fertilizer
+(read the almanac and the Gazette riddle while you're
+in there); cowify, into a cow; sheepify, into a sheep;
 catify and dogify, into a cat or a dog.  Cast the same
 spell again to undo it.
 
 The axe fells trees (three swings) for wood; they grow
 back in a season.
 
-Mabel's leash leads a villager you've chickenfied, cowified
-sheepified, catified or dogified; lead her into your coop
-(a hen), barn (a cow or sheep) or cabin (a cat or dog) and
-she's one of your animals until the same spell turns her
-back.  A cat or dog who doesn't like the life runs off.  Any tool on her lets her go.  Ivy
-builds a barn; Mabel sells cows and sheep, the milk pail
-(cows daily, sheep every other day) and shears (a sheep
-is woolly enough to shear every third day).  Mabel sells
-cats (they live in your cabin) and dogs (in your farmyard)
-too; walk into one to pet her, once a day.
+Mabel's leash leads a villager you've chickenfied,
+cowified, sheepified, catified or dogified; lead her into
+your coop (a hen), barn (a cow or sheep) or cabin (a cat
+or dog) and she's one of your animals until the same spell
+turns her back. A cat or dog who doesn't like the life
+runs off. Any tool on her lets her go. Ivy builds a barn;
+Mabel sells cows and sheep, the milk pail (cows daily,
+sheep every other day) and shears (a sheep is woolly
+enough to shear every third day). Mabel sells cats (they
+live in your cabin) and dogs (in your farmyard) too; walk
+into one to pet her, once a day. Her fruit tree saplings
+grow up in 28 days and bear fruit in their season.
 
 Nell builds machines: jars for mayonnaise and preserves, a
 cheese press, a loom and beehives.  Set one on your farm
@@ -6985,9 +7032,10 @@ class Game:
                             tot[i] += int(c[1 + 2 * i:3 + 2 * i], 16)
                 self.avg[name] = "#%02x%02x%02x" % tuple(v // 256
                                                         for v in tot)
+        self.loo_painted = {}
         if self.p:
             self.paint_hero()
-            self.paint_bikinis()
+            self.paint_specials()
         self.scale_images()
 
     def paint_hero(self):
@@ -7002,35 +7050,44 @@ class Game:
             self.base[n] = img
         SPRITES.add("you")
 
-    def paint_bikinis(self, scale=False):
-        """Each maid in a bikini gets her own sprite, in her colour."""
+    def paint_specials(self, scale=False):
+        """Sprites made to order: each maid in a bikini, in her colour, and
+        each villager turned fruit tree, in fruit."""
+        frames = []
         for vid, b in self.st.get("bikinis", {}).items():
             px = art_pixels(*person_art(self.look_of(vid)))
-            for n, frame in (("vb_" + vid, px),
-                             ("vb_" + vid + "@1", px[1:] + [[None] * 16]),
-                             ("sb_" + vid, golden(px))):
-                # into the same image if she has one already: the map
-                # still shows it, and a new one would leave it pointing at
-                # nothing
-                img = self.base.get(n)
-                if img is None:
-                    img = self.base[n] = tk.PhotoImage(width=16, height=16)
-                img.blank()
-                for y, row in enumerate(frame):
-                    for x, c in enumerate(row):
-                        if c:
-                            img.put(c, to=(x, y, x + 1, y + 1))
-                SPRITES.add(n.split("@")[0])
-                if scale:
-                    big = self.img.get(n)
-                    if big is None:
-                        self.img[n] = img.zoom(self.scale)
-                    else:
-                        big.blank()
-                        big.tk.call(big.name, "copy", img.name, "-zoom",
-                                    self.scale, self.scale)
-                    if n.endswith("@1"):
-                        self.animated.add(n[:-2])
+            frames += [("vb_" + vid, px),
+                       ("vb_" + vid + "@1", px[1:] + [[None] * 16]),
+                       ("sb_" + vid, golden(px))]
+        for vid, t in self.st.get("fruitful", {}).items():
+            frames.append(("tvf_" + vid, tree_art(
+                VILLAGERS[vid]["look"], self.season(), t["kind"])))
+        for n, frame in frames:
+            self.paint_sprite(n, frame, scale)
+
+    def paint_sprite(self, n, frame, scale=True):
+        """One sprite made to order, drawn into the same image if there's
+        one already: the map still shows it, and a new one would leave it
+        pointing at nothing."""
+        img = self.base.get(n)
+        if img is None:
+            img = self.base[n] = tk.PhotoImage(width=16, height=16)
+        img.blank()
+        for y, row in enumerate(frame):
+            for x, c in enumerate(row):
+                if c:
+                    img.put(c, to=(x, y, x + 1, y + 1))
+        SPRITES.add(n.split("@")[0])
+        if scale and hasattr(self, "img"):
+            big = self.img.get(n)
+            if big is None:
+                self.img[n] = img.zoom(self.scale)
+            else:
+                big.blank()
+                big.tk.call(big.name, "copy", img.name, "-zoom",
+                            self.scale, self.scale)
+            if n.endswith("@1"):
+                self.animated.add(n[:-2])
 
     def scale_images(self):
         s = self.scale
@@ -7312,6 +7369,8 @@ class Game:
         st = self.st = {
             "seed": seed, "day": 0, "minute": WAKE, "weather": "sun",
             "tomorrow": "sun", "soil": {}, "sprinklers": [], "machines": {}, "bikinis": {},
+            "orchard": {}, "fruitful": {}, "loo_state": {},
+            "fertilized": {},
             "debris": {"%d,%d" % k: v for k, v in farm_debris(
                 self.areas["valley"].grid, seed).items()},
             "forage": {}, "apples": {}, "shipped": {}, "mail": [],
@@ -7391,6 +7450,10 @@ class Game:
         st.setdefault("pets", [])
         st.setdefault("machines", {})
         st.setdefault("bikinis", {})
+        st.setdefault("orchard", {})
+        st.setdefault("fruitful", {})
+        st.setdefault("loo_state", {})
+        st.setdefault("fertilized", {})
         for vid in VILLAGERS:
             st["friends"].setdefault(vid, {
                 "pts": 0, "talked": -1, "week": 0, "gift_day": -1,
@@ -7583,6 +7646,8 @@ class Game:
             return ("sprinkler", None)
         if k in st.get("machines", ()):
             return ("machine", st["machines"][k])
+        if k in st.get("orchard", ()):
+            return ("fruittree", st["orchard"][k])
         s = st["soil"].get(k)
         if s and s[1]:
             return ("crop", s)
@@ -7606,7 +7671,8 @@ class Game:
             return False
         if a.outdoor:
             th = self.thing_at(x, y)
-            if th and th[0] in ("debris", "sprinkler", "machine"):
+            if th and th[0] in ("debris", "sprinkler", "machine",
+                                "fruittree"):
                 return False
         elif a.key == "coop" and self.chicken_at(x, y) is not None:
             return False
@@ -7681,6 +7747,9 @@ class Game:
             if th and th[0] == "machine":
                 self.machine_menu("%d,%d" % (x, y))
                 return True
+            if th and th[0] == "fruittree":
+                self.fruit_tree_bump("%d,%d" % (x, y))
+                return True
             if t == "bin":
                 self.ship_menu()
                 return True
@@ -7748,7 +7817,21 @@ class Game:
             self.do_business()
             return True
         if t == "loobench":
-            self.say(random.choice(LOO_ALMANAC), "info")
+            self.read_almanac()
+            return True
+        if t == "loopaper":
+            self.gazette()
+            return True
+        if t == "loobend":
+            ls = self.loo_state(self.st["loo_in"]) if self.st.get(
+                "loo_in") else None
+            self.say("A jar of flowers brightens the bench." if ls and
+                     "flowers" in ls["decor"] else
+                     "The end of the bench. A good spot for a jar of "
+                     "flowers, if anybody brought some.", "info")
+            return True
+        if a.key == "loo" and t in ("logwall", "moonwin"):
+            self.carving()
             return True
         if t == "bed2" and a.key == "cabin":
             self.bed_menu()
@@ -7863,7 +7946,8 @@ class Game:
     def hand_list(self):
         seeds = sorted(n for n, c in self.p["items"].items()
                        if c and (n.endswith(" seeds") or n == "sprinkler" or
-                                 n in MACHINES))
+                                 n in MACHINES or n.endswith(" sapling") or
+                                 n == "fertilizer"))
         return [t for t in TOOLS if t in self.p["tools"]] + seeds
 
     def hand_name(self, h=None):
@@ -7945,9 +8029,17 @@ class Game:
             return on_farm(x, y) and t in TILLABLE and not th
         if h and h.endswith(" seeds"):
             return t == "soil" and not th
-        if h == "sprinkler" or h in MACHINES:
+        if h == "fertilizer":
+            return bool(th and th[0] == "crop" and not th[1][3] and
+                        not self.ripe(th[1]) and self.st["fertilized"].get(
+                            "%d,%d" % (x, y)) != self.st["day"])
+        if h == "sprinkler" or h in MACHINES or (h and h.endswith(
+                " sapling")):
             return on_farm(x, y) and not th and (t == "soil" or
                                                  t in TILLABLE)
+        if th and th[0] == "fruittree" and (h == "axe" or self.fruit_left(
+                th[1])):
+            return True
         if h == "fishing rod":
             return t in WATER
         return False
@@ -8156,8 +8248,13 @@ class Game:
         any of those in gold."""
         gold = self.statue(vid)
         if self.loo(vid):
-            return "lh_" + vid
+            return self.loo_tile(vid)
         if self.tree(vid):
+            t = self.st.get("fruitful", {}).get(vid)
+            if t and t.get("fruit"):
+                if "tvf_" + vid not in self.base:
+                    self.paint_specials(scale=True)
+                return "tvf_" + vid
             return "tv_" + vid
         if self.chicken(vid):
             return ("shen_" if gold else "hen_") + self.hen_colour(vid)
@@ -8366,10 +8463,19 @@ class Game:
         if not self.tree(vid):
             st["trees"].append(vid)
             n.goal, n.path, n.stuck = None, [], 0
+            fruit = None
+            if random.random() < FRUIT_TREEIFY:
+                fruit = random.choice(list(FRUIT_TREES))
+                st["fruitful"][vid] = {"kind": fruit, "planted": -999,
+                                       "fruit": 0}
+                if self.fruit_season(st["fruitful"][vid]):
+                    st["fruitful"][vid]["fruit"] = 1
+                self.paint_specials(scale=True)
             self.say("Bark creeps up from %s's feet, twigs sprout from "
-                     "%s fingers, and with a rustle there's a young tree "
+                     "%s fingers, and with a rustle there's a young %s "
                      "where %s stood, %s." % (
-                         name, "their", name, "its leaves trembling with "
+                         name, "their", fruit + " tree" if fruit else "tree",
+                         name, "its leaves trembling with "
                          "delight" if likes else "its branches creaking "
                          "crossly"), "quest")
             if likes:
@@ -8385,6 +8491,7 @@ class Game:
             self.end_turn(TOOL_COST)
             return
         st["trees"].remove(vid)
+        st["fruitful"].pop(vid, None)
         n.goal, n.path, n.stuck = None, [], 0
         self.say("The bark splits and falls away like old leaves, and %s "
                  "stumbles out, shaking twigs from %s hair." % (
@@ -8519,6 +8626,34 @@ class Game:
             key = "cabin"
         return door_of(key)
 
+    def loo_state(self, vid):
+        """An outhouse's pit, grime, decorations, and whether it's on its
+        side."""
+        return self.st.setdefault("loo_state", {}).setdefault(
+            vid, {"pit": 0, "grime": 0, "decor": [], "tipped": False})
+
+    def loo_tile(self, vid):
+        ls = self.st.get("loo_state", {}).get(vid)
+        sig = (ls["grime"] >= LOO_FILTHY, tuple(sorted(ls["decor"])),
+               ls["tipped"]) if ls else (False, (), False)
+        if sig == (False, (), False) or not hasattr(self, "base"):
+            return "lh_" + vid
+        painted = getattr(self, "loo_painted", None)
+        if painted is None:
+            painted = self.loo_painted = {}
+        if painted.get(vid) != sig:
+            self.paint_sprite("lhs_" + vid, loo_special_art(
+                VILLAGERS[vid]["look"], self.season(), *sig))
+            painted[vid] = sig
+        return "lhs_" + vid
+
+    def use_loo(self, vid):
+        """Somebody's been: a little more in the pit, a little less
+        clean."""
+        ls = self.loo_state(vid)
+        ls["pit"] += 1
+        ls["grime"] += 1
+
     def loo_door(self, vid):
         n = self.npcs[vid]
         return n.x, n.y + 1
@@ -8530,14 +8665,30 @@ class Game:
         name = VILLAGERS[vid]["short"]
         inside = [o for o in self.npcs.values()
                   if o.visit and o.visit["loo"] == vid and o.hidden]
-        if tuple(self.pos()) != self.loo_door(vid):
+        ls = self.loo_state(vid)
+        if ls["tipped"] or tuple(self.pos()) != self.loo_door(vid):
             self.walking = None
             done = self.friend(vid).get("cleaned") == self.st["day"]
-            self.open_menu("The outhouse that is %s" % name, [
-                ("Clean it%s" % (" (done today)" if done else ""),
-                 lambda: self.clean_loo(vid)),
-                ("Knock", lambda: self.knock_loo(vid)),
-                ("Leave it be", lambda: None)])
+            grime = ls["grime"]
+            items = []
+            if ls["tipped"]:
+                items.append(("Set it upright",
+                              lambda: self.right_loo(vid)))
+            items.append(("Clean it%s" % (
+                " (done today)" if done else " (filthy!)" if grime >=
+                LOO_FILTHY else " (grubby)" if grime >= LOO_GRUBBY else ""),
+                lambda: self.clean_loo(vid)))
+            if ls["pit"] >= PIT_PER_FERT:
+                items.append(("Empty the pit (%d fertilizer)" % (
+                    ls["pit"] // PIT_PER_FERT),
+                    lambda: self.empty_pit(vid)))
+            if self.decor_choices(vid):
+                items.append(("Decorate it", lambda: self.decorate_menu(
+                    vid)))
+            items += [("Knock", lambda: self.knock_loo(vid)),
+                      ("Leave it be", lambda: None)]
+            self.open_menu("The outhouse that is %s%s" % (
+                name, ", lying on its side" if ls["tipped"] else ""), items)
             return
         if inside:
             self.say("You rattle the door. \"Occupied!\" calls %s from "
@@ -8558,6 +8709,180 @@ class Game:
         self.layout()
         self.end_turn(WALK_COST)
 
+    def loo_inside(self):
+        """What's to be seen inside the outhouse you're in."""
+        vid = self.st.get("loo_in")
+        if not vid:
+            return {}
+        ls = self.loo_state(vid)
+        out = {}
+        if "flowers" in ls["decor"]:
+            out[(1, 1)] = "decor_flowers"
+        if "curtains" in ls["decor"]:
+            out[(3, 0)] = "decor_curtains"
+        if "wreath" in ls["decor"]:
+            out[(3, 3)] = "decor_wreath"
+        if ls["grime"] >= LOO_FILTHY:
+            out[(2, 2)] = "flies"
+            out[(5, 2)] = "flies"
+        return out
+
+    def empty_pit(self, vid):
+        """Dig out the pit from round the back: fertilizer, one sack for
+        every few visits."""
+        ls = self.loo_state(vid)
+        sacks = ls["pit"] // PIT_PER_FERT
+        if not sacks or not self.spend("hoe"):
+            return
+        ls["pit"] -= sacks * PIT_PER_FERT
+        self.give("fertilizer", sacks)
+        self.sound.play("chop")
+        name = VILLAGERS[vid]["short"]
+        self.say("Holding your breath, you dig out the pit behind %s and "
+                 "bag it up. (+%d fertilizer)" % (name, sacks), "good")
+        self.say(random.choice(
+            LOO_PIT_LIKE if self.likes_change(vid, "looify") else
+            LOO_PIT_HATE).replace("{who}", name), "talk")
+        self.end_turn(TOOL_COST)
+
+    def right_loo(self, vid):
+        """Set an outhouse the pranksters tipped over back on its feet."""
+        ls = self.loo_state(vid)
+        if not ls["tipped"]:
+            return
+        if not self.spend("hoe"):
+            return
+        ls["tipped"] = False
+        name = VILLAGERS[vid]["short"]
+        self.sound.play("door")
+        n = self.npcs[vid]
+        self.flash(n.x, n.y, "heart")
+        self.say("You heave the outhouse that is %s upright again." % name,
+                 "good")
+        self.say(random.choice(
+            LOO_RIGHT_LIKE if self.likes_change(vid, "looify") else
+            LOO_RIGHT_HATE).replace("{who}", name), "talk")
+        self.befriend(vid, 60)
+        self.end_turn(TOOL_COST)
+
+    def decor_choices(self, vid):
+        """What you could put up in this outhouse: (decoration, item)."""
+        ls = self.loo_state(vid)
+        have = self.p["items"]
+        out = []
+        if "flowers" not in ls["decor"]:
+            for f in LOO_FLOWERS:
+                if have.get(f):
+                    out.append(("flowers", f))
+                    break
+        if "wreath" not in ls["decor"] and have.get("holly"):
+            out.append(("wreath", "holly"))
+        if "curtains" not in ls["decor"] and have.get("cloth"):
+            out.append(("curtains", "cloth"))
+        return out
+
+    def decorate_menu(self, vid):
+        self.open_menu("Put up what?", [
+            ("%s (1 %s)" % (cap(LOO_DECOR[d]), item),
+             lambda d=d, item=item: self.decorate_loo(vid, d, item))
+            for d, item in self.decor_choices(vid)] +
+            [("Nothing", lambda: None)])
+
+    def decorate_loo(self, vid, d, item):
+        ls = self.loo_state(vid)
+        if d in ls["decor"] or not self.take(item):
+            return
+        ls["decor"].append(d)
+        name = VILLAGERS[vid]["short"]
+        n = self.npcs[vid]
+        self.flash(n.x, n.y, "sparkle")
+        self.sound.play("pick")
+        self.say("You put up %s in the outhouse that is %s." % (
+            LOO_DECOR[d], name), "good")
+        if self.likes_change(vid, "looify"):
+            self.say(random.choice(LOO_DECOR_LIKE).replace("{who}", name),
+                     "talk")
+            self.befriend(vid, GIFT_POINTS["like"])
+        else:
+            self.say(random.choice(LOO_DECOR_HATE).replace("{who}", name),
+                     "talk")
+            self.befriend(vid, GIFT_POINTS["neutral"])
+        self.end_turn(TOOL_COST)
+
+    def read_almanac(self):
+        """Tomorrow's weather, and a tip for the season, or a joke."""
+        st = self.st
+        if random.random() < 0.25:
+            self.say(random.choice(LOO_ALMANAC), "info")
+        else:
+            self.say("The almanac says tomorrow brings %s. %s" % (
+                ALMANAC_WEATHER[st["tomorrow"]],
+                random.choice(ALMANAC_TIPS[self.season()])), "info")
+        self.end_turn(1)
+
+    def gazette(self):
+        """Amy's riddle in today's Gazette: answer it right, once a day,
+        for a little prize."""
+        st = self.st
+        q, right, wrong = RIDDLES[st["day"] % len(RIDDLES)]
+        if st.get("riddle_day") == st["day"]:
+            self.say("You've done today's Gazette riddle. Tomorrow's paper "
+                     "will have a new one.", "info")
+            self.render()
+            return
+        answers = [right] + list(wrong)
+        random.Random(st["day"]).shuffle(answers)
+        self.open_menu("Today's Gazette riddle, by A.H.: %s" % q, [
+            (a, lambda a=a: self.answer_riddle(a == right, right))
+            for a in answers])
+
+    def answer_riddle(self, ok, right):
+        st = self.st
+        st["riddle_day"] = st["day"]
+        if not ok:
+            self.say("Wrong! The answer, printed upside down at the bottom, "
+                     "is '%s'." % right, "info")
+            self.end_turn(1)
+            return
+        self.p["gold"] += 50
+        self.sound.play("gold")
+        self.say("Right! The Gazette pays 50g to anyone who sends in the "
+                 "answer, and you scribble yours on the coupon. (+50g)",
+                 "gold")
+        if self.friend("amy").get("met"):
+            self.befriend("amy", 15, quiet=True)
+            self.say("(Amy will be pleased somebody got it.)", "heart")
+        self.end_turn(1)
+
+    def carving(self):
+        """Something somebody's scratched into the outhouse wall."""
+        st = self.st
+        you = self.p["name"]
+        lines = list(LOO_CARVINGS)
+        partner = self.partner()
+        if partner:
+            lines += ["%s + %s, carved inside a lopsided heart." % (
+                you, VILLAGERS[partner]["short"])] * 3
+        for vid, f in st["friends"].items():
+            if self.hearts(vid) >= 8 and not partner:
+                lines.append("'%s was here,' and underneath, in different "
+                             "writing, '%s likes %s!!'" % (
+                                 VILLAGERS[vid]["short"],
+                                 VILLAGERS[vid]["short"], you))
+        for vid in VILLAGERS:
+            kind = self.transformed(vid)
+            if kind and kind not in ("loo", "swapped"):
+                lines.append("'%s IS A %s NOW?!' Somebody's drawn one." % (
+                    VILLAGERS[vid]["short"].upper(), {
+                        "statue": "STATUE", "maid": "MAID"}.get(
+                        kind, kind.upper())))
+        loo = st.get("loo_in")
+        if loo:
+            lines.append("'%s was here.' Well, %s still is." % (
+                VILLAGERS[loo]["short"], VILLAGERS[loo]["short"]))
+        self.say("Carved in the wall: " + random.choice(lines), "info")
+        self.end_turn(1)
+
     def knock_loo(self, vid):
         self.say("You knock on the side of the outhouse that is %s. "
                  "The door's round the front." % VILLAGERS[vid]["short"],
@@ -8575,6 +8900,7 @@ class Game:
             self.render()
             return
         f["cleaned"] = self.st["day"]
+        self.loo_state(vid)["grime"] = 0
         n = self.npcs[vid]
         self.sound.play("pour")
         self.flash(n.x, n.y, "heart")
@@ -8591,6 +8917,17 @@ class Game:
         name = VILLAGERS[vid]["short"] if vid else "nobody"
         self.sound.play(random.choice(("pour", "raspberry")))
         self.say(random.choice(LOO_BUSINESS), "info")
+        season = self.season()
+        if random.random() < (0.45, 0.15, 0.15, 0.5)[season]:
+            self.say(random.choice(LOO_SEASON[season]), "info")
+        if vid:
+            self.use_loo(vid)
+            grime = self.loo_state(vid)["grime"]
+            if grime >= LOO_FILTHY:
+                self.say("Flies buzz round your head. It could do with a "
+                         "good clean.", "bad")
+            elif grime == LOO_GRUBBY:
+                self.say("It's getting a bit grubby in here.", "info")
         if vid and random.random() < 0.5:
             self.say(random.choice(
                 LOO_VOICE_LIKE if self.likes_change(vid, "looify") else
@@ -8618,6 +8955,7 @@ class Game:
                 return False
             if v["in"]:
                 if st["minute"] >= v["until"]:
+                    self.use_loo(v["loo"])
                     n.visit, n.hidden = None, False
                     x, y = self.loo_door(v["loo"])
                     taken = {(m.where, m.x, m.y) for m in self.npcs.values()
@@ -8627,6 +8965,22 @@ class Game:
                         self.say(random.choice(LOO_OUT).replace(
                             "{who}", n.name), "info")
                     n.goal, n.path = None, []
+                    return False
+                return True
+            dx, dy = self.loo_door(v["loo"])
+            busy = [m for m in self.npcs.values() if m is not n and
+                    m.visit and m.visit["loo"] == v["loo"] and m.visit["in"]]
+            if busy and n.where == "valley" and \
+                    abs(n.x - dx) + abs(n.y - dy) <= 2:
+                if not v.get("queued"):
+                    v["queued"] = True
+                    if here == "valley" and visible and self.near_you(n):
+                        self.say(random.choice(LOO_QUEUE).replace(
+                            "{who}", n.name).replace(
+                            "{in}", busy[0].name).replace(
+                            "{loo}", VILLAGERS[v["loo"]]["short"]), "info")
+                if st["minute"] > v["give_up"]:
+                    n.visit = None              # she'll find a bush
                     return False
                 return True
             if (n.where, n.x, n.y) == ("valley",) + self.loo_door(v["loo"]):
@@ -8651,10 +9005,12 @@ class Game:
             return False
         for lv in st["loos"]:
             o = self.npcs[lv]
-            if o.where == "valley" and \
+            ls = self.loo_state(lv)
+            if o.where == "valley" and not ls["tipped"] and \
+                    ls["grime"] < LOO_FILTHY and \
                     abs(o.x - n.x) + abs(o.y - n.y) <= 6 and \
-                    not any(m.visit and m.visit["loo"] == lv
-                            for m in self.npcs.values()):
+                    sum(1 for m in self.npcs.values()
+                        if m.visit and m.visit["loo"] == lv) < 2:
                 n.visit = {"loo": lv, "in": False,
                            "give_up": st["minute"] + 40}
                 n.goal, n.path, n.stuck = None, [], 0
@@ -8667,9 +9023,15 @@ class Game:
 
     def tree_bump(self, n):
         """Walking into a villager-tree: a rustle, glad or cross; walk into
-        it again straight away to push through the branches."""
+        it again straight away to push through the branches.  A fruit tree
+        in fruit, you pick first."""
         vid = n.vid
         here = (vid, self.area.key, n.x, n.y, self.pos())
+        t = self.st["fruitful"].get(vid)
+        if t and t.get("fruit"):
+            self.pick_villager_fruit(n, t)
+            self.last_statue = None
+            return
         if getattr(self, "last_statue", None) == here and \
                 self.squeeze_past(n):
             self.last_statue = None
@@ -8767,7 +9129,7 @@ class Game:
             x, y = map(int, k.split(","))
             if (x, y) == tuple(st["pos"]) or k in st["soil"] or \
                     k in st["sprinklers"] or k in st["forage"] or \
-                    k in st["machines"] or \
+                    k in st["machines"] or k in st["orchard"] or \
                     any(n.where == "valley" and (n.x, n.y) == (x, y)
                         for n in self.npcs.values()):
                 continue
@@ -8804,6 +9166,7 @@ class Game:
             return
         self.chops = {}
         self.st["trees"].remove(vid)
+        self.st["fruitful"].pop(vid, None)
         n.goal, n.path, n.stuck = None, [], 0
         self.give("wood", CHOPPABLE["tree"])
         self.flash(n.x, n.y, "puff")
@@ -8908,7 +9271,7 @@ class Game:
                 self.say("(%s is embarrassed, but does as she's told.)" %
                          name, "bad")
         self.portraits = {}
-        self.paint_bikinis(scale=True)
+        self.paint_specials(scale=True)
         self.flash(n.x, n.y, "sparkle")
         self.pass_time(1)
         self.render()
@@ -8958,6 +9321,10 @@ class Game:
                         s[2] = crop(name, "days") - regrow
                     else:
                         s[1], s[2] = None, 0
+            for t in st["orchard"].values():
+                if t.get("fruit"):
+                    got[t["kind"]] = got.get(t["kind"], 0) + t["fruit"]
+                    t["fruit"] = 0
             if not got:
                 return None
             for item, c in got.items():
@@ -9860,6 +10227,9 @@ class Game:
                 if k in st["sprinklers"]:
                     st["sprinklers"].remove(k)
                     self.give("sprinkler")
+                ft = st["orchard"].pop(k, None)
+                if ft:
+                    self.give(ft["kind"] + " sapling")
                 m = st["machines"].pop(k, None)
                 if m:
                     self.give(m["kind"])
@@ -10045,6 +10415,121 @@ class Game:
         if self.area.outdoor:
             self.step_on(*self.pos())
         return True
+
+    # ── Fruit trees ──
+
+    def fruit_season(self, t):
+        return self.season() == FRUIT_TREES[t["kind"]][0]
+
+    def tree_stage(self, t):
+        age = self.st["day"] - t.get("planted", -999)
+        return "s" if age < 7 else "y" if age < FRUIT_TREE_DAYS else "m"
+
+    def fruit_left(self, t):
+        return t.get("fruit", 0) if self.fruit_season(t) else 0
+
+    def fruit_tree_tile(self, t):
+        stage = self.tree_stage(t)
+        if stage == "m" and self.fruit_left(t):
+            stage = "f"
+        return "ft_%s_%s" % (t["kind"], stage)
+
+    def plant_sapling(self, k, kind):
+        st = self.st
+        st["soil"].pop(k, None)
+        st["orchard"][k] = {"kind": kind, "planted": st["day"], "fruit": 0}
+        self.take(kind + " sapling")
+        self.sound.play("pick")
+        self.say("You plant the %s sapling and firm the earth round it. "
+                 "In %d days it'll be grown, and every %s after that it'll "
+                 "bear %s." % (kind, FRUIT_TREE_DAYS,
+                               SEASONS[FRUIT_TREES[kind][0]].lower(),
+                               plural(kind, 2)), "good")
+        self.end_turn(TOOL_COST)
+
+    def fruit_tree_bump(self, k):
+        """Walking into a fruit tree you planted: pick it, or see how it's
+        coming along."""
+        t = self.st["orchard"].get(k)
+        if not t:
+            return
+        self.walking = None
+        kind = t["kind"]
+        n = self.fruit_left(t)
+        if n:
+            t["fruit"] = 0
+            self.give(kind, n)
+            self.sound.play("pick")
+            x, y = map(int, k.split(","))
+            self.flash(x, y, "sparkle")
+            self.say("You pick %d %s." % (n, plural(kind, n)), "good")
+            self.end_turn(2)
+            return
+        stage = self.tree_stage(t)
+        bears = SEASONS[FRUIT_TREES[kind][0]].lower()
+        if stage != "m":
+            left = FRUIT_TREE_DAYS - (self.st["day"] - t["planted"])
+            self.say("Your %s %s is coming along. Grown in %d day%s, then "
+                     "%s every %s." % (kind, "sapling" if stage == "s"
+                                      else "tree", left,
+                                      "" if left == 1 else "s",
+                                      plural(kind, 2), bears), "info")
+        elif self.fruit_season(t):
+            self.say("No %s left on this tree today. More tomorrow." %
+                     plural(kind, 2), "info")
+        elif self.season() == 0:
+            self.say("Your %s tree is in blossom, humming with bees. "
+                     "%s come in %s." % (kind, cap(plural(kind, 2)), bears),
+                     "info")
+        elif self.season() == 3:
+            self.say("Your %s tree is bare and sleeping till spring." % kind,
+                     "info")
+        else:
+            self.say("Your %s tree is in full leaf. %s come in %s." % (
+                kind, cap(plural(kind, 2)), bears), "info")
+        self.render()
+
+    def fell_fruit_tree_menu(self, k):
+        t = self.st["orchard"].get(k)
+        if not t:
+            return
+        self.open_menu("Chop down your %s %s?" % (
+            t["kind"], "sapling" if self.tree_stage(t) == "s" else "tree"),
+            [("Yes, chop it down", lambda: self.fell_fruit_tree(k)),
+             ("No, leave it", lambda: None)])
+
+    def fell_fruit_tree(self, k):
+        t = self.st["orchard"].pop(k, None)
+        if not t or not self.spend("axe"):
+            return
+        wood = {"s": 1, "y": 4, "m": 8}[self.tree_stage(t)]
+        self.give("wood", wood)
+        self.sound.play("chop")
+        self.say("You chop down the %s tree. (+%d wood)" % (t["kind"], wood),
+                 "info")
+        self.end_turn(TOOL_COST)
+
+    def pick_villager_fruit(self, n, t):
+        """Picking fruit off somebody the wand made a fruit tree."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        kind = t["kind"]
+        got = t["fruit"]
+        t["fruit"] = 0
+        self.give(kind, got)
+        self.sound.play("pick")
+        self.flash(n.x, n.y, "sparkle")
+        what = "%d %s" % (got, plural(kind, got))
+        if self.likes_change(vid, "treeify"):
+            self.say("You pick %s from %s, who giggles and rustles: \"Ooh, "
+                     "that tickles! Take them, take them!\"" % (what, name),
+                     "good")
+        else:
+            self.say("You pick %s from %s. \"Hey! Those are MINE! I grew "
+                     "those!\" creaks %s." % (what, name, name), "good")
+            self.befriend(vid, -20, quiet=True)
+        self.paint_specials(scale=True)
+        self.end_turn(2)
 
     # ── Machines ──
 
@@ -10254,6 +10739,12 @@ class Game:
         if th and th[0] == "machine":
             self.machine_menu(k)
             return
+        if th and th[0] == "fruittree":
+            if h == "axe":
+                self.fell_fruit_tree_menu(k)
+            else:
+                self.fruit_tree_bump(k)
+            return
         if t == "bin":
             self.ship_menu()
             return
@@ -10343,6 +10834,30 @@ class Game:
             self.say("You set the sprinkler in the ground. It'll water the "
                      "four squares around it every morning.", "good")
             self.end_turn(TOOL_COST)
+            return
+        if h == "fertilizer":
+            if not (th and th[0] == "crop") or th[1][3] or \
+                    self.ripe(th[1]):
+                self.say("Fertilizer goes on a growing crop.", "info")
+                return
+            if st["fertilized"].get(k) == st["day"]:
+                self.say("You've already fed that one today.", "info")
+                return
+            st["fertilized"][k] = st["day"]
+            th[1][2] += 1
+            self.take("fertilizer")
+            self.sound.play("pick")
+            self.say("You work fertilizer in round the %s. It perks up "
+                     "visibly: a day's growth overnight." % th[1][1], "good")
+            self.end_turn(1)
+            return
+        if h and h.endswith(" sapling"):
+            if not on_farm(x, y) or th or not (t == "soil" or
+                                               t in TILLABLE):
+                self.say("Plant the %s in open ground on your farm." % h,
+                         "info")
+                return
+            self.plant_sapling(k, h[:-8])
             return
         if h in MACHINES:
             if not on_farm(x, y) or th or not (t == "soil" or
@@ -10485,7 +11000,8 @@ class Game:
         if energy and self.p["items"].get(n):
             acts.append(("Eat it (+%d energy)" % energy,
                          lambda: self.eat(n)))
-        if n.endswith(" seeds") or n == "sprinkler" or n in MACHINES:
+        if n.endswith(" seeds") or n == "sprinkler" or n in MACHINES or \
+                n.endswith(" sapling") or n == "fertilizer":
             acts.append(("Hold it", lambda: (self.p.update(hand=n),
                                              self.say("You hold the %s." %
                                                       self.hand_name(),
@@ -10654,6 +11170,13 @@ class Game:
             if s[1] and s[0] and not s[3]:
                 s[2] += 1
             s[0] = 0
+        fest = self.festival_today()
+        prank = fest and fest[0] == "Harvest Fair" and [
+            v for v in st["loos"] if not self.loo_state(v)["tipped"]]
+        for v in st["loos"]:
+            if self.loo_state(v)["grime"] >= LOO_FILTHY:
+                self.befriend(v, -10, quiet=True)
+        st["fertilized"] = {}
         old_season = self.season()
         st["day"] += 1
         st["minute"] = WAKE
@@ -10692,9 +11215,15 @@ class Game:
             k = "%d,%d" % (x, y)
             if valley.grid[y][x] == "grass" and k not in st["soil"] and \
                     k not in st["debris"] and k not in st["sprinklers"] and \
-                    k not in st["machines"] and \
+                    k not in st["machines"] and k not in st["orchard"] and \
                     (x, y) != self.pos() and season != 3:
                 st["debris"][k] = "weed"
+        for t in list(st["orchard"].values()) + list(
+                st["fruitful"].values()):
+            if self.fruit_season(t) and self.tree_stage(t) == "m":
+                t["fruit"] = min(3, t.get("fruit", 0) + 1)
+            else:
+                t["fruit"] = 0
         if season == 2:
             for x in (5, 8, 11, 14):
                 k = "%d,%d" % (x, 17)
@@ -10711,6 +11240,12 @@ class Game:
         if self.season_drawn != season:
             self.load_images()
         self.morning_news()
+        if prank:
+            vid = random.choice(prank)
+            self.loo_state(vid)["tipped"] = True
+            self.say("Pranksters were out after the Harvest Fair: the "
+                     "outhouse that is %s has been tipped over!" %
+                     VILLAGERS[vid]["short"], "quest")
         self.settle_npcs()
         self.layout()
         self.save()
@@ -10734,7 +11269,7 @@ class Game:
                 x, y = random.choice(spots)
                 k = "%d,%d" % (x, y)
                 if k not in st["forage"] and k not in st["debris"] and \
-                        k not in st["machines"]:
+                        k not in st["machines"] and k not in st["orchard"]:
                     st["forage"][k] = item
 
     def mail(self, sender, text):
@@ -12603,10 +13138,14 @@ class Game:
                                    else "sprinkler" if kind == "sprinkler"
                                    else self.machine_tile(what)
                                    if kind == "machine"
+                                   else self.fruit_tree_tile(what)
+                                   if kind == "fruittree"
                                    else what)
                     base = t
                     if a.key == "coop" and [x, y] in st["eggs"]:
                         mid = "egg"
+                    if a.key == "loo":
+                        mid = self.loo_inside().get((x, y), mid)
                     top = people.get((x, y))
                     if (x, y) == (px, py):
                         top = "you"
@@ -12776,41 +13315,24 @@ class Game:
         self.root.after(300, hide)
 
     def draw_text_box(self, text, color=INK):
-        """Text in a box in the middle of the map: in two columns, split
-        at a paragraph, when it's too tall and there's room side by side;
-        then smaller, if it still doesn't fit."""
+        """Text in a box in the middle of the map, as big as will fit: in
+        one column if it can, or two, split at a paragraph, if that lets
+        it be bigger."""
         c = self.canvas
         W, H = c.winfo_width(), c.winfo_height()
-        probe = c.create_text(0, 0, text=text, font=F(*MONO), anchor="nw")
-        x0, y0, x1, y1 = c.bbox(probe)
-        c.delete(probe)
-        cols = [text]
-        paras = text.split("\n\n")
-        w, h = x1 - x0, y1 - y0
-        one = min(1, (H - 20) / h, (W - 20) / w)            # how big each
-        two = min(1, (H - 20) / (h / 2 + 20), (W - 20) / (2 * w + 32))
-        if one < 1 and two > one and len(paras) > 1:
-            def tallest(i):
-                return max("\n\n".join(paras[:i]).count("\n"),
-                           "\n\n".join(paras[i:]).count("\n"))
-            i = min(range(1, len(paras)), key=tallest)
-            cols = ["\n\n".join(paras[:i]), "\n\n".join(paras[i:])]
-        font = F(*MONO)
-        for attempt in range(2):
-            ts, x = [], 0
-            for col in cols:
-                t = c.create_text(x, 0, text=col, fill=color, font=font,
-                                  justify="left", anchor="nw",
-                                  tags="overlay")
-                ts.append(t)
-                x = c.bbox(t)[2] + 32
-            x0, y0, x1, y1 = c.bbox(*ts)
-            if attempt or (y1 - y0 <= H - 20 and x1 - x0 <= W - 20):
-                break
-            k = min((H - 20) / (y1 - y0), (W - 20) / (x1 - x0))
-            font = F("Menlo", max(7, int(12 * k)))
-            for t in ts:
-                c.delete(t)
+        key = (text, W, H, font_px(12))     # fonts scale with the window
+        cache = getattr(self, "box_fit", {})
+        if key not in cache:
+            cache[key] = self.fit_text_box(text, W, H)
+            self.box_fit = cache
+        cols, font = cache[key]
+        ts, x = [], 0
+        for col in cols:
+            t = c.create_text(x, 0, text=col, fill=color, font=font,
+                              justify="left", anchor="nw", tags="overlay")
+            ts.append(t)
+            x = c.bbox(t)[2] + 32
+        x0, y0, x1, y1 = c.bbox(*ts)
         dx, dy = (W - (x1 - x0)) / 2 - x0, (H - (y1 - y0)) / 2 - y0
         for t in ts:
             c.move(t, dx, dy)
@@ -12820,6 +13342,41 @@ class Game:
                                tags="overlay")
         for t in ts:
             c.tag_raise(t, r)
+
+    def fit_text_box(self, text, W, H):
+        """(columns, font) for a text box: the largest font at which it
+        fits in one column, or else in two."""
+        c = self.canvas
+        paras = text.split("\n\n")
+        two = [text]
+        if len(paras) > 1:
+            def tallest(i):
+                return max("\n\n".join(paras[:i]).count("\n"),
+                           "\n\n".join(paras[i:]).count("\n"))
+            i = min(range(1, len(paras)), key=tallest)
+            two = ["\n\n".join(paras[:i]), "\n\n".join(paras[i:])]
+
+        def size_of(cols, font):
+            ts, x = [], 0
+            for col in cols:
+                t = c.create_text(x, 0, text=col, font=font, anchor="nw")
+                ts.append(t)
+                x = c.bbox(t)[2] + 32
+            x0, y0, x1, y1 = c.bbox(*ts)
+            for t in ts:
+                c.delete(t)
+            return x1 - x0, y1 - y0
+        best, room = None, -1
+        for size in range(12, 4, -1):
+            font = F(*MONO) if size == 12 else F("Menlo", size)
+            for cols in ([text], two) if len(two) > 1 else ([text],):
+                w, h = size_of(cols, font)
+                if w <= W - 40 and h <= H - 30:
+                    return cols, font
+                fit = min((W - 40) / w, (H - 30) / h)
+                if size == 5 and fit > room:        # least bad, at worst
+                    best, room = (cols, font), fit
+        return best
 
     def draw_map(self):
         c, a = self.canvas, self.areas["valley"]
@@ -13539,6 +14096,71 @@ TREE_SHAPE = (
     ".....TTmmTT.....",
     ".....tTTTTt.....",
     "....tTTttTTt....")
+FRUIT_SPOTS = ((4, 2), (9, 1), (11, 3), (6, 4), (2, 4), (12, 5), (8, 5),
+               (5, 6))
+FRUIT_TREE_ROWS = {
+    "s": ("................", "................", "................",
+          "................", "................", "................",
+          "................", "................", "................",
+          "........L.......",
+          "......LHLL......",
+          ".......LlL......",
+          "........T.......",
+          "........T.......",
+          "........T.......",
+          ".......tTt......"),
+    "y": ("................", "................", "................",
+          "................",
+          "......LLLL......",
+          ".....LHHLLL.....",
+          "....LLLLLLLL....",
+          "....LLLLLLLl....",
+          ".....lLLLLl.....",
+          "......lTTl......",
+          ".......TT.......",
+          ".......TT.......",
+          ".......TT.......",
+          ".......TT.......",
+          ".......TT.......",
+          "......tTTt......"),
+    "m": (".....LLLLLL.....",
+          "...LLHHLLLLLL...",
+          "..LLHHLLLLLLLL..",
+          ".LLLLLLLLLLLLLl.",
+          ".LLLLLLLLLLLLLl.",
+          ".LLLLLLLLLLLLll.",
+          "..lLLLLLLLLLLl..",
+          "...llLLLLLLll...",
+          "....lllTTlll....",
+          "......tTTt......",
+          "......TTTT......",
+          "......TTTT......",
+          "......tTTt......",
+          "......TTTT......",
+          ".....tTTTTt.....",
+          "....tTTttTTt...."),
+}
+BLOSSOM_SPOTS = ((5, 1), (8, 2), (11, 2), (3, 3), (7, 3), (12, 4), (4, 5),
+                 (9, 5), (6, 6), (11, 6), (2, 4))
+
+
+def fruit_tree_art(kind, stage, season):
+    """A fruit tree you planted: a sapling, a young tree, or grown, in
+    blossom in spring, and hung with fruit ("f") in its season."""
+    leaf, dark, hi, _ = TREE_LEAVES[season]
+    _, fruit, bloom, _ = FRUIT_TREES[kind]
+    pal = {"L": leaf, "l": dark, "H": hi, "T": "#7a5434", "t": "#5a3c24"}
+    px = art_pixels(pal, FRUIT_TREE_ROWS["m" if stage == "f" else stage])
+    if stage in ("m", "f") and season == 0:
+        for x, y in BLOSSOM_SPOTS:
+            px[y][x] = bloom
+    if stage == "f":
+        for x, y in FRUIT_SPOTS:
+            px[y][x] = fruit
+            px[y + 1][x] = shade(fruit, 0.75)
+    return px
+
+
 TREE_LEAVES = {   # season -> leaf, shadow, highlight, blossom (None: shirt)
     0: ("#78c060", "#4a8a3a", "#a8e080", "#f8c0d8"),
     1: ("#4a9a3a", "#2e6a2a", "#78c060", None),
@@ -13547,9 +14169,19 @@ TREE_LEAVES = {   # season -> leaf, shadow, highlight, blossom (None: shirt)
 }
 
 
-def tree_art(look, season):
+def tree_art(look, season, fruit=None):
     """A villager turned tree: leaves for the season, a hint of their hair
-    in the green, and their face peering out of the trunk."""
+    in the green, and their face peering out of the trunk; hung with
+    fruit, if they're a fruit tree."""
+    if fruit:
+        px = tree_art(look, season)
+        col = FRUIT_TREES[fruit][1]
+        for x, y in FRUIT_SPOTS:
+            if px[y][x] and px[y][x] != "#7a5434":
+                px[y][x] = col
+                if y + 1 < 8:
+                    px[y + 1][x] = shade(col, 0.75)
+        return px
     leaf, dark, hi, bloom = TREE_LEAVES[season]
     hair = look.get("hair", "#5a3a1e")
     if season != 3:
@@ -13590,6 +14222,36 @@ def loo_art(look, season):
            "d": door, "D": shade(door, 0.78), "m": "#f4e070",
            "k": "#3a2818"}
     return art_pixels(pal, LOO_SHAPE)
+
+
+def loo_special_art(look, season, filthy, decor, tipped):
+    """An outhouse with something about it: flies, flowers, a wreath on
+    the door, curtains in the moon, or knocked onto its side."""
+    px = loo_art(look, season)
+    if "curtains" in decor:
+        for row in px:
+            for x, c in enumerate(row):
+                if c == "#f4e070":
+                    row[x] = "#e05878"
+    if "wreath" in decor:
+        for x, y in ((6, 9), (7, 8), (8, 8), (9, 9), (6, 10), (9, 10),
+                     (7, 11), (8, 11)):
+            px[y][x] = "#2a7a3a"
+        px[8][7] = "#d02030"
+    if "flowers" in decor:
+        for x, y, c in ((0, 13, "#a0603a"), (1, 13, "#a0603a"),
+                        (0, 14, "#7a4428"), (1, 14, "#7a4428"),
+                        (0, 12, "#4a8a3a"), (1, 11, "#f06080"),
+                        (0, 11, "#f4d030")):
+            px[y][x] = c
+    if filthy:
+        for x, y in ((1, 3), (14, 2), (13, 6), (2, 7)):
+            px[y][x] = "#1a1a1a"
+            if px[y - 1][x] is None:
+                px[y - 1][x] = "#c8d8e8"
+    if tipped:
+        px = [[px[15 - x][y] for x in range(16)] for y in range(16)]
+    return px
 
 
 MAID_DRESS = "#2a2838"
@@ -14041,6 +14703,95 @@ LOO_ALMANAC = ["A well-thumbed farmer's almanac, missing most of its "
                "in pencil, 'Otto smells.'",
                "An old almanac. Someone's done the crossword in it, "
                "badly."]
+LOO_SEASON = {   # a line of the season, sometimes, as you sit
+    0: ["A bee drifts in through the moon window, considers you, and "
+        "drifts out again.",
+        "Blossom petals blow in under the door."],
+    1: ["It's stifling in here. A fly does slow circles.",
+        "Somebody's cut a hole in the door for the breeze. It helps."],
+    2: ["A leaf blows in under the door and settles at your feet.",
+        "Rain drums on the roof. It's oddly peaceful."],
+    3: ["The seat is so cold you yelp.",
+        "Brr! Frost on the inside of the moon window.",
+        "Your breath steams. You don't linger."],
+}
+LOO_QUEUE = ["{who} waits outside the outhouse that is {loo}, tapping a "
+             "foot.",
+             "\"Will you be much longer, {in}?\" calls {who}, hopping "
+             "outside the outhouse.",
+             "{who} queues for the outhouse that is {loo}, whistling and "
+             "pretending not to.",
+             "{who} knocks on the outhouse that is {loo}. \"Only me! "
+             "I'll wait!\""]
+LOO_PIT_LIKE = ["\"Ahh. That's much better,\" sighs {who} from the "
+                "walls.",
+                "{who} creaks happily: \"You're a good friend. A strong-"
+                "stomached friend.\""]
+LOO_PIT_HATE = ["\"This,\" says {who}, very quietly, \"is the worst day "
+                "of my life.\"",
+                "{who} groans from somewhere in the planks: \"Don't look. "
+                "Just... don't look.\""]
+LOO_RIGHT_LIKE = ["{who} laughs from the planks: \"Wheee! That was the "
+                  "most fun I've had in weeks! Thank you, though.\"",
+                  "\"Again!\" cries {who}. \"No, wait. Thank you.\""]
+LOO_RIGHT_HATE = ["\"Mortifying,\" whispers {who}. \"Utterly "
+                  "mortifying. Thank you.\"",
+                  "{who} creaks: \"Everyone SAW. On my SIDE. Thank you for "
+                  "coming.\""]
+LOO_DECOR_LIKE = ["\"Oh! For me?\" {who}'s door creaks open all by "
+                  "itself, delighted.",
+                  "{who} hums happily: \"Now I'm the prettiest privy in "
+                  "the valley.\""]
+LOO_DECOR_HATE = ["\"It's still an outhouse,\" mutters {who}. \"...It is "
+                  "nice, though.\"",
+                  "{who} sighs: \"Lipstick on a privy. Thank you, I "
+                  "suppose.\""]
+ALMANAC_WEATHER = {"sun": "fair skies", "rain": "rain, good for the crops",
+                   "storm": "a storm, so batten down the hatches",
+                   "snow": "snow, and plenty of it"}
+ALMANAC_TIPS = {
+    0: ["Plant potatoes early; strawberries pay for themselves.",
+        "Sow in spring and water daily, and the season repays you."],
+    1: ["Corn and tomatoes keep giving all summer.",
+        "A sprinkler earns its keep in the long dry days."],
+    2: ["Pumpkins and yams for fall, and pick apples while they last.",
+        "Store up for winter: nothing grows in the snow."],
+    3: ["Mend your tools and make friends; the fields rest.",
+        "Winter roots and snow yams can be dug in the woods."],
+}
+RIDDLES = [   # Amy's Gazette riddles: (question, answer, wrong answers)
+    ("What has keys but can't open locks?", "A piano",
+     ("A jailer", "A map")),
+    ("What gets wetter the more it dries?", "A towel",
+     ("The river", "A fish")),
+    ("What has a neck but no head?", "A bottle",
+     ("A scarf", "A giraffe")),
+    ("What can you catch but not throw?", "A cold",
+     ("A ball", "A fish")),
+    ("What has many teeth but can't bite?", "A comb",
+     ("A shark", "A dog")),
+    ("What goes up but never comes down?", "Your age",
+     ("A kite", "A ladder")),
+    ("What has hands but can't clap?", "A clock",
+     ("A baker", "A fiddler")),
+    ("The more you take, the more you leave behind. What are they?",
+     "Footsteps", ("Apples", "Coins")),
+    ("What has a bed but never sleeps?", "A river",
+     ("A cat", "An innkeeper")),
+    ("What runs but never walks?", "Water", ("A dog", "A horse")),
+]
+LOO_CARVINGS = [
+    "'OTTO WAS HERE. AND HERE. AND HERE.'",
+    "'Roses are red, this privy is brown. It's the comfiest seat in the "
+    "whole of the town.'",
+    "'Pip & Benji, Knights of the Outhouse.' There's a sword.",
+    "'Gus caught a pike THIS BIG' and a line right across the wall.",
+    "'Wren sings in here. It echoes. You're welcome.'",
+    "'Buy your seeds at Pike's!' Mabel's handwriting, unmistakably.",
+    "'Edmund for Mayor (again)'",
+    "'Do not lick the seat. - Dr. Thorne.' Underlined twice.",
+    "A tally of little moons. Somebody's been counting.",
+    "'Here I sit, broken-hearted...' and the rest's been scratched out."]
 LOO_IN_LIKE = ["It's surprisingly fresh in here, with a hint of lavender.",
                "Somebody's put a little jar of wildflowers on the bench.",
                "It's spotless. The planks seem to be smiling."]
@@ -15235,7 +15986,8 @@ TERRAIN = ["grass", "tallgrass", "meadow", "flowers", "path", "cobble",
            "seeds", "counter", "bed", "bed2", "table", "chair", "stove",
            "fireplace", "forge", "anvil", "barrel", "crates", "plant", "cot",
            "cabinet", "piano", "easel", "nets", "toolrack", "straw", "nest",
-           "trough", "loohole", "loobench", "hay", "churn"]
+           "trough", "loohole", "loobench", "hay", "churn", "moonwin",
+           "loopaper", "loobend"]
 TERRAIN += ["roof_" + r for r in ROOFS] + ["eave_" + r for r in ROOFS]
 TERRAIN += [k + "_" + m for m in WALLS for k in ("wall", "win", "door")]
 ANIMATED_TERRAIN = {"water", "river", "pond", "fountain", "lamp",
@@ -15281,6 +16033,10 @@ def all_tiles(season=0):
     for colour in COW_COLOURS:
         sprites["cow_" + colour] = cow_art(colour)
         sprites["scow_" + colour] = golden(sprites["cow_" + colour])
+    for kind in FRUIT_TREES:
+        for stage in "symf":
+            sprites["ft_%s_%s" % (kind, stage)] = fruit_tree_art(
+                kind, stage, season)
     for colour in CAT_COLOURS:
         sprites["cat_" + colour] = cat_art(colour)
         sprites["scat_" + colour] = golden(sprites["cat_" + colour])
@@ -15299,6 +16055,38 @@ def all_tiles(season=0):
             tiles[name + "@1"] = px[1:] + [[None] * 16]   # a bob
     return tiles
 
+
+# Inside an outhouse: what you've put up, and what you'd rather not have
+ART["flies"] = ({"f": "#1a1a1a", "w": "#c8d8e8"}, (
+    "................", "...w............", "..wfw.......w...",
+    "...........wfw..", "................", "......w.........",
+    ".....wfw........", "................", "..........w.....",
+    ".........wfw....", "................", "...w............",
+    "..wfw...........", "................", "................",
+    "................"))
+ART["decor_flowers"] = ({"g": "#a8d4e0", "G": "#6a98a8", "s": "#4a8a3a",
+                        "r": "#f06080", "y": "#f4d030", "b": "#8a70e0"}, (
+    "................", "................", "......r..y......",
+    ".....rry.yy.....", "......sb.s......", ".......sbs......",
+    "........s.......", "......gggg......", "......gssg......",
+    "......gGGg......", "......gGGg......", "......gggg......",
+    "................", "................", "................",
+    "................"))
+ART["decor_wreath"] = ({"h": "#2a7a3a", "H": "#1e5a2a", "r": "#d02030",
+                       "b": "#c02838"}, (
+    "................", ".......bb.......", "......bbbb......",
+    ".....hHhhHh.....", "....hr....hH....", "....h......h....",
+    "....H......r....", "....h......h....", ".....hrhHhh.....",
+    "......hHhh......", "................", "................",
+    "................", "................", "................",
+    "................"))
+ART["decor_curtains"] = ({"c": "#e05878", "C": "#b03858", "w": "#f8e8ec"}, (
+    "...ccw....wcc...", "...cCw....wCc...", "...cCc....cCc...",
+    "...ccC....Ccc...", "...cCc....cCc...", "....cC....Cc....",
+    "....cc....cc....", ".....c....c.....", "................",
+    "................", "................", "................",
+    "................", "................", "................",
+    "................"))
 
 # Nell's machines, and each with a sparkle when there's something to take
 ART["m_mayonnaise_jar"] = ({"L": "#902828", "l": "#c04040", "G": "#8aa8b8",
@@ -15534,6 +16322,12 @@ def selftest():
             if need not in ("jam", "pickle") and (
                     need not in ITEMS or made not in ITEMS):
                 problems.append("machine %s: %s -> %s" % (m, need, made))
+    for q, right, wrong in RIDDLES:
+        if right in wrong or len(wrong) != 2:
+            problems.append("riddle %s" % q)
+    for kind in FRUIT_TREES:
+        if kind not in ITEMS or kind + " sapling" not in ITEMS:
+            problems.append("fruit tree %s" % kind)
     for c in JAM_FRUIT + PICKLE_VEG:
         if c not in ITEMS:
             problems.append("preserves: no %s" % c)
