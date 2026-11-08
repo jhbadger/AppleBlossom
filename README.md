@@ -207,8 +207,10 @@ up to eight squares until it hits someone or something solid.
   open; anywhere else it fizzles. The outhouse stays put until you change it
   back. Walk into it from the front and you go inside, where there's a bench
   with two holes and an old almanac. Walk into a hole and you do your
-  business, sometimes to a comment from the walls. Walk into the side and
-  you just knock. Villagers passing near an outhouse now and then pop in for
+  business, sometimes to a comment from the walls. Walk into the side or
+  back and you can knock, or **clean** it: once a day per outhouse, a scrub
+  counts as a gift they like, and sometimes the outhouse answers back
+  (happily if they enjoy being one, grudgingly if not). Villagers passing near an outhouse now and then pop in for
   a few minutes and come out again; if you're inside, they rattle the door
   and hurry off, and if they're inside, you'll hear "Occupied!" As ever,
   some villagers like being an outhouse and some don't, with friendship to

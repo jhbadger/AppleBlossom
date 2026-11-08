@@ -8292,9 +8292,13 @@ class Game:
         inside = [o for o in self.npcs.values()
                   if o.visit and o.visit["loo"] == vid and o.hidden]
         if tuple(self.pos()) != self.loo_door(vid):
-            self.say("You knock on the side of the outhouse that is %s. "
-                     "The door's round the front." % name, "info")
-            self.end_turn(1)
+            self.walking = None
+            done = self.friend(vid).get("cleaned") == self.st["day"]
+            self.open_menu("The outhouse that is %s" % name, [
+                ("Clean it%s" % (" (done today)" if done else ""),
+                 lambda: self.clean_loo(vid)),
+                ("Knock", lambda: self.knock_loo(vid)),
+                ("Leave it be", lambda: None)])
             return
         if inside:
             self.say("You rattle the door. \"Occupied!\" calls %s from "
@@ -8314,6 +8318,34 @@ class Game:
         self.walking = None
         self.layout()
         self.end_turn(WALK_COST)
+
+    def knock_loo(self, vid):
+        self.say("You knock on the side of the outhouse that is %s. "
+                 "The door's round the front." % VILLAGERS[vid]["short"],
+                 "info")
+        self.end_turn(1)
+
+    def clean_loo(self, vid):
+        """A scrub of the outside walls, once a day: as good as a gift
+        they like, and sometimes they say so."""
+        f = self.friend(vid)
+        name = VILLAGERS[vid]["short"]
+        if f.get("cleaned") == self.st["day"]:
+            self.say("You've already scrubbed %s today. The boards are "
+                     "still damp." % name, "info")
+            self.render()
+            return
+        f["cleaned"] = self.st["day"]
+        n = self.npcs[vid]
+        self.sound.play("pour")
+        self.flash(n.x, n.y, "heart")
+        self.say(random.choice(LOO_CLEAN) % name, "good")
+        if random.random() < 0.5:
+            self.say(random.choice(
+                LOO_CLEAN_LIKE if self.likes_change(vid, "looify") else
+                LOO_CLEAN_HATE).replace("{who}", name), "talk")
+        self.befriend(vid, GIFT_POINTS["like"])
+        self.end_turn(TOOL_COST)
 
     def do_business(self):
         vid = self.st["loo_in"]
@@ -12945,6 +12977,29 @@ LOO_IN_LIKE = ["It's surprisingly fresh in here, with a hint of lavender.",
 LOO_IN_HATE = ["From the walls comes a long-suffering sigh.",
                "The door slams itself behind you. Pointedly.",
                "The planks creak in a way that sounds a lot like 'ugh.'"]
+LOO_CLEAN = [
+    "You scrub the boards of the outhouse that is %s until they shine.",
+    "You sweep the cobwebs off %s, wipe down the door and polish the "
+    "little moon.",
+    "You give %s a thorough going-over with a brush and a bucket. It "
+    "smells... better. Mostly.",
+    "You scrape the moss off %s's roof and buff the door handle."]
+LOO_CLEAN_LIKE = [
+    "{who}'s door creaks happily: \"Ooh, that tickles!\"",
+    "From somewhere in the planks, {who} sighs: \"Lovely. Do behind the "
+    "hinges next time.\"",
+    "The outhouse that is {who} seems to stand up a little straighter. "
+    "\"Spotless! Tell everyone.\"",
+    "\"Mind the knothole, that's my ear,\" giggles {who}."]
+LOO_CLEAN_HATE = [
+    "The door rattles. \"Scrubbing me doesn't make this all right,\" "
+    "says {who}. \"...Thank you, though.\"",
+    "{who} grumbles from inside the walls: \"Missed a spot. On my "
+    "dignity.\"",
+    "\"If you've time to clean me, you've time to turn me back,\" "
+    "mutters {who}.",
+    "A small, grudging voice: \"...It is nicer clean. Don't tell anyone "
+    "I said so.\" It's {who}."]
 LOO_VOICE_LIKE = ["Somewhere in the walls, {who} hums cheerfully.",
                   "A muffled voice says, \"Take your time!\" It's {who}.",
                   "The outhouse that is {who} gives a contented creak."]
