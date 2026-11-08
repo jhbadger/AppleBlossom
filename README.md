@@ -95,7 +95,7 @@ button, or tap yourself) and choose a spell. Then pick a direction: an arrow
 key, a tap on that side of you, or the d-pad. Anyone the spell would hit is
 ringed in gold while you aim. Space zaps the way you're facing, and Esc lowers
 the wand. With the wand in hand you can also just tap a villager who's in a
-straight line from you, which casts the spell you last chose. The spell flies
+straight line from you, choose a spell, and it flies at them. The spell flies
 up to eight squares until it hits someone or something solid.
 
 - **Petrify** turns whoever it hits into a golden statue. A statue can't move
