@@ -6066,7 +6066,68 @@ for _i, _m in enumerate(METALS):
 MUSEUM_REWARDS = {   # artifacts given: what Juniper gives you
     3: ("gold", 500), 6: ("copper bar", SMELT), 9: ("iron bar", SMELT),
     12: ("gold bar", SMELT), len(ARTIFACTS) + 1: ("gold", 5000)}
+MONSTER_MAIDS = {   # a maidified monster in your cabin: her name, and what
+    #                 she says about what she was
+    "slime": ("Gloopy", (
+        "I used to be a slime, you know. I still leave a little shiny "
+        "trail when I mop. Sorry!",
+        "Being a maid is much nicer than oozing. Fewer people step in "
+        "you.")),
+    "frost_slime": ("Frostine", (
+        "I was a frost slime. I keep the butter lovely and cold, if you "
+        "ever need that.",
+        "My hands are always freezing. It's very good for pastry.")),
+    "shadow_slime": ("Umbra", (
+        "I was a shadow slime. I still like the corners best. Dusting "
+        "them's no trouble at all.",
+        "Sunlight! It's... a lot. I'm getting used to it.")),
+    "bat": ("Flitter", (
+        "I was a cave bat. I hang the washing up beautifully. Upside "
+        "down, but beautifully.",
+        "I can hear a pin drop three rooms away. Very useful, for a "
+        "maid.")),
+    "rat": ("Whiskers", (
+        "I was a giant rat. I know where every crumb in this cabin is. "
+        "EVERY crumb.",
+        "No cheese for me, thank you. ...Well. Maybe a little.")),
+    "spider": ("Silke", (
+        "I was a cave spider. I can't stop sweeping up cobwebs. "
+        "Professional jealousy, I think.",
+        "Eight legs were quicker for scrubbing, but two are much easier "
+        "to curtsy on.")),
+    "skeleton": ("Bonnie", (
+        "I was a skeleton. It's lovely having a face again. I keep "
+        "pulling faces in the mirror.",
+        "I still rattle a bit when I hurry. Just ignore it.")),
+    "goblin": ("Gobbelina", (
+        "I was a goblin! I used to whack people. Now I whack rugs. It's "
+        "the same lovely feeling.",
+        "I still want to keep anything shiny I find. I'm working on "
+        "it.")),
+    "ghost": ("Wisp", (
+        "I was a ghost. Walking through walls was quicker, but doors are "
+        "so much more polite.",
+        "Ooooo... sorry. Old habits. Ooooo-kay, what needs doing?")),
+    "golem": ("Pebble", (
+        "I was a rock golem. Everything feels so light now! I could carry "
+        "the whole cabin.",
+        "Slow and steady gets the floor clean. I'm still a little "
+        "slow.")),
+    "imp": ("Ember", (
+        "I was a fire imp. I light the stove with a snap of my fingers. "
+        "Don't tell anyone.",
+        "I've only set the curtains alight once. Twice. Not since "
+        "Tuesday, anyway.")),
+}
 STATUE_HEFT = 20                # energy it takes to pick a statue up
+
+
+def monster_maid_look(kind):
+    """A maidified monster: a maid with hair the monster's colour."""
+    col = list(ART["mon_" + kind][0].values())[0]
+    return maid_look({"face": "F", "body": "F", "skin": 1, "hair": col,
+                      "style": "bob", "eyes": "#1a1a1a", "shirt": col,
+                      "pants": col, "bg": mix(col, "#f0e8f4", 0.6)})
 STATUE_OF = {}                  # a statue in your bag -> ("mon", kind) or
 for _k, _m in MONSTERS.items():  # ("vil", villager)
     if "boss" not in _m.traits:
@@ -7336,6 +7397,8 @@ spell again to undo it.  Each spell costs a point of magic
 mine give 2 more.  In the mine, spells change monsters for
 good: walk into one once a day for gold, eggs, milk, wood,
 wool, magic or energy, and a looified one is an outhouse.
+Invite a maidified monster to your cabin to do a chore;
+you can dismiss her, for good, by walking into her.
 
 The axe fells trees (three swings) for wood; they grow
 back in a season.
@@ -7744,6 +7807,16 @@ class Game:
         if img is None:
             img = self.img.get(name[2:] if name[:2] in ("1:", "2:")
                                else name)
+        return img
+
+    def mmaid_portrait(self, kind, expr, z):
+        key = ("mmaid", kind, expr, z)
+        img = self.portraits.get(key)
+        if img is None:
+            px = portrait(monster_maid_look(kind), expr)
+            base = tk.PhotoImage(width=PW, height=PW)
+            base.put(" ".join("{" + " ".join(r) + "}" for r in px))
+            img = self.portraits[key] = base.zoom(z)
         return img
 
     def portrait_image(self, who, expr, z):
@@ -8348,7 +8421,7 @@ class Game:
         a = area or self.area
         if not a.inside(x, y):
             return False
-        if self.decor_at(x, y, a):
+        if self.decor_at(x, y, a) or self.mmaid_at(x, y, a):
             return False
         t = self.tile_at(x, y, a)
         if t not in WALKABLE:
@@ -8417,6 +8490,11 @@ class Game:
         if self.decor_at(x, y):
             self.walking = None
             self.decor_bump(x, y)
+            return True
+        m = self.mmaid_at(x, y)
+        if m:
+            self.walking = None
+            self.mmaid_menu(m)
             return True
         i = self.pet_at(a.key, x, y)
         if i is not None:
@@ -9032,13 +9110,16 @@ class Game:
                  lambda: self.lift_mine_statue(x, y)),
                 squeeze, ("Leave it", lambda: None)])
             return
-        if not ready:
+        invite = [("Invite her to your cabin", lambda: self.invite_maid(
+            x, y))] if spell == "maidify" else []
+        if not ready and not invite:
             self.squeeze_by(x, y, "You've had what %s has to give today. "
                                   "You squeeze past." % name)
             return
-        self.open_menu(cap(name), [
-            (CHANGED[spell][2], lambda: self.tend_changed(e, name)),
-            squeeze, ("Leave it", lambda: None)])
+        self.open_menu(cap(name), ([
+            (CHANGED[spell][2], lambda: self.tend_changed(e, name))]
+            if ready else []) + invite + [squeeze,
+                                          ("Leave it", lambda: None)])
 
     def tend_changed(self, e, name):
         spell, p, m = e["spell"], self.p, MONSTERS[e["kind"]]
@@ -9352,6 +9433,138 @@ class Game:
         self.give(n)
         self.say("You heave the %s onto your back." % n, "good")
         self.end_turn(TOOL_COST)
+
+    # ── Maids who were monsters ──
+    #
+    # A monster you maidified can come and live in your cabin and do a
+    # chore every morning, like any maid.  There's no turning her back,
+    # so you can dismiss her instead.  "mmaids": [{kind, name, chore, x,
+    # y}].
+
+    def mmaids(self):
+        return self.st.setdefault("mmaids", [])
+
+    def mmaid_at(self, x, y, area=None):
+        if (area or self.area).key != "cabin":
+            return None
+        for m in self.mmaids():
+            if (m["x"], m["y"]) == (x, y):
+                return m
+        return None
+
+    def mmaid_spot(self):
+        """A free square of cabin floor for another maid, out of
+        everybody's way, or None."""
+        a = self.areas["cabin"]
+        spots = {tuple(v) for v in a.spots.values()}
+        ex, ey = a.exit
+        free = [(x, y) for y in range(a.h) for x in range(a.w)
+                if a.grid[y][x] in WALKABLE and a.grid[y][x] != "exit"
+                and (x, y) not in spots and abs(x - ex) + abs(y - ey) > 1
+                and not self.npc_at(x, y, a) and not self.decor_at(x, y, a)
+                and not self.mmaid_at(x, y, a)
+                and self.pet_at("cabin", x, y) is None
+                and not (self.area is a and (x, y) == self.pos())]
+        if not free:
+            return None
+        sx, sy = a.spots[MAID_SPOTS[0]]
+        return min(free, key=lambda p: abs(p[0] - sx) + abs(p[1] - sy))
+
+    def invite_maid(self, x, y):
+        e = self.changed_at(x, y)
+        spot = self.mmaid_spot()
+        if spot is None:
+            self.say("There's no room left in your cabin for another maid. "
+                     "Not even a broom cupboard.", "info")
+            self.render()
+            return
+        name, lines = MONSTER_MAIDS[e["kind"]]
+        same = sum(1 for m in self.mmaids() if m["kind"] == e["kind"])
+        if same:
+            name += " " + ("the Second", "the Third", "the Fourth")[
+                min(same, 3) - 1] if same < 4 else " %d" % (same + 1)
+        del self.floor_state(self.mine["floor"])["changed"]["%d,%d" % (x, y)]
+        self.mmaids().append({"kind": e["kind"], "name": name,
+                              "chore": None, "x": spot[0], "y": spot[1]})
+        self.sound.play("heart")
+        self.say("\"Your cabin? With a proper broom cupboard?\" The little "
+                 "maid that was %s claps her hands. \"I'm %s! I'll be "
+                 "there before you are!\" She bobs a curtsy and scurries "
+                 "off up the ladder." % (an(MONSTERS[e["kind"]].name),
+                                         name), "heart")
+        self.end_turn(1)
+
+    def mmaid_says(self, m, line, expr="happy"):
+        """Her line in the talk window, portrait and all."""
+        self.talk = {"mm": m, "v": None, "expr": expr, "text": line,
+                     "mode": "kw"}
+        self.say("%s: %s" % (m["name"], line), "talk")
+
+    def mmaid_menu(self, m):
+        if not self.talk or self.talk.get("mm") is not m:
+            self.mmaid_says(m, random.choice((
+                "Yes, %s? Is there something you need?" % self.p["name"],
+                "Oh! You startled me. What can I do for you?",
+                "Everything's spick and span. What is it?")))
+        now = m["chore"]
+        self.open_menu("Each morning she'll %s." % MAID_CHORES[now][1]
+                       if now else "She has no chore yet.", [
+                           ("Chat", lambda: self.mmaid_chat(m)),
+                           ("Give her a chore", lambda: self.mmaid_chores(m)),
+                           ("Squeeze past", lambda: self.squeeze_mmaid(m)),
+                           ("Dismiss her", lambda: self.mmaid_dismiss(m)),
+                           ("Goodbye", self.end_talk)],
+                       cancel=self.end_talk)
+
+    def mmaid_chat(self, m):
+        lines = MONSTER_MAIDS[m["kind"]][1]
+        self.mmaid_says(m, random.choice(lines + (
+            "Is there anything else, %s?" % self.p["name"],
+            "I do like it here. It's ever so much brighter than the mine."
+            if m["chore"] else "What would you like me to do each "
+            "morning?")), random.choice(("happy", "laugh", "blush")))
+        self.pass_time(1)
+        self.mmaid_menu(m)
+
+    def mmaid_chores(self, m):
+        self.open_menu("What should %s do each morning?" % m["name"], [
+            (label, lambda c=c: self.mmaid_chore(m, c))
+            for c, (label, _) in MAID_CHORES.items()],
+            cancel=lambda: self.mmaid_menu(m))
+
+    def mmaid_chore(self, m, chore):
+        m["chore"] = chore
+        self.mmaid_says(m, "Of course! I'll %s, every morning." %
+                        MAID_CHORES[chore][1])
+        self.mmaid_menu(m)
+
+    def squeeze_mmaid(self, m):
+        self.end_talk()
+        x, y = self.pos()
+        m["x"], m["y"], self.st["pos"] = x, y, [m["x"], m["y"]]
+        self.say("You squeeze past %s, who flattens herself against the "
+                 "wall." % m["name"], "info")
+        self.end_turn(1)
+
+    def mmaid_dismiss(self, m):
+        self.mmaid_says(m, "You... you want me to go?", "sad")
+        self.open_menu("Dismiss %s? She'll go for good, and there's no "
+                       "getting her back." % m["name"], [
+                           ("Yes, dismiss her", lambda: self.mmaid_gone(m)),
+                           ("No, keep her", lambda: (
+                               self.mmaid_says(m, "Oh, thank goodness. I'll "
+                                               "get back to it, then!"),
+                               self.mmaid_menu(m)))],
+                       cancel=lambda: self.mmaid_menu(m))
+
+    def mmaid_gone(self, m):
+        self.end_talk()
+        if m in self.mmaids():
+            self.mmaids().remove(m)
+        self.say("%s unties her apron, folds it neatly, curtsies one last "
+                 "time, and is gone. You never see her again." % m["name"],
+                 "info")
+        self.end_turn(1)
 
     # ── Juniper's museum ──
 
@@ -10949,6 +11162,18 @@ class Game:
             if done:
                 self.say("%s %s, %s." % (name, done, how),
                          "heart" if likes else "info")
+        for m in sorted(self.mmaids(), key=lambda m: (
+                order.index(m["chore"]) if m["chore"] in order else 99,
+                m["name"])):
+            if m["chore"] is None:
+                self.say("%s is waiting in your cabin to be told her "
+                         "chore." % m["name"], "info")
+                continue
+            done = self.do_chore(None, m["chore"])
+            if done:
+                self.say("%s %s, %s." % (m["name"], done,
+                                         random.choice(MAID_HAPPILY)),
+                         "heart")
 
     def do_chore(self, vid, chore):
         """One maid's chore; what she did, or None if there was nothing to
@@ -13951,6 +14176,9 @@ class Game:
         t = self.talk
         if not t or self.scene:
             return
+        if t.get("mm"):
+            self.mmaid_menu(t["mm"])
+            return
         vid = t["v"]
         if t["mode"] == "buy":
             self.shop_menu(vid)
@@ -13999,7 +14227,7 @@ class Game:
 
     def converse(self, w):
         t = self.talk
-        if not t:
+        if not t or t.get("mm"):
             return
         vid = t["v"]
         v = VILLAGERS[vid]
@@ -15006,7 +15234,7 @@ class Game:
                 if i < len(m["items"]):
                     self.menu_pick(i)
             elif self.talk and len(ev.char) == 1 and ev.char.isalpha() \
-                    and not self.scene:
+                    and not self.scene and not self.talk.get("mm"):
                 self.menu = None
                 self.entry.focus_set()
                 self.entry.insert("end", ev.char)
@@ -15428,6 +15656,9 @@ class Game:
             for mob in self.mine["mobs"]:
                 if near(mob.x, mob.y):
                     people[(mob.x, mob.y)] = mob.tile
+        if a.key == "cabin":
+            for m in st.get("mmaids", ()):
+                people[(m["x"], m["y"])] = "mmaid_" + m["kind"]
         for pet in st.get("pets", ()):
             if pet["where"] == a.key:
                 people[(pet["x"], pet["y"])] = "%s_%s" % (pet["kind"],
@@ -15593,7 +15824,8 @@ class Game:
         c, t = self.canvas, self.talk
         W, H = c.winfo_width(), c.winfo_height()
         vid = t["v"]
-        v = VILLAGERS[vid]
+        mm = t.get("mm")
+        v = {"look": monster_maid_look(mm["kind"])} if mm else VILLAGERS[vid]
         pz = max(2, min(7, int(min(H * 0.3, W * 0.28) / PW)))
         psz = PW * pz
         pad = S(10)
@@ -15616,10 +15848,21 @@ class Game:
                            outline=ACCENT, width=2, tags="overlay")
         expr = t.get("expr", "neutral")
         c.create_image(pad * 2, y0 + pad, anchor="nw", tags="overlay",
-                       image=self.portrait_image(vid, expr, pz))
+                       image=self.mmaid_portrait(mm["kind"], expr, pz) if mm
+                       else self.portrait_image(vid, expr, pz))
         c.create_rectangle(pad * 2, y0 + pad, pad * 2 + psz, y0 + pad + psz,
                            outline=shade(v["look"]["bg"], 0.6), width=2,
                            tags="overlay")
+        if mm:
+            c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
+                          text=mm["name"], font=bold, fill=ACCENT)
+            c.create_text(tx + bold.measure(mm["name"]) + S(12), y0 + pad,
+                          anchor="nw", tags="overlay", font=F("Helvetica", 13),
+                          fill=INK_DIM, text="(your maid, once %s)" % an(
+                              MONSTERS[mm["kind"]].name))
+            c.create_text(tx, y0 + pad + lh + S(6), anchor="nw", width=tw,
+                          text=text, font=f, fill=INK, tags="overlay")
+            return
         h = self.hearts(vid)
         f_ = self.friend(vid)
         status = {"dating": "  (sweetheart)", "engaged": "  (engaged)",
@@ -18757,10 +19000,7 @@ def all_tiles(season=0):
     for k in MONSTERS:                   # monsters the wand has changed
         col = list(ART["mon_" + k][0].values())[0]
         sprites["smon_" + k] = golden(sprites["mon_" + k])
-        sprites["mmaid_" + k] = art_pixels(*person_art(maid_look({
-            "face": "F", "body": "F", "skin": 1, "hair": col,
-            "style": "bob", "eyes": "#1a1a1a", "shirt": col,
-            "pants": col})))
+        sprites["mmaid_" + k] = art_pixels(*person_art(monster_maid_look(k)))
         sprites["mtree_" + k] = tree_art({"hair": col, "shirt": col},
                                          season)
         sprites["mloo_" + k] = loo_art({"shirt": col}, season)

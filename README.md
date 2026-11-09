@@ -256,7 +256,7 @@ for what it gives:
 | Spell | It becomes | Once a day |
 | --- | --- | --- |
 | Petrify | a golden statue | chip a little gold off its toe; or pick it up (20 energy) and set it on your farm or in your cabin, where it still gives gold |
-| Maidify | a little maid in the monster's colours | the gold she's swept up |
+| Maidify | a little maid in the monster's colours | the gold she's swept up; or invite her to your cabin (see below) |
 | Chickenfy | a hen | an egg |
 | Treeify | a tree, growing in the dark | wood |
 | Cowify | a cow | milk (with a pail) |
@@ -269,6 +269,15 @@ They stand in the way, but walk into one you've already had from today
 (or choose Squeeze Past) and you slip by. Monsters won't go near them.
 Genderswap just leaves a monster baffled for a few turns. The Mine King is
 too old and wicked to change, but every spell burns him.
+
+**Monster maids.** Invite a maidified monster to your cabin and she
+comes to live there, with a name of her own (Ember the fire imp, Bonnie
+the skeleton, Wisp the ghost, Gobbelina the goblin...), and her hair the
+monster's colour. Walk into her to talk, portrait and all: chat (she'll
+tell you about the monster she was), give her a chore (the
+same chores as any maid, done every morning), or squeeze past. Nothing
+turns her back, so instead you can **dismiss** her (you're asked to make
+sure): she folds her apron and is gone for good.
 
 ### Ore and Otto's forge
 
