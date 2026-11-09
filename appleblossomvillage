@@ -6119,6 +6119,255 @@ MONSTER_MAIDS = {   # a maidified monster in your cabin: her name, and what
         "I've only set the curtains alight once. Twice. Not since "
         "Tuesday, anyway.")),
 }
+MONSTER_ROMANCE = {   # each monster maid's heart: gifts she loves, likes
+    # and hates; kissed; asked too soon; going steady; proposed to; her
+    # vows; as your wife; and what she does for you of a morning
+    "slime": {
+        "loves": ["mayonnaise", "honey", "blueberry jam"],
+        "likes": ["milk", "pancakes", "salad"],
+        "hates": ["coffee", "stone"],
+        "kiss": ["(blush)Ooh! I've gone all wobbly. Just like old times!",
+                 "(laugh)Careful! I used to be sticky. I might still be, a "
+                 "little."],
+        "notyet": "(blush)Flowers! I'd go all gooey, but... not yet. I'm "
+                  "still getting used to having knees.",
+        "accept": "(blush)Your sweetheart? Me? I used to be a puddle on a "
+                  "cave floor! ...Yes. Oh, yes please.",
+        "proposal": "(happy)Marry you?! I'd melt, if I still could. Yes! "
+                    "Yes, a hundred times!",
+        "vows": "(blush)I was a slime with nothing to hold on to. Now I've "
+                "got you, and I'm never letting go. It's in my nature.",
+        "wife": ["(happy)Welcome home, darling! I've polished everything "
+                 "till it shines like I used to.",
+                 "(blush)Being married to you is ever so much better than "
+                 "oozing."],
+        "morning": "polished every pot in the cabin till it shone, and drew "
+                   "a little heart in the shine"},
+    "frost_slime": {
+        "loves": ["melon", "snow yam", "cheese"],
+        "likes": ["salad", "blueberry", "milk"],
+        "hates": ["coffee", "stew"],
+        "kiss": ["(blush)Oh! My cheeks have gone warm. That's never "
+                 "happened before!",
+                 "(laugh)Your lips are so warm! Do it again, I'm thawing."],
+        "notyet": "(blush)For me? I... my heart's still half frozen, I "
+                  "think. Give it time to thaw.",
+        "accept": "(blush)You've melted me. Properly, all the way through. "
+                  "Yes, I'll be your sweetheart.",
+        "proposal": "(happy)Yes! Oh, yes! Let's marry in winter, so I can "
+                    "make the snow fall just right.",
+        "vows": "(blush)I was cold all my life, down in the dark. You're "
+                "the first warm thing I ever wanted to keep. I'm yours.",
+        "wife": ["(happy)There's cold milk in the larder and a warm welcome "
+                 "in the cabin. Welcome home!",
+                 "(blush)Hold my hands a moment? They're always freezing, "
+                 "and you're always warm."],
+        "morning": "left a jug of milk chilled just right on the step, with "
+                   "a frost heart drawn on the window"},
+    "shadow_slime": {
+        "loves": ["book of poems", "chocolate", "blackberry"],
+        "likes": ["tea", "crocus", "wild plum"],
+        "hates": ["sunflower", "daffodil"],
+        "kiss": ["(blush)Oh... You found me, even in the corner.",
+                 "(blush)*She goes so pink she almost glows."],
+        "notyet": "(sad)Flowers, for me? I'm... not used to being noticed. "
+                  "Not yet. Ask me again?",
+        "accept": "(blush)Nobody ever looked for me before. You did. I'll "
+                  "be your sweetheart, and I won't hide from you.",
+        "proposal": "(happy)I used to live in the darkest part of the mine. "
+                    "Now I'm going to be married in the sunshine! Yes!",
+        "vows": "(blush)I was a shadow. You brought me into the light, and "
+                "you stayed. Wherever you are, I'll be right beside you, "
+                "like a shadow should.",
+        "wife": ["(happy)Welcome home. I kept a lamp lit for you. I never "
+                 "thought I'd like lamps.",
+                 "(blush)I'm still happiest in the corners. But only the "
+                 "ones you're in."],
+        "morning": "dusted every dark corner of the cabin and left a candle "
+                   "burning for you"},
+    "bat": {
+        "loves": ["melon", "wild grape", "cherry"],
+        "likes": ["apple", "peach", "blueberry"],
+        "hates": ["wild leek", "holly"],
+        "kiss": ["(blush)Eek! My ears have gone all hot!",
+                 "(laugh)I heard that coming three rooms away, and I still "
+                 "went all fluttery."],
+        "notyet": "(surprised)Oh! I... I'm still learning to stay the right "
+                  "way up. Ask me again when I've got the hang of it?",
+        "accept": "(blush)Yes! I'd turn somersaults if the ceiling were high "
+                  "enough! Your sweetheart!",
+        "proposal": "(laugh)I'm head over heels! Well, I always was. But now "
+                    "it's for you. Yes!",
+        "vows": "(blush)I used to fly about in the dark, never landing "
+                "anywhere for long. Now I've found where I belong. I'm "
+                "hanging on to you, always.",
+        "wife": ["(happy)Welcome home, love! I heard your boots on the path "
+                 "ages ago.",
+                 "(blush)I sleep so well now. Lying down, even! Next to "
+                 "you."],
+        "morning": "picked the ripest fruit she could find before dawn and "
+                   "left it in a bowl by the bed"},
+    "rat": {
+        "loves": ["cheese", "bread", "corn"],
+        "likes": ["egg", "hazelnut", "pancakes"],
+        "hates": ["mouse", "catfish"],
+        "kiss": ["(blush)*Her nose twitches, and then she giggles.",
+                 "(laugh)Ooh! Better than cheese. ...Nearly. No. Better."],
+        "notyet": "(blush)For me? Let me think about it. Rats are cautious "
+                  "creatures. Not yet.",
+        "accept": "(blush)I've sniffed out every crumb in this cabin, and "
+                  "the best thing in it is you. Yes!",
+        "proposal": "(happy)Marry you?! I'll make us the snuggest nest of a "
+                    "home you ever saw! Yes!",
+        "vows": "(blush)I used to scurry about in the dark looking for "
+                "scraps. Now I've found the whole feast. I'll keep you warm "
+                "and fed forever.",
+        "wife": ["(happy)Welcome home! I've hidden a little something for "
+                 "you. Sniff it out!",
+                 "(blush)Every crumb's swept and the larder's full. Just how "
+                 "a home should be."],
+        "morning": "stocked the larder and tucked a wedge of cheese under "
+                   "your pillow with a note: 'For later. Love'"},
+    "spider": {
+        "loves": ["fishing lure", "cloth", "wool scarf"],
+        "likes": ["feather", "honey", "tea"],
+        "hates": ["energy tonic", "pickled turnip"],
+        "kiss": ["(blush)Oh! You've caught me. I'm the one in the web now.",
+                 "(laugh)Two arms are ever so much better for hugging than "
+                 "eight legs."],
+        "notyet": "(blush)Oh, they're lovely. But I like to take my time. "
+                  "Spin it slowly. Not yet.",
+        "accept": "(blush)I've spun a great many webs, and never caught "
+                  "anything as lovely as you. Yes, I'll be your sweetheart.",
+        "proposal": "(happy)Yes! I'll make my own veil. It'll be the finest "
+                    "lace anyone in the valley has ever seen!",
+        "vows": "(blush)I used to spin traps. Now I'm tying a knot. I "
+                "promise it'll be the strongest one I ever made.",
+        "wife": ["(happy)Welcome home, dear. I've darned your socks. And "
+                 "knitted you new ones. And a scarf.",
+                 "(blush)I've got you all wrapped up now. In a nice way!"],
+        "morning": "darned every hole in your clothes and left you a new "
+                   "lace handkerchief"},
+    "skeleton": {
+        "loves": ["milk", "old bone", "sheet music"],
+        "likes": ["cheese", "egg", "silver ring"],
+        "hates": ["mouse", "fertilizer"],
+        "kiss": ["(blush)Oh! I've got lips! I keep forgetting! Do that "
+                 "again.",
+                 "(laugh)Once I'd have blushed right down to the bone. Now I "
+                 "just blush. It's lovely."],
+        "notyet": "(blush)Flowers! I'd love to, but I'm still getting used "
+                  "to having a heart. It's quite new.",
+        "accept": "(blush)I had no heart for a hundred years. Now it's "
+                  "beating like a drum, and it's all yours. Yes!",
+        "proposal": "(happy)Yes! Till death do us part. I'd know. I've "
+                    "done death already, and I like this much better.",
+        "vows": "(blush)I've been dust, and bones, and now I'm me again. "
+                "I'll love you with all of it, every bit, for the rest of my "
+                "second life.",
+        "wife": ["(happy)Welcome home! I've had my glass of milk. Strong "
+                 "bones! Old habits.",
+                 "(blush)I used to rattle about in the dark all alone. Now "
+                 "I've got you to hold on to."],
+        "morning": "made you breakfast and set the table with a little "
+                   "rattle of joy"},
+    "goblin": {
+        "loves": ["silver ring", "gold bar", "old coin"],
+        "likes": ["stew", "chanterelle", "fine tools"],
+        "hates": ["salad", "rose"],
+        "kiss": ["(laugh)Hee hee! Smackers! Do it again!",
+                 "(blush)I want to keep you. Like a shiny thing. But "
+                 "nicely!"],
+        "notyet": "(blush)For me? Mine? ...Oh, I want to grab them, but "
+                  "I'm not ready to be anyone's sweetheart yet.",
+        "accept": "(laugh)You're mine! MINE! In the nice way! Yes, "
+                  "sweetheart, yes!",
+        "proposal": "(happy)A pendant! Shiny! Oh, and you! Even shinier! "
+                    "Yes, I'll marry you!",
+        "vows": "(blush)I was a goblin. I hoarded every shiny thing I found. "
+                "Now I've found the best one, and I'm keeping it forever. "
+                "That's you.",
+        "wife": ["(happy)Welcome home, my treasure! I've polished the "
+                 "doorknob. Twice.",
+                 "(laugh)I don't need all the shiny things any more. Well. "
+                 "Fewer of them."],
+        "morning": "polished everything metal in the cabin, the spoons "
+                   "twice"},
+    "ghost": {
+        "loves": ["sheet music", "rose", "crystal skull"],
+        "likes": ["tea", "book of poems", "holly"],
+        "hates": ["energy tonic", "coffee"],
+        "kiss": ["(blush)Oh! I felt that! I really felt it! Ooooo...",
+                 "(surprised)Warm! You're so warm! I used to go straight "
+                 "through people."],
+        "notyet": "(sad)Flowers... I've haunted a lot of places, but never "
+                  "anyone's heart. I'm not ready. Not yet.",
+        "accept": "(blush)I used to drift about, lost. Now I know exactly "
+                  "where I want to be. With you. Yes.",
+        "proposal": "(happy)Yes! Oh, yes. And this time it's for keeps, not "
+                    "for haunting.",
+        "vows": "(blush)I wandered the dark for longer than I can remember, "
+                "cold and see-through and sad. You made me solid. I'll be "
+                "with you always. I promise not to go 'ooooo' during the "
+                "vows.",
+        "wife": ["(happy)Welcome home! I only went 'ooooo' at the postman "
+                 "once today.",
+                 "(blush)I don't drift any more. I've got somewhere to "
+                 "stay. Here, with you."],
+        "morning": "tidied the whole cabin so quietly you never woke, and "
+                   "left a note: 'Boo. Love you'"},
+    "golem": {
+        "loves": ["stone", "gold ore", "amber bead"],
+        "likes": ["iron bar", "coffee", "fossil fern"],
+        "hates": ["fiber", "wool"],
+        "kiss": ["(blush)Oh. Oh my. I've gone all soft. Like sand.",
+                 "(happy)Rocks don't blush. I'm blushing. I'm not a rock any "
+                 "more."],
+        "notyet": "(blush)Flowers. They're nice. I'm slow, though. My heart "
+                  "is slow too. Give it time to catch up.",
+        "accept": "(happy)My heart was stone. Now it's yours. Solid. Steady. "
+                  "Yes.",
+        "proposal": "(happy)Yes. Slowly, and then all at once: yes!",
+        "vows": "(blush)I was made of rock. I was slow and heavy and alone. "
+                "I'm still a bit slow. But I'll be steady for you, always. "
+                "Like a mountain.",
+        "wife": ["(happy)Welcome home. I moved the woodpile. And the well. "
+                 "Just a little.",
+                 "(blush)You're my favourite thing to be still beside."],
+        "morning": "carried in a whole woodpile and stacked it by the door "
+                   "in the shape of a heart"},
+    "imp": {
+        "loves": ["coffee", "spice berry", "stew"],
+        "likes": ["chocolate", "pancakes", "apple pie"],
+        "hates": ["snow yam", "winter root"],
+        "kiss": ["(blush)Ooh! I've gone all hot! Hotter than usual!",
+                 "(laugh)Careful, you'll set me off! ...Do it again."],
+        "notyet": "(blush)Flowers! I'd love them... but I'd probably set "
+                  "them on fire. Let's wait a bit, eh?",
+        "accept": "(laugh)You've lit a fire in me! A nice one! Not the "
+                  "curtains kind! Yes, sweetheart!",
+        "proposal": "(happy)Yes! YES! I'll light every candle in the valley "
+                    "for the wedding! Carefully!",
+        "vows": "(blush)I was a little fire imp who burned everything she "
+                "touched. You're the first thing I ever wanted to keep warm "
+                "instead. My heart's yours, and it'll never go out.",
+        "wife": ["(happy)Welcome home, love! The stove's lit and the "
+                 "kettle's on. I didn't even need matches.",
+                 "(blush)Still burning for you. In the nice way. Mostly."],
+        "morning": "lit the stove, boiled the kettle and warmed your boots "
+                   "by the fire before you woke"},
+}
+MM_GIFT = {   # a monster maid given something, by how she likes it
+    "love": ["(blush)For me? Oh, it's my very favourite thing in the whole "
+             "world!", "(happy)You remembered! Oh, I could squeeze you!"],
+    "like": ["(happy)How kind! Thank you, {name}.",
+             "(happy)Oh, lovely! I'll treasure it."],
+    "neutral": ["(happy)Oh, thank you. I'll find somewhere for it.",
+                "(neutral)That's thoughtful of you. Thank you."],
+    "dislike": ["(sad)Oh. ...Thank you. I suppose.",
+                "(neutral)Hm. Well. It's the thought that counts."],
+    "hate": ["(cross)Ugh! Even as a monster I wouldn't have touched that.",
+             "(cross)Is this a joke? Take it away, please."]}
 STATUE_HEFT = 20                # energy it takes to pick a statue up
 
 
@@ -7398,7 +7647,9 @@ mine give 2 more.  In the mine, spells change monsters for
 good: walk into one once a day for gold, eggs, milk, wood,
 wool, magic or energy, and a looified one is an outhouse.
 Invite a maidified monster to your cabin to do a chore;
-you can dismiss her, for good, by walking into her.
+chat, kiss and give her gifts and she can become your
+sweetheart and wife, like any maid.  You can dismiss her,
+for good.
 
 The axe fells trees (three swings) for wood; they grow
 back in a season.
@@ -9442,7 +9693,45 @@ class Game:
     # y}].
 
     def mmaids(self):
-        return self.st.setdefault("mmaids", [])
+        ms = self.st.setdefault("mmaids", [])
+        for m in ms:
+            if "id" not in m:                    # an older save
+                m["id"] = max([o.get("id", 0) for o in ms] + [0]) + 1
+            for k, v in (("pts", 0), ("status", None), ("gift_day", -1),
+                         ("week", 0), ("talked", -1), ("kissed", None)):
+                m.setdefault(k, v)
+        return ms
+
+    def mm_hearts(self, m):
+        return m["pts"] // HEART
+
+    def mm_befriend(self, m, pts, quiet=False):
+        """Hearts for a monster maid: eight at most until she's your
+        sweetheart, ten after."""
+        before = self.mm_hearts(m)
+        top = (8 if m["status"] is None else 10) * HEART
+        m["pts"] = max(0, min(top, m["pts"] + pts))
+        if pts > 0 and self.area.key == "cabin":
+            self.flash(m["x"], m["y"], "heart")
+        after = self.mm_hearts(m)
+        if after > before and not quiet:
+            self.sound.play("heart")
+            self.say("%s: %s" % (m["name"], "♥" * after + "♡" * (
+                10 - after)), "heart")
+
+    def mm_partner(self):
+        """The monster maid you're courting, engaged or married to."""
+        for m in self.mmaids():
+            if m["status"] in ("dating", "engaged", "married"):
+                return m
+        return None
+
+    def partner_name(self):
+        vid = self.partner()
+        if vid:
+            return VILLAGERS[vid]["short"]
+        m = self.mm_partner()
+        return m["name"] if m else None
 
     def mmaid_at(self, x, y, area=None):
         if (area or self.area).key != "cabin":
@@ -9485,7 +9774,10 @@ class Game:
                 min(same, 3) - 1] if same < 4 else " %d" % (same + 1)
         del self.floor_state(self.mine["floor"])["changed"]["%d,%d" % (x, y)]
         self.mmaids().append({"kind": e["kind"], "name": name,
-                              "chore": None, "x": spot[0], "y": spot[1]})
+                              "chore": None, "x": spot[0], "y": spot[1],
+                              "id": max([o["id"] for o in self.mmaids()] +
+                                        [0]) + 1})
+        self.mmaids()
         self.sound.play("heart")
         self.say("\"Your cabin? With a proper broom cupboard?\" The little "
                  "maid that was %s claps her hands. \"I'm %s! I'll be "
@@ -9502,19 +9794,38 @@ class Game:
 
     def mmaid_menu(self, m):
         if not self.talk or self.talk.get("mm") is not m:
-            self.mmaid_says(m, random.choice((
-                "Yes, %s? Is there something you need?" % self.p["name"],
-                "Oh! You startled me. What can I do for you?",
-                "Everything's spick and span. What is it?")))
+            r = MONSTER_ROMANCE[m["kind"]]
+            if m["status"] == "married":
+                hello = random.choice(r["wife"])
+            elif m["status"]:
+                hello = random.choice((
+                    "(blush)Oh, it's you! Hello, sweetheart.",
+                    "(happy)There you are! I was hoping you'd come by."))
+            else:
+                hello = random.choice((
+                    "(happy)Yes, %s? Is there something you need?" %
+                    self.p["name"],
+                    "(surprised)Oh! You startled me. What can I do for you?",
+                    "(happy)Everything's spick and span. What is it?"))
+            self.mm_line(m, hello)
         now = m["chore"]
         self.open_menu("Each morning she'll %s." % MAID_CHORES[now][1]
                        if now else "She has no chore yet.", [
                            ("Chat", lambda: self.mmaid_chat(m)),
+                           ("Kiss her", lambda: self.mm_kiss(m)),
+                           ("Give her a gift", lambda: self.mm_gift_menu(m)),
                            ("Give her a chore", lambda: self.mmaid_chores(m)),
                            ("Squeeze past", lambda: self.squeeze_mmaid(m)),
                            ("Dismiss her", lambda: self.mmaid_dismiss(m)),
                            ("Goodbye", self.end_talk)],
                        cancel=self.end_talk)
+
+    def mm_line(self, m, line):
+        """Say one of her lines, written '(expr)text'."""
+        expr, text = parse_line(fill_in(line, self))
+        narr = text.startswith("*")
+        self.mmaid_says(m, text.lstrip("*"), expr)
+        self.talk["narr"] = narr
 
     def mmaid_chat(self, m):
         lines = MONSTER_MAIDS[m["kind"]][1]
@@ -9523,8 +9834,148 @@ class Game:
             "I do like it here. It's ever so much brighter than the mine."
             if m["chore"] else "What would you like me to do each "
             "morning?")), random.choice(("happy", "laugh", "blush")))
+        if m["talked"] != self.st["day"]:
+            m["talked"] = self.st["day"]
+            self.mm_befriend(m, CHAT_POINTS)
         self.pass_time(1)
         self.mmaid_menu(m)
+
+    def mm_kiss(self, m):
+        """A kiss for her, twice a day, each as good as a gift she likes."""
+        day, n = m["kissed"] or (None, 0)
+        if day != self.st["day"]:
+            n = 0
+        if n >= 2:
+            self.mm_line(m, random.choice(MAID_KISS_ENOUGH))
+            self.mmaid_menu(m)
+            return
+        m["kissed"] = [self.st["day"], n + 1]
+        self.say("> (you kiss %s on the cheek)" % m["name"], "you")
+        self.mm_line(m, random.choice(MONSTER_ROMANCE[m["kind"]]["kiss"] +
+                                      MAID_KISS_LIKE[:2]))
+        self.mm_befriend(m, GIFT_POINTS["like"])
+        self.sound.play("heart")
+        self.pass_time(1)
+        self.mmaid_menu(m)
+
+    def mm_taste(self, m, item):
+        r = MONSTER_ROMANCE[m["kind"]]
+        for taste, key in (("love", "loves"), ("hate", "hates"),
+                           ("like", "likes")):
+            if item in r[key]:
+                return taste
+        kind = ITEMS.get(item, (0, 0, "?"))[2]
+        return "like" if kind in ("food", "fruit") else \
+            "dislike" if kind == "material" else "neutral"
+
+    def mm_gift_menu(self, m):
+        items = sorted(n for n, c in self.p["items"].items()
+                       if c and not n.endswith(" seeds") and n not in
+                       ("sprinkler", "fertilizer") and n not in STATUE_OF
+                       and n not in MACHINES and not n.endswith(" sapling"))
+        if not items:
+            self.mm_line(m, "(happy)You've nothing to give? That's all "
+                            "right. You being here is enough.")
+            self.mmaid_menu(m)
+            return
+        self.open_menu("Give %s what?" % m["name"], [
+            (n, lambda n=n: self.mm_give(m, n)) for n in items],
+            cancel=lambda: self.mmaid_menu(m))
+
+    def mm_give(self, m, item):
+        self.say("> (you give %s %s)" % (m["name"], an(item)), "you")
+        if item == "blossom bouquet":
+            self.mm_bouquet(m)
+        elif item == "blossom pendant":
+            self.mm_pendant(m)
+        elif m["gift_day"] == self.st["day"]:
+            self.mm_line(m, "(blush)You've already given me something "
+                            "today. That's plenty!")
+        elif m["week"] >= 2 and m["status"] != "married":
+            self.mm_line(m, "(happy)You've been so generous this week! "
+                            "Save it for later.")
+        else:
+            self.take(item)
+            taste = self.mm_taste(m, item)
+            m["gift_day"] = self.st["day"]
+            m["week"] += 1
+            self.mm_line(m, random.choice(MM_GIFT[taste]))
+            self.mm_befriend(m, GIFT_POINTS[taste])
+            self.pass_time(1)
+        self.mmaid_menu(m)
+
+    def mm_bouquet(self, m):
+        r = MONSTER_ROMANCE[m["kind"]]
+        other = self.partner_name()
+        if m["status"]:
+            self.mm_line(m, "(blush)We're already together, silly. But "
+                            "thank you.")
+        elif other:
+            self.mm_line(m, "(sad)Aren't you with %s?" % other)
+        elif self.mm_hearts(m) < 8:
+            self.mm_line(m, r["notyet"])
+        else:
+            self.take("blossom bouquet")
+            m["status"] = "dating"
+            self.sound.play("quest")
+            self.mm_line(m, r["accept"])
+            self.say("You and %s are going steady!" % m["name"], "heart")
+            if self.area.key == "cabin":
+                self.flash(m["x"], m["y"], "heart")
+
+    def mm_pendant(self, m):
+        if m["status"] != "dating" or self.mm_hearts(m) < 10:
+            self.mm_line(m, "(blush)You already asked. I already said yes!"
+                         if m["status"] in ("engaged", "married") else
+                         "(blush)Oh! It's beautiful. I... I'm not ready for "
+                         "that yet. Give it time." if m["status"] else
+                         "(surprised)A pendant?! We're not even courting!")
+            return
+        self.take("blossom pendant")
+        m["status"] = "engaged"
+        self.st["wedding"] = self.st["day"] + 3
+        self.sound.play("quest")
+        self.mm_line(m, MONSTER_ROMANCE[m["kind"]]["proposal"])
+        self.say("You're engaged to %s! The wedding will be in three days, "
+                 "in the square, at ten in the morning." % m["name"],
+                 "heart")
+
+    def mm_wedding(self, m):
+        """Your wedding to a maid who was a monster, in the square."""
+        drift = ("Apple blossom petals drift", "Summer sunlight dances",
+                 "Golden leaves drift", "Snowflakes drift")[self.season()]
+        was = an(MONSTERS[m["kind"]].name)
+        steps = ["*The whole village gathers in the square. %s over the "
+                 "fountain." % drift,
+                 "*Mayor Pell clears his throat, and looks twice at the "
+                 "bride. Bernard is already crying. Wren plays something "
+                 "soft on her fiddle.",
+                 "*%s comes up the aisle in her maid's dress, the frilled "
+                 "cap traded for a veil. Nobody in the valley has ever seen "
+                 "a bride who used to be %s. Agnes Whitlock says it's the "
+                 "loveliest wedding she's ever been to." % (m["name"], was),
+                 MONSTER_ROMANCE[m["kind"]]["vows"],
+                 "*Everyone cheers. Pip throws far too much confetti.",
+                 "(happy)Let's go home, {name}. Our home."]
+
+        def after():
+            m["status"] = "married"
+            self.st["spouse"] = "mm:%d" % m["id"]
+            self.st["wedding"] = None
+            self.say("You and %s are married!" % m["name"], "heart")
+            self.end_talk()
+            self.save()
+        self.sound.play("heart")
+        self.mm_scene(m, steps, after)
+
+    def mm_scene(self, m, steps, after):
+        if not steps:
+            after()
+            return
+        self.mm_line(m, steps[0])
+        self.open_menu("", [("▶", lambda: self.mm_scene(m, steps[1:],
+                                                        after))],
+                       lambda: self.mm_scene(m, steps[1:], after))
 
     def mmaid_chores(self, m):
         self.open_menu("What should %s do each morning?" % m["name"], [
@@ -9548,8 +9999,11 @@ class Game:
 
     def mmaid_dismiss(self, m):
         self.mmaid_says(m, "You... you want me to go?", "sad")
-        self.open_menu("Dismiss %s? She'll go for good, and there's no "
-                       "getting her back." % m["name"], [
+        bond = {"dating": " She's your sweetheart!", "engaged":
+                " You're engaged to her!", "married":
+                " She's your wife!"}.get(m["status"], "")
+        self.open_menu("Dismiss %s?%s She'll go for good, and there's no "
+                       "getting her back." % (m["name"], bond), [
                            ("Yes, dismiss her", lambda: self.mmaid_gone(m)),
                            ("No, keep her", lambda: (
                                self.mmaid_says(m, "Oh, thank goodness. I'll "
@@ -9561,6 +10015,10 @@ class Game:
         self.end_talk()
         if m in self.mmaids():
             self.mmaids().remove(m)
+        if m["status"] == "engaged":
+            self.st["wedding"] = None
+        if self.st.get("spouse") == "mm:%d" % m["id"]:
+            self.st["spouse"] = None
         self.say("%s unties her apron, folds it neatly, curtsies one last "
                  "time, and is gone. You never see her again." % m["name"],
                  "info")
@@ -10614,10 +11072,10 @@ class Game:
         st = self.st
         you = self.p["name"]
         lines = list(LOO_CARVINGS)
-        partner = self.partner()
+        partner = self.partner_name()
         if partner:
             lines += ["%s + %s, carved inside a lopsided heart." % (
-                you, VILLAGERS[partner]["short"])] * 3
+                you, partner)] * 3
         for vid, f in st["friends"].items():
             if self.hearts(vid) >= 8 and not partner:
                 lines.append("'%s was here,' and underneath, in different "
@@ -13705,6 +14163,9 @@ class Game:
         for f in st["friends"].values():
             if self.weekday() == 0:
                 f["week"] = 0
+        for m in self.mmaids():
+            if self.weekday() == 0:
+                m["week"] = 0
         p["energy"] = round(p["max_energy"] * rest)
         p["magic"] = max(p["magic"], int(p["max_magic"] * rest + 0.5))
         if self.season_drawn != season:
@@ -14573,9 +15034,8 @@ class Game:
             self.speak(vid, "(blush)We're already together, silly. But "
                             "thank you.")
             return
-        if other:
-            self.speak(vid, "(sad)Aren't you with %s?" %
-                       VILLAGERS[other]["short"])
+        if other or self.mm_partner():
+            self.speak(vid, "(sad)Aren't you with %s?" % self.partner_name())
             return
         if self.hearts(vid) < 8:
             self.speak(vid, "(blush)Oh... I like you, {name}. But not like "
@@ -14726,7 +15186,9 @@ class Game:
                     self.st["chickens"]) >= COOP_ROOM):
                 continue
             if name == "blossom pendant" and not (
-                    self.partner() and self.hearts(self.partner()) >= 10):
+                    self.partner() and self.hearts(self.partner()) >= 10
+                    or self.mm_partner() and self.mm_hearts(
+                        self.mm_partner()) >= 10):
                 continue
             if name == "checkup" and "checkup" in self.flags_today():
                 continue
@@ -15022,6 +15484,9 @@ class Game:
     def wedding(self):
         vid = self.partner()
         if not vid:
+            m = self.mm_partner()
+            if m and m["status"] == "engaged":
+                self.mm_wedding(m)
             return
         v = VILLAGERS[vid]
         st = self.st
@@ -15069,6 +15534,12 @@ class Game:
         vid = self.st["spouse"]
         if not vid or random.random() < 0.4:
             return
+        if vid.startswith("mm:"):
+            m = next((m for m in self.mmaids()
+                      if "mm:%d" % m["id"] == vid), None)
+            if m:
+                self.mm_spouse_morning(m)
+            return
         v = VILLAGERS[vid]["short"]
         if self.maid(vid):
             v += (", apron and all," if self.outfit(vid) == "uniform" else
@@ -15088,6 +15559,24 @@ class Game:
         else:
             self.say("%s fixed the fence and left you a note: 'Love "
                      "you.'" % v, "heart")
+
+    def mm_spouse_morning(self, m):
+        r = random.random()
+        if r < 0.3 and self.st["soil"] and self.st["weather"] == "sun":
+            for s in self.st["soil"].values():
+                s[0] = 1
+            self.say("%s watered all the crops before you woke up." %
+                     m["name"], "heart")
+        elif r < 0.6:
+            food = random.choice(("pancakes", "bread", "honey cake",
+                                  "stew"))
+            self.give(food)
+            self.say("%s made you breakfast: %s, wrapped for later." % (
+                m["name"], food), "heart")
+        else:
+            self.say("%s %s." % (m["name"],
+                                 MONSTER_ROMANCE[m["kind"]]["morning"]),
+                     "heart")
 
     # ── The morning ──
 
@@ -15856,12 +16345,21 @@ class Game:
         if mm:
             c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
                           text=mm["name"], font=bold, fill=ACCENT)
-            c.create_text(tx + bold.measure(mm["name"]) + S(12), y0 + pad,
-                          anchor="nw", tags="overlay", font=F("Helvetica", 13),
-                          fill=INK_DIM, text="(your maid, once %s)" % an(
-                              MONSTERS[mm["kind"]].name))
-            c.create_text(tx, y0 + pad + lh + S(6), anchor="nw", width=tw,
-                          text=text, font=f, fill=INK, tags="overlay")
+            h = self.mm_hearts(mm)
+            role = {"dating": "your sweetheart", "engaged": "your fiancée",
+                    "married": "your wife"}.get(mm["status"], "your maid")
+            hf = F("Helvetica", 13)
+            hearts = "♥" * h + "♡" * (10 - h)
+            hx = tx + bold.measure(mm["name"]) + S(12)
+            c.create_text(hx, y0 + pad, anchor="nw", tags="overlay",
+                          font=hf, fill=HEARTC, text=hearts)
+            c.create_text(tx, y0 + pad + lh, anchor="nw", tags="overlay",
+                          font=hf, fill=INK_DIM, text="(%s, once %s)" % (
+                              role, an(MONSTERS[mm["kind"]].name)))
+            c.create_text(tx, y0 + pad + lh * 2 + S(6), anchor="nw",
+                          width=tw, text=text, tags="overlay",
+                          font=F("Helvetica", 14, "italic") if t.get("narr")
+                          else f, fill=INK_DIM if t.get("narr") else INK)
             return
         h = self.hearts(vid)
         f_ = self.friend(vid)
@@ -16115,6 +16613,15 @@ class Game:
                 "  talked" if f["talked"] == self.st["day"] else "",
                 "gifts %d/2" % f["week"], mark))
         lines += ["", "❀ could become a sweetheart"]
+        if self.mmaids():
+            lines += ["", "Your maids who were monsters:"]
+            for m in self.mmaids():
+                h = self.mm_hearts(m)
+                lines.append("%-12s %s  %s%s" % (
+                    m["name"][:12], "♥" * h + "♡" * (10 - h),
+                    "talked  " if m["talked"] == self.st["day"] else "",
+                    {"dating": "sweetheart", "engaged": "engaged",
+                     "married": "spouse"}.get(m["status"], "❀")))
         hens = self.st["chickens"]
         if hens:
             lines += [""] + wrap("Your hens: " + ", ".join(
@@ -19399,6 +19906,16 @@ def selftest():
         for c in OUTFITS[kind][1]:
             if c not in COLOUR_NAMES:
                 problems.append("outfit colour %s unnamed" % c)
+    for kind in MONSTER_MAIDS:
+        r = MONSTER_ROMANCE.get(kind)
+        if not r or any(not r.get(k) for k in (
+                "loves", "likes", "hates", "kiss", "notyet", "accept",
+                "proposal", "vows", "wife", "morning")):
+            problems.append("monster maid %s lacks romance" % kind)
+            continue
+        for item in r["loves"] + r["likes"] + r["hates"]:
+            if item not in ITEMS:
+                problems.append("monster maid %s: unknown %s" % (kind, item))
     for q, right, wrong in RIDDLES:
         if right in wrong or len(wrong) != 2:
             problems.append("riddle %s" % q)

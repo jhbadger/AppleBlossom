@@ -279,6 +279,17 @@ same chores as any maid, done every morning), or squeeze past. Nothing
 turns her back, so instead you can **dismiss** her (you're asked to make
 sure): she folds her apron and is gone for good.
 
+She has a heart, too. Chat with her once a day, **kiss** her (twice a
+day, as good as a gift she likes) and give her gifts (one a day, two a
+week): each kind of monster maid has her own favourites, from Bonnie's
+milk ("Strong bones!") to Gobbelina's silver rings and Ember's coffee.
+At 8 hearts give her a Blossom Bouquet to go steady; at 10, Otto will
+sell you a Blossom Pendant, and she'll marry you in the square three days
+later, with vows of her own about the monster she was. As your wife she
+helps out of a morning in her own way. You can only court one person at
+a time, villager or monster maid. Her hearts are on your friends list
+(F).
+
 ### Ore and Otto's forge
 
 Here and there the rock walls glint with **ore**: copper near the top,
