@@ -670,6 +670,31 @@ confession at eight hearts.
 4. Your spouse moves into your cabin, still goes to work, and some mornings
    waters the crops or leaves you breakfast.
 
+## Children
+
+Once you've been married a week, your bed offers to **try for a baby**
+with your spouse; a baby arrives a fortnight later, in a crib in your
+cabin, with a name (give them another if you like). You can have two.
+
+Walk into the crib to cuddle the baby once a day. At two weeks old the
+baby is a child, walking about the cabin: play with them once a day (you
+feel better for it, +10 energy), chat, or squeeze past. From four weeks
+old, on a fine day they play out in the farmyard from ten till four.
+Their hearts grow with every cuddle and game, and they're on your friends
+list (F). They take after both of you: hair and eyes from one parent or
+the other.
+
+**If your wife was a monster maid,** your child takes after her: her
+monster's hair colour and eyes, and something more besides. An imp's baby
+has two tiny horns and warm hands; a ghost's goes see-through when she
+sneezes; a goblin's has the pointiest ears; a golem's is very heavy for
+such a little thing. They say things only they would ("Look! Sparks! Mum
+showed me!"), and some mornings they get up to something: an imp's child
+lights the stove before you're up (+15 energy), a goblin's brings you a
+shiny coin (+25g), a skeleton's digs you up an old bone, a golem's carries
+in the woodpile, a ghost's leaves a tingle of magic in the air. The
+village has things to say about them, too.
+
 ## Festivals
 
 | Day | Festival | What to do |

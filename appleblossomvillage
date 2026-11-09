@@ -6578,6 +6578,84 @@ LEADS_TO = {   # spell: the animal, and the room that takes her in
     "chickenfy": ("hen", "coop"), "cowify": ("cow", "barn"),
     "sheepify": ("sheep", "barn"), "catify": ("cat", "cabin"),
     "dogify": ("dog", "cabin")}
+KID_DUE = 14                    # days from "let's have a baby" to the baby
+KID_GROWS = 14                  # days a baby, before walking and talking
+KID_OUT = 28                    # days old before playing in the farmyard
+KID_MAX = 2
+KID_NAMES = {"F": ["Poppy", "Maisie", "Willow", "Hazel", "Daisy", "Rosie",
+                   "Ivy-May", "Lark", "Bramble", "Clementine"],
+             "M": ["Alfie", "Rowan", "Barnaby", "Teddy", "Finn", "Ollie",
+                   "Jasper", "Huckle", "Arlo", "Wilf"]}
+KID_BABY = ["*The baby gurgles and grabs your finger. Quite a grip!",
+            "*A tiny yawn, a tiny sneeze, and straight back to sleep.",
+            "*The baby blows a bubble and looks very pleased about it.",
+            "*Big eyes watch you, very seriously, then crinkle into a "
+            "smile."]
+KID_CHILD = ["(happy)Can we go fishing? Pleeease?",
+             "(laugh)I fed the chickens! Well, one chicken. Twice.",
+             "(happy)When I grow up I'm going to be a farmer. Like you!",
+             "(surprised)Did you know worms have five hearts? Juniper told "
+             "me.",
+             "(happy)Pip says I can be in his gang if I bring him a cookie.",
+             "(blush)I drew you a picture. It's you. And a cow. The cow's "
+             "the big one."]
+KID_TRAITS = {   # a monster maid's child: eye colour; what's odd about the
+    # baby; what the child does some mornings; a present that comes with
+    # it (item, how many; "gold", "energy" or "magic"); what they say
+    "slime": ("#2a4a2a", "and is ever so slightly wobbly",
+              "left a shiny trail right across the kitchen floor. Very "
+              "clean, at least", None,
+              ["(laugh)I can bounce! Watch! ...Ow.",
+               "(happy)Mum says I'm made of sugar and sticky."]),
+    "frost_slime": ("#4a80c0", "and has the coldest little toes",
+                    "drew frost ferns on every window in the cabin", None,
+                    ["(happy)I made the milk cold! On purpose!",
+                     "(laugh)Snowball fight! I always win. I cheat."]),
+    "shadow_slime": ("#7a5aa0", "and hides in your shadow whenever anyone "
+                     "comes in", "spent the morning hiding in the corners. "
+                     "You found them eventually", None,
+                     ["(blush)Can I stay in here? It's nice and dark.",
+                      "(happy)I hid from Pip ALL DAY. He never found me."]),
+    "bat": ("#c04040", "and has rather large ears",
+            "slept hanging upside down from the bunk again. Fast asleep",
+            None, ["(laugh)I can hear you coming from SO far away!",
+                   "(happy)Everything's more fun upside down."]),
+    "rat": ("#1a1a1a", "and has a nose that never stops twitching",
+            "found a lost hazelnut at the back of the pantry and brought it "
+            "to you", ("hazelnut", 1),
+            ["(happy)I found a crumb. A BIG one.",
+             "(surprised)Is there cheese? I can smell cheese."]),
+    "spider": ("#c03030", "and can already tie the neatest little knots",
+               "knitted you a tiny scarf. Very, very tiny",
+               ("wool scarf", 1),
+               ["(happy)I made a web in the doorway! Don't walk in it!",
+                "(laugh)Mum's teaching me lace. I'm better at knots."]),
+    "skeleton": ("#3a2a1a", "and rattles a little when they laugh",
+                 "dug up an old bone in the garden and brought it to you, "
+                 "very proud", ("old bone", 1),
+                 ["(laugh)I drank ALL the milk. For strong bones!",
+                  "(happy)Mum says she used to be all bones. I've got "
+                  "skin!"]),
+    "goblin": ("#e0c020", "and has the pointiest little ears",
+               "found a shiny coin and gave it to you. Mostly willingly",
+               ("gold", 25),
+               ["(laugh)Mine! MINE! ...Sorry. Do you want to share?",
+                "(happy)I found a button. It's shiny. I'm keeping it."]),
+    "ghost": ("#80a8e0", "and goes a little see-through when they sneeze",
+              "went invisible again. You found them giggling in the pantry, "
+              "and a tingle of magic in the air", ("magic", 1),
+              ["(laugh)Boo! Did I scare you? I did, didn't I?",
+               "(happy)I walked through the wall! Halfway. It was the door."]),
+    "golem": ("#a07040", "and is very heavy for such a little thing",
+              "carried in the whole woodpile. Again", ("wood", 5),
+              ["(happy)I lifted the table! With you on it! Nearly.",
+               "(blush)I'm slow at running. But I never fall over."]),
+    "imp": ("#f8e040", "and has two tiny horns, and warm hands",
+            "lit the stove before anyone was up. The cabin's toasty",
+            ("energy", 15),
+            ["(laugh)Look! Sparks! Mum showed me!",
+             "(happy)I only burned the toast a little. It's nicer black."]),
+}
 STATUE_HEFT = 20                # energy it takes to pick a statue up
 
 
@@ -7829,6 +7907,8 @@ Ivy builds chicken coops and Mabel sells hens; each hen
 lays an egg a night.  Walk into a hen to pet or rename her.
 Feed your animals: graze them (the trough opens the doors),
 put hay in the trough, or build a silo; happy ones give more.
+Married a week, your bed offers to try for a baby; cuddle
+and play with your children once a day.
 Cook at your cabin stove from what's in the pantry beside
 it (and your bag); friends send recipes at 3 hearts.
 Go to bed before 2 am.
@@ -8237,6 +8317,11 @@ class Game:
         for vid, t in self.st.get("fruitful", {}).items():
             frames.append(("tvf_" + vid, tree_art(
                 VILLAGERS[vid]["look"], self.season(), t["kind"])))
+        for i, k in enumerate(self.st.get("kids", ())):
+            px = art_pixels(*person_art(k["look"]))
+            frames += [("kid_%d" % i, px),
+                       ("kid_%d@1" % i, px[1:] + [[None] * 16]),
+                       ("kidb_%d" % i, crib_art(k["look"]))]
         for n, frame in frames:
             self.paint_sprite(n, frame, scale)
 
@@ -8889,7 +8974,8 @@ class Game:
         a = area or self.area
         if not a.inside(x, y):
             return False
-        if self.decor_at(x, y, a) or self.mmaid_at(x, y, a):
+        if self.decor_at(x, y, a) or self.mmaid_at(x, y, a) or \
+                self.kid_at(x, y, a):
             return False
         t = self.tile_at(x, y, a)
         if t not in WALKABLE:
@@ -8971,6 +9057,11 @@ class Game:
         if m:
             self.walking = None
             self.mmaid_menu(m)
+            return True
+        k = self.kid_at(x, y)
+        if k:
+            self.walking = None
+            self.kid_menu(k)
             return True
         i = self.pet_at(a.key, x, y)
         if i is not None:
@@ -10011,7 +10102,7 @@ class Game:
                 and (x, y) not in spots and abs(x - ex) + abs(y - ey) > 1
                 and not self.npc_at(x, y, a) and not self.decor_at(x, y, a)
                 and not any((m["x"], m["y"]) == (x, y)
-                            for m in self.mmaids())
+                            for m in self.mmaids() + self.kids())
                 and self.pet_at("cabin", x, y) is None
                 and not (self.area is a and (x, y) == self.pos())]
         if not free:
@@ -10222,6 +10313,7 @@ class Game:
         def after():
             m["status"] = "married"
             self.st["spouse"] = "mm:%d" % m["id"]
+            self.st["married_day"] = self.st["day"]
             self.st["wedding"] = None
             self.say("You and %s are married!" % m["name"], "heart")
             self.end_talk()
@@ -10684,6 +10776,241 @@ class Game:
                         ingredient(spec, n) for spec, n in need.items()]))))
                 self.say("%s has sent you a recipe: %s! (Cook it at your "
                          "stove.)" % (VILLAGERS[who]["short"], dish), "quest")
+
+    # ── Children ──
+    #
+    # Married a week or more, you can try for a baby at bedtime; a fortnight
+    # later there's a crib in the cabin.  A baby grows into a child at two
+    # weeks, and plays in the farmyard on fine days from four.  "kids":
+    # [{name, sex, born, look, kind (their mother's monster, or None), x,
+    # y, love, seen}].  A monster maid's child takes after her.
+
+    def kids(self):
+        return self.st.setdefault("kids", [])
+
+    def spouse_info(self):
+        """Your spouse: (name, look, the monster she was or None), or
+        None."""
+        sp = self.st.get("spouse")
+        if not sp:
+            return None
+        if sp.startswith("mm:"):
+            m = next((m for m in self.mmaids() if "mm:%d" % m["id"] == sp),
+                     None)
+            return m and (m["name"], monster_maid_look(m["kind"]),
+                          m["kind"])
+        return VILLAGERS[sp]["short"], self.look_of(sp), None
+
+    def kid_age(self, k):
+        return self.st["day"] - k["born"]
+
+    def can_try_baby(self):
+        st = self.st
+        ks = self.kids()
+        return bool(self.spouse_info()) and len(ks) < KID_MAX and \
+            st.get("baby_due") is None and not st.get("baby_try") and \
+            st["day"] - st.get("married_day", -99) >= 7 and \
+            all(self.kid_age(k) >= KID_OUT for k in ks)
+
+    def try_baby(self):
+        self.st["baby_try"] = True
+        self.say("You and %s talk late into the night about a baby." %
+                 self.spouse_info()[0], "heart")
+        self.sleep()
+
+    def kid_mornings(self):
+        """A baby on the way, a baby born, and what the children get up
+        to."""
+        st = self.st
+        if st.pop("baby_try", None):
+            st["baby_due"] = st["day"] + KID_DUE
+            self.say("Good news: a baby is on the way! %s is over the "
+                     "moon. (Due in %d days.)" % (self.spouse_info()[0],
+                                                  KID_DUE), "heart")
+        if st.get("baby_due") is not None and st["day"] >= st["baby_due"]:
+            st["baby_due"] = None
+            if self.spouse_info():
+                self.kid_born()
+        for k in self.kids():
+            if self.kid_age(k) < KID_GROWS:
+                continue
+            he = "She" if k["sex"] == "F" else "He"
+            r = random.random()
+            if k["kind"] and r < 0.35:
+                t = KID_TRAITS[k["kind"]]
+                text = "%s %s." % (k["name"], t[2])
+                gift = t[3]
+                if gift and gift[0] == "gold":
+                    self.p["gold"] += gift[1]
+                    text += " (+%dg)" % gift[1]
+                elif gift and gift[0] == "energy":
+                    self.p["energy"] = min(self.p["max_energy"],
+                                           self.p["energy"] + gift[1])
+                    text += " (+%d energy)" % gift[1]
+                elif gift and gift[0] == "magic":
+                    self.p["magic"] = min(self.p["max_magic"],
+                                          self.p["magic"] + gift[1])
+                    text += " (+1 magic)"
+                elif gift:
+                    self.give(*gift)
+                    text += " (+%s)" % gift[0]
+                self.say(text, "heart")
+            elif r < 0.12:
+                self.say("%s drew you a picture before breakfast. %s's "
+                         "very proud of it." % (k["name"], he), "heart")
+
+    def kid_born(self):
+        name, look, kind = self.spouse_info()
+        me = self.p["look"]
+        sex = random.choice("FM")
+        used = {k["name"] for k in self.kids()}
+        kid_name = random.choice([n for n in KID_NAMES[sex] if n not in used]
+                                 or KID_NAMES[sex])
+        hair_from = random.choice(("you", "them"))
+        hair = list(ART["mon_" + kind][0].values())[0] if kind else (
+            me["hair"] if hair_from == "you" else look["hair"])
+        k = {"name": kid_name, "sex": sex, "born": self.st["day"],
+             "kind": kind, "love": 0, "seen": -1, "parent": name,
+             "look": {"face": sex, "body": "C", "age": "child",
+                      "skin": random.choice((me["skin"], look["skin"])),
+                      "hair": hair, "eyes": KID_TRAITS[kind][0] if kind else
+                      random.choice((me["eyes"], look["eyes"])),
+                      "style": random.choice(
+                          ("bob", "pigtails", "bangs", "ponytail") if
+                          sex == "F" else ("short", "messy", "spiky")),
+                      "shirt": random.choice(SHIRTS),
+                      "pants": random.choice(PANTS), "bg": "#f0e0e8"}}
+        k["x"], k["y"] = self.mmaid_spot() or self.areas["cabin"].entry
+        self.kids().append(k)
+        if hasattr(self, "base"):
+            self.paint_specials(scale=True)
+        self.sound.play("quest")
+        she, her = ("She", "her") if sex == "F" else ("He", "him")
+        self.say("Your baby is here: a little %s! You call %s %s." % (
+            "girl" if sex == "F" else "boy", her, kid_name), "quest")
+        if kind:
+            self.say("%s has %s's hair, the colour of %s, %s." % (
+                she, name, an(MONSTERS[kind].name), KID_TRAITS[kind][1]),
+                "heart")
+        else:
+            self.say("%s has %s hair." % (
+                she, "your" if hair_from == "you" else name + "'s"), "heart")
+        self.say("(There's a crib in your cabin now. Walk into it to cuddle "
+                 "%s, or give %s another name.)" % (her, her), "info")
+
+    def kid_where(self, k):
+        """In the cabin, or out in the farmyard on a fine day once they're
+        old enough."""
+        st = self.st
+        if self.kid_age(k) >= KID_OUT and 1000 <= self.hhmm() < 1600 and \
+                st["weather"] not in ("rain", "storm", "snow"):
+            if k.get("out") != st["day"]:
+                if getattr(self, "placing_maids", False):
+                    return "nowhere", -1, -1
+                self.placing_maids = True
+                try:
+                    taken = {(n.where, n.x, n.y) for n in self.npcs.values()}
+                    taken |= {("valley", o["ox"], o["oy"])
+                              for o in self.kids() if o is not k and
+                              o.get("out") == st["day"]}
+                    x, y = OUT_SPOTS["farmyard"]
+                    k["ox"], k["oy"] = self.free_spot("valley", x + 2, y,
+                                                      taken)
+                    k["out"] = st["day"]
+                finally:
+                    self.placing_maids = False
+            return "valley", k["ox"], k["oy"]
+        return "cabin", k["x"], k["y"]
+
+    def kid_at(self, x, y, area=None):
+        key = (area or self.area).key
+        if key not in ("cabin", "valley"):
+            return None
+        for k in self.kids():
+            if self.kid_where(k) == (key, x, y):
+                return k
+        return None
+
+    def kid_tile(self, k):
+        i = self.kids().index(k)
+        return ("kidb_%d" if self.kid_age(k) < KID_GROWS else "kid_%d") % i
+
+    def kid_line(self, k, line):
+        expr, text = parse_line(fill_in(line, self))
+        self.talk = {"kid": k, "v": None, "mode": "kw", "expr": expr,
+                     "text": text.lstrip("*"), "narr": text.startswith("*")}
+        if not text.startswith("*"):
+            self.say("%s: %s" % (k["name"], text), "talk")
+
+    def kid_menu(self, k):
+        baby = self.kid_age(k) < KID_GROWS
+        him = "her" if k["sex"] == "F" else "him"
+        if not self.talk or self.talk.get("kid") is not k:
+            self.kid_line(k, random.choice(KID_BABY) if baby else
+                          self.kid_chatter(k))
+        rows = [("Cuddle %s" % him if baby else "Play with %s" % him,
+                 lambda: self.kid_love(k))]
+        if not baby:
+            rows += [("Chat", lambda: (self.kid_line(
+                k, self.kid_chatter(k)), self.kid_menu(k))),
+                ("Squeeze past", lambda: self.squeeze_kid(k))]
+        rows += [("Give %s a new name" % him, lambda: (
+            self.end_talk(), self.start_naming(self.kids().index(k),
+                                               "kids"))),
+                 ("Goodbye", self.end_talk)]
+        self.open_menu("", rows, cancel=self.end_talk)
+
+    def kid_chatter(self, k):
+        lines = list(KID_CHILD)
+        if k["kind"]:
+            lines += KID_TRAITS[k["kind"]][4] * 2
+        return random.choice(lines)
+
+    def kid_love(self, k):
+        baby = self.kid_age(k) < KID_GROWS
+        if k["seen"] == self.st["day"]:
+            self.kid_line(k, "*Sound asleep, a smile on that little face."
+                          if baby else "(happy)Again tomorrow? Promise?")
+        else:
+            k["seen"] = self.st["day"]
+            k["love"] = min(1000, k["love"] + 40)
+            self.sound.play("heart")
+            where = self.kid_where(k)
+            if self.area.key == where[0]:
+                self.flash(where[1], where[2], "heart")
+            if baby:
+                self.kid_line(k, "*You rock the baby gently. A tiny hand "
+                                 "holds on to your collar.")
+            else:
+                self.p["energy"] = min(self.p["max_energy"],
+                                       self.p["energy"] + 10)
+                self.kid_line(k, random.choice((
+                    "(laugh)Again! Again! Spin me again!",
+                    "(happy)You're it! No, YOU'RE it!",
+                    "(laugh)I win! I always win at hide-and-seek!")))
+                self.say("You play with %s for a while. You feel better for "
+                         "it. (+10 energy)" % k["name"], "heart")
+            self.pass_time(10)
+        self.kid_menu(k)
+
+    def squeeze_kid(self, k):
+        self.end_talk()
+        x, y = self.pos()
+        out = self.kid_where(k)[0] == "valley"
+        kx, ky = ("ox", "oy") if out else ("x", "y")
+        k[kx], k[ky], self.st["pos"] = x, y, [k[kx], k[ky]]
+        self.say("You squeeze past %s, who giggles." % k["name"], "info")
+        self.end_turn(1)
+
+    def look_portrait(self, key, look, expr, z):
+        key = ("look", key, expr, z)
+        img = self.portraits.get(key)
+        if img is None:
+            px = portrait(look, expr)
+            base = tk.PhotoImage(width=PW, height=PW)
+            base.put(" ".join("{" + " ".join(r) + "}" for r in px))
+            img = self.portraits[key] = base.zoom(z)
+        return img
 
     # ── Juniper's museum ──
 
@@ -13846,7 +14173,8 @@ class Game:
         self.naming = i
         self.naming_pen = pen
         self.talkbar.pack(side="bottom", fill="x", before=self.log)
-        self.prompt.config(text="Her new name:")
+        self.prompt.config(text="New name:" if pen == "kids" else
+                           "Her new name:")
         self.entry.delete(0, "end")
         self.entry.insert(0, self.st[pen][i]["name"])
         self.entry.select_range(0, "end")
@@ -13862,8 +14190,9 @@ class Game:
             c = self.st[getattr(self, "naming_pen", "chickens")][i]
             old, c["name"] = c["name"], name
             if old != name:
-                self.say("%s is now called %s. She seems to approve." % (
-                    old, name), "good")
+                self.say("%s is now called %s. %s seems to approve." % (
+                    old, name, "He" if c.get("sex") == "M" else "She"),
+                    "good")
         self.end_naming()
 
     def end_naming(self):
@@ -14749,10 +15078,12 @@ class Game:
 
     def bed_menu(self):
         h = self.hhmm()
+        baby = [("Try for a baby with %s" % self.spouse_info()[0],
+                 self.try_baby)] if self.can_try_baby() else []
         self.open_menu("Go to bed?" if h >= 1800 or h < 600 else
                        "Go to bed? It's only %s." % self.clock(),
-                       [("Sleep until morning", self.sleep),
-                        ("Not yet", lambda: None)])
+                       [("Sleep until morning", self.sleep)] + baby +
+                       [("Not yet", lambda: None)])
 
     def sleep(self):
         late = self.st["minute"] >= 24 * 60
@@ -15370,6 +15701,9 @@ class Game:
         if t.get("mm"):
             self.mmaid_menu(t["mm"])
             return
+        if t.get("kid"):
+            self.kid_menu(t["kid"])
+            return
         vid = t["v"]
         if t["mode"] == "buy":
             self.shop_menu(vid)
@@ -15418,7 +15752,7 @@ class Game:
 
     def converse(self, w):
         t = self.talk
-        if not t or t.get("mm"):
+        if not t or t.get("mm") or t.get("kid"):
             return
         vid = t["v"]
         v = VILLAGERS[vid]
@@ -15678,6 +16012,18 @@ class Game:
                 "married": "You married a maid who used to be %s! The "
                            "whole valley's still talking about it. In a "
                            "nice way." % an(was)}[m["status"]])
+        for k in self.kids():
+            her, she = ("her", "She") if k["sex"] == "F" else ("him", "He")
+            out.append("Little %s's getting so big! %s" % (
+                k["name"], random.choice((
+                    "Bring %s by the bakery some time." % her,
+                    "%s's got your smile." % she,
+                    "Time flies, doesn't it?"))))
+            if k["kind"]:
+                out.append("Is it true little %s %s?" % (
+                    k["name"], KID_TRAITS[k["kind"]][1][4:]))
+        if st.get("baby_due") is not None:
+            out.append("A baby on the way! The whole valley's knitting.")
         mine = st.get("mine", {})
         if mine.get("king"):
             out.append("(happy)You beat the Mine King! My grandad would've "
@@ -16316,6 +16662,7 @@ class Game:
         def after():
             st["friends"][vid]["status"] = "married"
             st["spouse"] = vid
+            st["married_day"] = st["day"]
             st["wedding"] = None
             self.say("You and %s are married!" % v["short"], "heart")
             self.end_talk()
@@ -16423,6 +16770,7 @@ class Game:
             self.say("Today's your wedding day! Go to the square between "
                      "ten and three.", "heart")
         self.teach_recipes()
+        self.kid_mornings()
         for m in self.mmaids():
             if self.mm_hearts(m) >= 4:
                 self.mm_teach(m)
@@ -16520,7 +16868,8 @@ class Game:
                 if i < len(m["items"]):
                     self.menu_pick(i)
             elif self.talk and len(ev.char) == 1 and ev.char.isalpha() \
-                    and not self.scene and not self.talk.get("mm"):
+                    and not self.scene and not self.talk.get("mm") and \
+                    not self.talk.get("kid"):
                 self.menu = None
                 self.entry.focus_set()
                 self.entry.insert("end", ev.char)
@@ -16950,6 +17299,10 @@ class Game:
                 where, x, y = self.mmaid_where(m)
                 if where == a.key:
                     people[(x, y)] = "mmaid_" + m["kind"]
+            for k in self.kids():
+                where, x, y = self.kid_where(k)
+                if where == a.key:
+                    people[(x, y)] = self.kid_tile(k)
         for pet in st.get("pets", ()):
             if pet["where"] == a.key:
                 people[(pet["x"], pet["y"])] = "%s_%s" % (pet["kind"],
@@ -17123,7 +17476,9 @@ class Game:
         W, H = c.winfo_width(), c.winfo_height()
         vid = t["v"]
         mm = t.get("mm")
-        v = {"look": monster_maid_look(mm["kind"])} if mm else VILLAGERS[vid]
+        kid = t.get("kid")
+        v = {"look": monster_maid_look(mm["kind"])} if mm else \
+            {"look": kid["look"]} if kid else VILLAGERS[vid]
         pz = max(2, min(7, int(min(H * 0.3, W * 0.28) / PW)))
         psz = PW * pz
         pad = S(10)
@@ -17147,10 +17502,30 @@ class Game:
         expr = t.get("expr", "neutral")
         c.create_image(pad * 2, y0 + pad, anchor="nw", tags="overlay",
                        image=self.mmaid_portrait(mm["kind"], expr, pz) if mm
-                       else self.portrait_image(vid, expr, pz))
+                       else self.look_portrait(
+                           (kid["name"], kid["born"]), kid["look"], expr, pz)
+                       if kid else self.portrait_image(vid, expr, pz))
         c.create_rectangle(pad * 2, y0 + pad, pad * 2 + psz, y0 + pad + psz,
                            outline=shade(v["look"]["bg"], 0.6), width=2,
                            tags="overlay")
+        if kid:
+            h = min(10, kid["love"] // 100)
+            age = self.kid_age(kid)
+            c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
+                          text=kid["name"], font=bold, fill=ACCENT)
+            c.create_text(tx + bold.measure(kid["name"]) + S(12), y0 + pad,
+                          anchor="nw", tags="overlay", font=F("Helvetica", 13),
+                          fill=HEARTC, text="♥" * h + "♡" * (10 - h))
+            c.create_text(tx, y0 + pad + lh, anchor="nw", tags="overlay",
+                          font=F("Helvetica", 13), fill=INK_DIM,
+                          text="(your %s, %d day%s old)" % (
+                              "daughter" if kid["sex"] == "F" else "son",
+                              age, "" if age == 1 else "s"))
+            c.create_text(tx, y0 + pad + lh * 2 + S(6), anchor="nw",
+                          width=tw, text=text, tags="overlay",
+                          font=F("Helvetica", 14, "italic") if t.get("narr")
+                          else f, fill=INK_DIM if t.get("narr") else INK)
+            return
         if mm:
             c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
                           text=mm["name"], font=bold, fill=ACCENT)
@@ -17422,6 +17797,16 @@ class Game:
                 "  talked" if f["talked"] == self.st["day"] else "",
                 "gifts %d/2" % f["week"], mark))
         lines += ["", "❀ could become a sweetheart"]
+        if self.kids():
+            lines += [""] + wrap("Your children: " + ", ".join(
+                ("%s (%s, %d days) %s" % (
+                    k["name"], "girl" if k["sex"] == "F" else "boy",
+                    self.kid_age(k), "\u2665" * min(10, k["love"] // 100)
+                )).strip()
+                for k in self.kids()) + ".", 64)
+        if self.st.get("baby_due") is not None:
+            lines.append("A baby is due in %d days." % (
+                self.st["baby_due"] - self.st["day"]))
         if self.mmaids():
             lines += ["", "Your maids who were monsters:"]
             for m in self.mmaids():
@@ -20139,6 +20524,29 @@ WOOF_ANGRY = ["The dog that is {who} growls low in her throat.",
               "{who} turns round three times and lies down with her back to "
               "you.",
               "{who} the dog gives you a long, wounded look."]
+
+
+def crib_art(look):
+    """A baby asleep in a wooden crib, a tuft of their hair showing."""
+    skin, hair = SKIN[look["skin"]], look["hair"]
+    blanket = look.get("shirt", "#f0a0c0")
+    pal = {"w": "#a0703e", "W": "#6a4626", "b": blanket,
+           "B": shade(blanket, 0.8), "k": skin, "h": hair, "e": "#1a1a1a"}
+    return art_pixels(pal, (
+        "................", "................", "................",
+        "................",
+        ".w............w.",
+        ".w....hhh.....w.",
+        ".w...hkkkh....w.",
+        ".w...kekek....w.",
+        ".wwwwkkkkkwwwww.",
+        ".wbbbbbbbbbbbbw.",
+        ".wbBbbbbBbbbbbw.",
+        ".wbbbbbbbbbBbbw.",
+        ".wwwwwwwwwwwwww.",
+        ".W............W.",
+        ".W............W.",
+        "................"))
 
 
 def cat_art(colour):
