@@ -255,7 +255,7 @@ for what it gives:
 
 | Spell | It becomes | Once a day |
 | --- | --- | --- |
-| Petrify | a golden statue | chip a little gold off its toe |
+| Petrify | a golden statue | chip a little gold off its toe; or pick it up (20 energy) and set it on your farm or in your cabin, where it still gives gold |
 | Maidify | a little maid in the monster's colours | the gold she's swept up |
 | Chickenfy | a hen | an egg |
 | Treeify | a tree, growing in the dark | wood |
@@ -321,10 +321,12 @@ chests, and crush one from your bag for 2 more. Dmitri loves them as a
 gift.
 
 - **Petrify** turns whoever it hits into a golden statue. A statue can't move
-  or talk. Walk into one and you polish it, rub its nose for luck, or knock on
-  it to hear it ring; walk into it again straight away and you squeeze past
-  it. Petrify a statue again and it turns back into the
-  villager, who has something to say about it.
+  or talk. Walk into one to polish it (rub its nose for luck, or knock on
+  it to hear it ring), squeeze past it, or **pick it up** (it takes 20
+  energy). A statue in your bag can be held and set down anywhere on your
+  farm, or on your cabin floor, as decoration, and picked up again later.
+  Petrify a statue again and it turns back into the villager, who has
+  something to say about it (and walks home from wherever you left them).
 - **Genderswap**, after Homeroom's Boy/Girl Gun, turns whoever it hits into the
   other sex. Their sprite and portrait change: face, build and hairstyle,
   beards and moustaches gone, and Granny Rose becomes Grandpa Rose. Each game

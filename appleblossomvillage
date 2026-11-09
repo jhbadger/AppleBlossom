@@ -6066,6 +6066,15 @@ for _i, _m in enumerate(METALS):
 MUSEUM_REWARDS = {   # artifacts given: what Juniper gives you
     3: ("gold", 500), 6: ("copper bar", SMELT), 9: ("iron bar", SMELT),
     12: ("gold bar", SMELT), len(ARTIFACTS) + 1: ("gold", 5000)}
+STATUE_HEFT = 20                # energy it takes to pick a statue up
+STATUE_OF = {}                  # a statue in your bag -> ("mon", kind) or
+for _k, _m in MONSTERS.items():  # ("vil", villager)
+    if "boss" not in _m.traits:
+        STATUE_OF["golden " + _m.name] = ("mon", _k)
+for _v, _d in VILLAGERS.items():
+    STATUE_OF["statue of " + _d["short"]] = ("vil", _v)
+for _n in STATUE_OF:
+    ITEMS[_n] = (0, 0, "statue")
 CRYSTAL = "magic crystal"       # snapped off the mine's walls: +2 magic
 CRYSTAL_MAGIC = 2
 ITEMS[CRYSTAL] = (120, 0, "crystal")
@@ -7307,7 +7316,8 @@ Blossom Pendant at 10 asks them to marry you.
 
 Grandmother's magic wand: hold it, use it, choose a spell,
 then press an arrow (or tap) to zap that way.  Petrify
-turns someone to gold; genderswap turns them into the
+turns someone to gold (pick a statue up, and set it down
+on your farm or in your cabin); genderswap turns them into the
 other sex; chickenfy, into a hen; maidify, into a maid who
 lives in your cabin and does the CHORE you give her every
 morning (whom you may KISS twice a day, and ask what to
@@ -8119,7 +8129,7 @@ class Game:
         self.museum_cases()
         for vid, (area, x, y) in st["npcs"].items():
             n = self.npcs.get(vid)
-            if n and area in self.areas:
+            if n and (area in self.areas or area == "carried"):
                 n.where, n.x, n.y = area, x, y
         for vid, n in self.npcs.items():          # hens and cows of yours
             if self.cooped(vid):
@@ -8338,6 +8348,8 @@ class Game:
         a = area or self.area
         if not a.inside(x, y):
             return False
+        if self.decor_at(x, y, a):
+            return False
         t = self.tile_at(x, y, a)
         if t not in WALKABLE:
             return False
@@ -8402,6 +8414,10 @@ class Game:
         a = self.area
         if a.key == "mine":
             return self.mine_bump(x, y, t)
+        if self.decor_at(x, y):
+            self.walking = None
+            self.decor_bump(x, y)
+            return True
         i = self.pet_at(a.key, x, y)
         if i is not None:
             self.walking = None
@@ -9008,6 +9024,14 @@ class Game:
             return
         ready = self.st["day"] - e["day"] >= (
             SHEAR_DAYS if spell == "sheepify" else 1)
+        if spell == "petrify":
+            rows = [("Chip off a little gold", lambda: self.tend_changed(
+                e, name))] if ready else []
+            self.open_menu(cap(name), rows + [
+                ("Pick it up (%d energy)" % STATUE_HEFT,
+                 lambda: self.lift_mine_statue(x, y)),
+                squeeze, ("Leave it", lambda: None)])
+            return
         if not ready:
             self.squeeze_by(x, y, "You've had what %s has to give today. "
                                   "You squeeze past." % name)
@@ -9192,7 +9216,8 @@ class Game:
         self.walking = None
         self.sound.play("death")
         purse, p["gold"] = p["gold"], 0
-        stacks = sorted(n for n, c in p["items"].items() if c)
+        stacks = sorted(n for n, c in p["items"].items()
+                        if c and n not in STATUE_OF)
         lost = [n for n in stacks if random.random() < 0.4]
         if stacks and not lost:
             lost = [random.choice(stacks)]
@@ -9211,6 +9236,122 @@ class Game:
         self.layout()
         self.pass_time(120, quiet=True)
         self.save()
+
+    # ── Statues you carry home ──
+    #
+    # A golden statue, of a monster or of a villager, can be picked up,
+    # carried in your bag and set down on your farm or in your cabin.
+    # Monster statues there are decorations ("decor": "area:x,y" -> kind
+    # and the day you last chipped it); a villager is simply moved, and
+    # is "carried" while in your bag.
+
+    def heave(self):
+        if self.p["energy"] < STATUE_HEFT:
+            self.say("You strain and heave, but it's far too heavy for you "
+                     "just now. Eat something first.", "bad")
+            self.render()
+            return False
+        self.p["energy"] -= STATUE_HEFT
+        self.sound.play("chop")
+        return True
+
+    def lift_mine_statue(self, x, y):
+        e = self.changed_at(x, y)
+        if not e or not self.heave():
+            return
+        del self.floor_state(self.mine["floor"])["changed"]["%d,%d" % (x, y)]
+        n = "golden " + MONSTERS[e["kind"]].name
+        self.give(n)
+        self.say("You heave the %s onto your back. Oof. (Hold it and set it "
+                 "down on your farm, or in your cabin.)" % n, "good")
+        self.end_turn(TOOL_COST)
+
+    def lift_statue(self, n):
+        """Pick up a villager who's been turned to gold."""
+        vid = n.vid
+        if not self.heave():
+            return
+        n.where, n.goal, n.path = "carried", None, []
+        name = "statue of " + VILLAGERS[vid]["short"]
+        self.give(name)
+        self.say("You heave the %s onto your back. Oof. Golden people are "
+                 "heavier than they look." % name, "good")
+        self.end_turn(TOOL_COST)
+
+    def decor(self):
+        return self.st.setdefault("decor", {})
+
+    def decor_at(self, x, y, area=None):
+        return self.decor().get("%s:%d,%d" % ((area or self.area).key, x, y))
+
+    def statue_spot(self, x, y):
+        """Can a statue go down here: open ground on your farm, or floor in
+        your cabin?"""
+        a = self.area
+        if a.key not in ("valley", "cabin") or not a.inside(x, y) or (
+                a.outdoor and not on_farm(x, y)):
+            return False
+        if (x, y) == self.pos() or self.npc_at(x, y) or \
+                self.decor_at(x, y) or self.pet_at(a.key, x, y) is not None:
+            return False
+        if a.outdoor and (self.grazer_at(x, y) or "%d,%d" % (x, y) in
+                          self.st["soil"]):
+            return False
+        if a.key == "cabin" and (x, y) in [tuple(v) for v in
+                                           a.spots.values()]:
+            return False
+        return self.can_stand(x, y)
+
+    def place_statue(self, x, y, item):
+        if not self.statue_spot(x, y):
+            self.say("Set a statue down on open ground on your farm, or on "
+                     "the floor of your cabin.", "info")
+            self.render()
+            return
+        what, who = STATUE_OF[item]
+        self.take(item)
+        if what == "mon":
+            self.decor()["%s:%d,%d" % (self.area.key, x, y)] = {
+                "kind": who, "day": -1}
+        else:
+            n = self.npcs[who]
+            n.where, n.x, n.y = self.area.key, x, y
+            n.goal, n.path, n.stuck = None, [], 0
+        self.sound.play("chop")
+        self.flash(x, y, "sparkle")
+        self.say("You set the %s down with a thump. It looks rather fine "
+                 "there." % item, "good")
+        self.end_turn(TOOL_COST)
+
+    def decor_bump(self, x, y):
+        d = self.decor_at(x, y)
+        name = "golden " + MONSTERS[d["kind"]].name
+        rows = []
+        if d["day"] != self.st["day"]:
+            rows.append(("Chip off a little gold",
+                         lambda: self.chip_decor(d, name)))
+        self.open_menu("The %s" % name, rows + [
+            ("Pick it up (%d energy)" % STATUE_HEFT,
+             lambda: self.lift_decor(x, y)),
+            ("Leave it", lambda: None)])
+
+    def chip_decor(self, d, name):
+        d["day"] = self.st["day"]
+        gold = max(1, random.randint(*MONSTERS[d["kind"]].gold) // 2)
+        self.p["gold"] += gold
+        self.sound.play("gold")
+        self.say("You chip a little gold off the toe of the %s: %dg." % (
+            name, gold), "gold")
+        self.end_turn(TOOL_COST)
+
+    def lift_decor(self, x, y):
+        if not self.heave():
+            return
+        d = self.decor().pop("%s:%d,%d" % (self.area.key, x, y))
+        n = "golden " + MONSTERS[d["kind"]].name
+        self.give(n)
+        self.say("You heave the %s onto your back." % n, "good")
+        self.end_turn(TOOL_COST)
 
     # ── Juniper's museum ──
 
@@ -9297,7 +9438,7 @@ class Game:
         seeds = sorted(n for n, c in self.p["items"].items()
                        if c and (n.endswith(" seeds") or n == "sprinkler" or
                                  n in MACHINES or n.endswith(" sapling") or
-                                 n == "fertilizer"))
+                                 n == "fertilizer" or n in STATUE_OF))
         return [t for t in TOOLS if t in self.p["tools"]] + seeds
 
     def hand_name(self, h=None):
@@ -9350,6 +9491,8 @@ class Game:
         if h == "magic wand":
             return self.wand_target(x - self.pos()[0],
                                     y - self.pos()[1]) is not None
+        if h in STATUE_OF:
+            return self.statue_spot(x, y)
         if h == "milk pail" and a.key == "barn":
             i = self.cow_at(x, y)
             return i is not None and self.milk_ready(self.st["cows"][i])
@@ -12351,7 +12494,20 @@ class Game:
 
     def statue_bump(self, n):
         """Walking into a statue: a polish, a rub for luck...  and walk
-        into the same one again straight away to squeeze past it."""
+        into the same one again straight away to squeeze past it.  A
+        plain statue (not a golden hen, say) you can pick up."""
+        if self.transformed(n.vid) == "statue" and not self.leashed(n.vid):
+            name = VILLAGERS[n.vid]["short"]
+            self.open_menu("The statue of %s" % name, [
+                ("Polish it", lambda: self.polish_statue(n)),
+                ("Squeeze past", lambda: (
+                    self.squeeze_past(n), self.say(
+                        "You squeeze past the statue of %s, breathing in." %
+                        name, "info"), self.end_turn(1))),
+                ("Pick it up (%d energy)" % STATUE_HEFT,
+                 lambda: self.lift_statue(n)),
+                ("Leave it", lambda: None)])
+            return
         here = (n.vid, self.area.key, n.x, n.y, self.pos())
         if getattr(self, "last_statue", None) == here and \
                 self.squeeze_past(n):
@@ -12363,6 +12519,11 @@ class Game:
             self.say(random.choice(STATUE_PHRASES).replace(
                 "{who}", VILLAGERS[n.vid]["short"]) +
                 " (Walk into it again to squeeze past.)", "info")
+        self.end_turn(1)
+
+    def polish_statue(self, n):
+        self.say(random.choice(STATUE_PHRASES).replace(
+            "{who}", VILLAGERS[n.vid]["short"]), "info")
         self.end_turn(1)
 
     def squeeze_past(self, n):
@@ -12677,6 +12838,9 @@ class Game:
         h = self.held()
         if h == "magic wand":
             self.start_aim()
+            return
+        if h in STATUE_OF:
+            self.place_statue(x, y, h)
             return
         a = self.area
         k = "%d,%d" % (x, y)
@@ -13044,7 +13208,8 @@ class Game:
             acts.append(("Crush it (+%d magic)" % CRYSTAL_MAGIC,
                          self.crush_crystal))
         if n.endswith(" seeds") or n == "sprinkler" or n in MACHINES or \
-                n.endswith(" sapling") or n == "fertilizer":
+                n.endswith(" sapling") or n == "fertilizer" or \
+                n in STATUE_OF:
             acts.append(("Hold it", lambda: (self.p.update(hand=n),
                                              self.say("You hold the %s." %
                                                       self.hand_name(),
@@ -14092,7 +14257,7 @@ class Game:
     def gift_menu(self, vid):
         items = sorted(n for n, c in self.p["items"].items()
                        if c and not n.endswith(" seeds")
-                       and n != "sprinkler")
+                       and n != "sprinkler" and n not in STATUE_OF)
         if not items:
             self.talk["mode"] = "kw"
             self.speak(vid, "You've nothing to give right now.", log=False)
@@ -15271,6 +15436,7 @@ class Game:
                                 b = 0 if d <= 2 else 1
                                 lit[k] = min(b, lit.get(k, 2))
         soil, things = st["soil"], self.thing_at
+        decor = st.get("decor", {})
         for j in range(rows):
             y = cy + j
             for i in range(cols):
@@ -15305,6 +15471,9 @@ class Game:
                         mid = "haypile"
                     if a.outdoor and not mid and k in st["droppings"]:
                         mid = "drop_" + st["droppings"][k]
+                    d = decor.get("%s:%d,%d" % (a.key, x, y))
+                    if d:
+                        mid = "smon_" + d["kind"]
                     if bowl == (x, y) and not mid:
                         mid = "bowl_full" if self.bowl_full(a.key) else \
                             "bowl"
@@ -16105,6 +16274,9 @@ def describe_item(n):
     if kind == "artifact":
         bits.append("Something old from the mine, for Juniper's museum "
                     "at the library.")
+    if kind == "statue":
+        bits.append("Heavy, golden and gleaming. Hold it and set it down on "
+                    "your farm or in your cabin.")
     if kind == "romance":
         bits.append({"blossom bouquet": "Give it to someone at 8 hearts to "
                                         "ask them to go steady.",
