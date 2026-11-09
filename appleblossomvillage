@@ -87,6 +87,7 @@ WEEKDAYS = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
 WALK_COST = 1
 TOOL_COST = 3
 MAX_ENERGY = 120
+MAX_MAGIC = 5                   # spells a day; sleep brings them back
 DIRS = ((0, -1), (0, 1), (-1, 0), (1, 0))
 MAX_ZOOM = 6
 SPRITES = set()                 # filled in when the art is drawn
@@ -340,6 +341,14 @@ def door(g):
 def mine_tile(name, rng):
     """The mine's rock and floor, in the colours of its depth, and the
     ladders and chests on it."""
+    if name.startswith("ore_crystal"):
+        g = mine_tile("mwall_" + name[-1], rng)
+        for x0, h, c in ((3, 7, "#80e8f8"), (7, 10, "#b090f8"),
+                         (11, 6, "#80e8f8")):
+            rect(g, x0, 13 - h, x0 + 1, 12, c)
+            rect(g, x0, 13 - h, x0, 12, shade(c, 1.3))
+            g[12 - h][x0] = g[12 - h][x0 + 1] = shade(c, 1.4)
+        return g
     if name.startswith("ore_"):
         g = mine_tile("mwall_" + name[-1], rng)
         col = ORES[name.split("_")[1]][2]
@@ -1408,7 +1417,7 @@ TOOL_KEYS = {"hoe": "Hoe", "watering can": "Can", "axe": "Axe",
              "shears": "Shears", "short sword": "Sword",
              "broadsword": "Sword"}
 TOOL_ENERGY = {"hoe": 2, "watering can": 1, "axe": 3, "pickaxe": 3,
-               "scythe": 1, "fishing rod": 4, "magic wand": 2, "leash": 0,
+               "scythe": 1, "fishing rod": 4, "magic wand": 0, "leash": 0,
                "milk pail": 1, "shears": 2, "short sword": 0,
                "broadsword": 0}
 WAND_RANGE = 8                  # how far a spell flies
@@ -4379,7 +4388,7 @@ VILLAGERS = {
                  "pants": "#2a2a3a", "bg": "#3a4a7a",
                  "extras": ("glasses", "coat"), "coatc": "#4a4a6a"},
         "birthday": (3, 27), "home": "observatory", "rest": 0,
-        "loves": ["tea", "book of poems", "golden carp"],
+        "loves": ["tea", "book of poems", "golden carp", "magic crystal"],
         "likes": ["coffee", "blueberry", "snow yam", "winter root",
                   "chocolate"],
         "dislikes": ["daffodil", "salad"],
@@ -6017,7 +6026,10 @@ for _i, _m in enumerate(METALS):
 MUSEUM_REWARDS = {   # artifacts given: what Juniper gives you
     3: ("gold", 500), 6: ("copper bar", SMELT), 9: ("iron bar", SMELT),
     12: ("gold bar", SMELT), len(ARTIFACTS) + 1: ("gold", 5000)}
-CHEST_ITEMS = (("energy tonic", 1, 1), ("bread", 1, 2), ("stone", 5, 15),
+CRYSTAL = "magic crystal"       # snapped off the mine's walls: +2 magic
+CRYSTAL_MAGIC = 2
+ITEMS[CRYSTAL] = (120, 0, "crystal")
+CHEST_ITEMS = ((CRYSTAL, 1, 2), ("energy tonic", 1, 1), ("bread", 1, 2), ("stone", 5, 15),
                ("coffee", 1, 1), ("honey cake", 1, 1))
 MINE_RESCUE = [
     "Everything goes black...",
@@ -6096,6 +6108,11 @@ def make_mine_floor(seed, day, floor):
     metals = [k for k in METALS if ORES[k][0][0] <= floor <= ORES[k][0][1]]
     for x, y in rng.sample(faces, min(len(faces), rng.randint(3, 6))):
         g[y][x] = "ore_%s_%d" % (rng.choice(metals + metals[-1:]), th)
+    faces = [p for p in faces if g[p[1]][p[0]] == wall]
+    if floor > 1:
+        for x, y in rng.sample(faces, min(len(faces), (rng.random() < 0.6) +
+                                          (floor > 6))):
+            g[y][x] = "ore_crystal_%d" % th
     kinds = [k for k, m in MONSTERS.items() if "boss" not in m.traits and
              m.floors[0] <= floor <= m.floors[1]]
     far = [p for p in spots if p not in chests and
@@ -6295,6 +6312,7 @@ class Mob:
         self.m = MONSTERS[kind]
         self.hp = self.m.hp
         self.aware = False
+        self.stun = 0               # turns it stands about, baffled
         self.tile = "mon_" + kind
 
 
@@ -7262,7 +7280,10 @@ you can use, clean, decorate and empty for fertilizer
 (read the almanac and the Gazette riddle while you're
 in there); cowify, into a cow; sheepify, into a sheep;
 catify and dogify, into a cat or a dog.  Cast the same
-spell again to undo it.
+spell again to undo it.  Each spell costs a point of magic
+(5 a day, back when you sleep); magic crystals from the
+mine give 2 more.  In the mine, spells change monsters for
+good, and each leaves something behind.
 
 The axe fells trees (three swings) for wood; they grow
 back in a season.
@@ -7932,6 +7953,7 @@ class Game:
         self.p = {"name": who["name"], "farm": who["farm"],
                   "pron": who["pron"], "look": who["look"], "gold": 500,
                   "energy": MAX_ENERGY, "max_energy": MAX_ENERGY,
+                  "magic": MAX_MAGIC, "max_magic": MAX_MAGIC,
                   "tools": ["hoe", "watering can", "axe", "pickaxe",
                             "scythe", "magic wand"],
                   "water": 20, "can": 20, "hand": "hoe",
@@ -8007,6 +8029,8 @@ class Game:
         self.st = st = g["st"]
         self.p.setdefault("built", [])
         self.p.setdefault("tool_lv", {})
+        self.p.setdefault("max_magic", MAX_MAGIC)
+        self.p.setdefault("magic", self.p["max_magic"])
         if self.p["can"] > 20 and not self.p["tool_lv"].get("watering can"):
             self.p["tool_lv"]["watering can"] = 1   # the old copper can
         st.setdefault("statues", [])
@@ -8644,6 +8668,18 @@ class Game:
 
     def dig_vein(self, x, y, t):
         metal = t.split("_")[1]
+        floor = self.mine["floor"]
+        if metal == "crystal":
+            self.give(CRYSTAL)
+            self.area.grid[y][x] = "mwall_%d" % mine_theme(floor)
+            self.mine_state()["mined"].setdefault(str(floor), []).append(
+                "%d,%d" % (x, y))
+            self.sound.play("potion")
+            self.say("You snap a magic crystal off the rock. It hums in "
+                     "your hand. (Crush it for %d magic.)" % CRYSTAL_MAGIC,
+                     "good")
+            self.end_turn(WALK_COST)
+            return
         if "pickaxe" not in self.p["tools"]:
             self.say("A vein of %s. You'd need a pickaxe." % metal, "info")
             self.render()
@@ -8660,7 +8696,6 @@ class Game:
             return
         n = 1 + random.randint(0, 1) + have // 2
         self.give(metal + " ore", n)
-        floor = self.mine["floor"]
         self.area.grid[y][x] = "mwall_%d" % mine_theme(floor)
         self.mine_state()["mined"].setdefault(str(floor), []).append(
             "%d,%d" % (x, y))
@@ -8767,6 +8802,72 @@ class Game:
             self.say("...and something else glints in the dust: %s!" %
                      an(n), "gold")
 
+    def zap_mob(self, mob, spell):
+        """The wand on a monster: it stays changed, and leaves something
+        behind. The Mine King shrugs the change off, but it burns."""
+        the = self.the_mob(mob)
+        self.flash(mob.x, mob.y, "sparkle")
+        mob.aware = True
+        if mob.kind == "king":
+            mob.hp -= 8
+            self.say("The spell crackles over the Mine King. He's too old "
+                     "and too wicked to change, but it burns: he roars.",
+                     "good")
+            if mob.hp <= 0:
+                self.slay(mob)
+            self.end_turn(TOOL_COST)
+            return
+        if spell == "genderswap":
+            mob.stun = 3
+            self.say("%s looks down at itself, deeply confused, and forgets "
+                     "all about you for a bit." % cap(the), "good")
+            self.end_turn(TOOL_COST)
+            return
+        p = self.p
+        what = {
+            "petrify": "%s turns to solid gold with a CLANK. You chip it "
+                       "into pieces: %dg.",
+            "maidify": "%s shrinks into a tiny maid in a frilly apron, who "
+                       "curtsies, sweeps the floor (finding %dg under the "
+                       "dust, which she hands you) and bustles off to find "
+                       "somewhere messier.",
+            "chickenfy": "%s turns into a startled hen, who lays an egg in "
+                         "fright and flaps off up the tunnel.",
+            "treeify": "%s sprouts roots and branches: a little tree, right "
+                       "there in the rock. You chop it up for wood.",
+            "looify": "%s becomes a small, sulky outhouse, which hops off "
+                      "into the dark, leaving a sack of fertilizer behind.",
+            "cowify": "%s turns into a bewildered cow, who lets you fill a "
+                      "pail before she wanders off mooing.",
+            "sheepify": "%s turns into a woolly sheep. You grab a handful "
+                        "of fleece as she bolts.",
+            "catify": "%s becomes a little cat, who winds round your ankles "
+                      "purring. A tingle of magic comes back to you.",
+            "dogify": "%s becomes a scruffy dog, who licks your face all "
+                      "over and trots off wagging. You feel much better.",
+        }[spell]
+        gold = 0
+        if spell == "petrify":
+            gold = 3 * random.randint(*mob.m.gold)
+        elif spell == "maidify":
+            gold = random.randint(*mob.m.gold)
+        p["gold"] += gold
+        loot = {"chickenfy": ("egg", 1), "treeify": ("wood", 5),
+                "looify": ("fertilizer", 1), "cowify": ("milk", 1),
+                "sheepify": ("wool", 1)}.get(spell)
+        if loot:
+            self.give(*loot)
+        if spell == "catify":
+            p["magic"] = min(p["max_magic"], p["magic"] + 1)
+        if spell == "dogify":
+            p["energy"] = min(p["max_energy"], p["energy"] + 20)
+        self.say((what % (cap(the), gold)) if "%d" in what else
+                 what % cap(the), "gold" if gold else "good")
+        self.mine["mobs"].remove(mob)
+        self.mine_state()["cleared"].setdefault(
+            str(self.mine["floor"]), []).append(mob.idx)
+        self.end_turn(TOOL_COST)
+
     def open_chest(self, x, y):
         f = self.mine["floor"]
         st = self.st
@@ -8813,6 +8914,9 @@ class Game:
 
     def mob_act(self, mob):
         """One monster's move. True if it knocked you out."""
+        if mob.stun:
+            mob.stun -= 1
+            return False
         px, py = self.pos()
         d = abs(mob.x - px) + abs(mob.y - py)
         if d == 1:
@@ -9074,7 +9178,7 @@ class Game:
     def use_tool(self):
         if not self.ready():
             return
-        if self.area.key == "mine":
+        if self.area.key == "mine" and self.held() != "magic wand":
             self.mine_swing()
             return
         self.use_tool_at(*self.ahead())
@@ -9105,6 +9209,9 @@ class Game:
             x, y = x + dx, y + dy
             if not self.area.inside(x, y):
                 return None
+            mob = self.mob_at(x, y) if self.area.key == "mine" else None
+            if mob:
+                return mob
             n = self.npc_at(x, y)
             if n:
                 return n
@@ -9132,9 +9239,16 @@ class Game:
         """Raise the wand: choose a spell, then the next direction you
         press (or tap) is the way it flies. With `at` (a direction, from
         tapping someone in line) it flies that way at once."""
+        if self.p["magic"] <= 0:
+            self.say("The wand gives a sad little sputter: you've no magic "
+                     "left today. It comes back while you sleep, or crush a "
+                     "magic crystal.", "bad")
+            self.render()
+            return
         cur = self.p.get("spell", "petrify")
         names = list(SPELLS)
-        self.open_menu("Cast which spell?", [
+        self.open_menu("Cast which spell? (%d magic left)" %
+                       self.p["magic"], [
             ("%s: %s" % (cap(n), SPELLS[n]),
              lambda n=n: self.aim_spell(n, at))
             for n in names] + [("Lower the wand", lambda: None)])
@@ -9166,9 +9280,15 @@ class Game:
             dx, dy = self.st["facing"]
         self.face(dx, dy)
         n = self.wand_target(dx, dy)
-        if not self.spend("magic wand"):
+        if self.p["magic"] <= 0:
+            self.say("The wand sputters. You've no magic left today.", "bad")
+            self.render()
             return
+        self.p["magic"] -= 1
         self.sound.play("spell")
+        if isinstance(n, Mob):
+            self.zap_mob(n, self.p.get("spell"))
+            return
         if n is None:
             self.say("You wave the wand. A spark of gold flies off and "
                      "fizzles out.", "info")
@@ -12678,6 +12798,9 @@ class Game:
         if energy and self.p["items"].get(n):
             acts.append(("Eat it (+%d energy)" % energy,
                          lambda: self.eat(n)))
+        if n == CRYSTAL and self.p["items"].get(n):
+            acts.append(("Crush it (+%d magic)" % CRYSTAL_MAGIC,
+                         self.crush_crystal))
         if n.endswith(" seeds") or n == "sprinkler" or n in MACHINES or \
                 n.endswith(" sapling") or n == "fertilizer":
             acts.append(("Hold it", lambda: (self.p.update(hand=n),
@@ -12689,6 +12812,21 @@ class Game:
                                                     "info")))
         acts.append(("Back", self.bag_menu))
         self.open_menu(cap(n), acts)
+
+    def crush_crystal(self):
+        p = self.p
+        if p["magic"] >= p["max_magic"]:
+            self.say("Your magic's already full. Save the crystal.", "info")
+            self.render()
+            return
+        if not self.take(CRYSTAL):
+            return
+        p["magic"] = min(p["max_magic"], p["magic"] + CRYSTAL_MAGIC)
+        self.sound.play("spell")
+        self.say("You crush the crystal in your fist. Light runs up your "
+                 "arm and into the wand. (+%d magic)" % CRYSTAL_MAGIC,
+                 "good")
+        self.end_turn(1)
 
     def eat(self, food):
         energy = ITEMS[food][1]
@@ -12925,6 +13063,7 @@ class Game:
             if self.weekday() == 0:
                 f["week"] = 0
         p["energy"] = round(p["max_energy"] * rest)
+        p["magic"] = max(p["magic"], int(p["max_magic"] * rest + 0.5))
         if self.season_drawn != season:
             self.load_images()
         self.morning_news()
@@ -15221,7 +15360,9 @@ class Game:
                  WEATHER_SHORT[st["weather"]], "",
                  "Gold    %dg" % p["gold"],
                  "Energy  %s%s %d" % ("█" * bar, "░" * (10 - bar),
-                                      e), "",
+                                      e),
+                 "Magic   %s%s %d" % ("✦" * p["magic"], "✧" * (
+                     p["max_magic"] - p["magic"]), p["magic"]), "",
                  "Holding:", "  " + self.hand_name(), ""]
         things = ["%s%s" % (n, " x%d" % v if v > 1 else "")
                   for n, v in sorted(p["items"].items()) if v]
@@ -18142,7 +18283,8 @@ TERRAIN = ["grass", "tallgrass", "meadow", "flowers", "path", "cobble",
            "loopaper", "loobend", "cave"]
 TERRAIN += ["%s_%d" % (k, th) for th in range(len(MINE_THEMES))
             for k in ["mwall", "mfloor", "ladder_up", "ladder_down", "chest",
-                      "chest_open"] + ["ore_" + m for m in METALS]]
+                      "chest_open"] + ["ore_" + m for m in METALS] +
+            ["ore_crystal"]]
 TERRAIN += ["case", "case_full"]
 TERRAIN += ["roof_" + r for r in ROOFS] + ["eave_" + r for r in ROOFS]
 TERRAIN += [k + "_" + m for m in WALLS for k in ("wall", "win", "door")]

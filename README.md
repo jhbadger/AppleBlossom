@@ -242,6 +242,15 @@ gone. Monsters you beat and chests you open stay that way until tomorrow.
 Reach floor 5 or 10 and you tie a rope there, so next time you can climb
 straight down to it.
 
+The wand works on monsters too, and they stay changed: petrify one into
+gold you chip apart (three times what it would drop), maidify it into a
+tiny maid who sweeps up some gold for you, chickenfy it for an egg,
+treeify it for wood, cowify or sheepify it for milk or wool, looify it
+for fertilizer, catify it for a little magic back, or dogify it for a
+lick that restores energy. Genderswap just leaves it baffled for a few
+turns. The Mine King is too old and wicked to change, but every spell
+burns him.
+
 ### Ore and Otto's forge
 
 Here and there the rock walls glint with **ore**: copper near the top,
@@ -284,6 +293,13 @@ ringed in gold while you aim. Space zaps the way you're facing, and Esc lowers
 the wand. With the wand in hand you can also just tap a villager who's in a
 straight line from you, choose a spell, and it flies at them. The spell flies
 up to eight squares until it hits someone or something solid.
+
+Spells take **magic**, not energy: you have 5 magic points (the stars
+under your energy bar), and every spell you cast uses one, hit or miss.
+They come back while you sleep (fewer if you collapse instead). Snap
+**magic crystals** off the old mine's walls (from floor 2), or find them in
+chests, and crush one from your bag for 2 more. Dmitri loves them as a
+gift.
 
 - **Petrify** turns whoever it hits into a golden statue. A statue can't move
   or talk. Walk into one and you polish it, rub its nose for luck, or knock on
