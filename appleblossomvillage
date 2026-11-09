@@ -340,6 +340,15 @@ def door(g):
 def mine_tile(name, rng):
     """The mine's rock and floor, in the colours of its depth, and the
     ladders and chests on it."""
+    if name.startswith("ore_"):
+        g = mine_tile("mwall_" + name[-1], rng)
+        col = ORES[name.split("_")[1]][2]
+        for _ in range(6):
+            x, y = rng.randrange(1, 13), rng.randrange(1, 11)
+            rect(g, x, y, x + 1, y + 1, shade(col, 0.75))
+            g[y][x] = col
+            g[y][x + 1] = shade(col, 1.25)
+        return g
     if name.startswith(("ladder_", "chest")):
         th = int(name[-1]) if name[-1].isdigit() else 0
         g = mine_tile("mfloor_%d" % th, rng)
@@ -393,7 +402,7 @@ def draw_terrain(name, frame=0, season=0):
     """The pixels of a terrain tile (a list of 16 rows of colours)."""
     rng = random.Random("%s%d%d" % (name, frame, season))
     s = season
-    if name.startswith(("mwall_", "mfloor_", "ladder_", "chest")):
+    if name.startswith(("mwall_", "mfloor_", "ladder_", "chest", "ore_")):
         return mine_tile(name, rng)
     if name == "cave":
         g = ground(rng, s, 0)
@@ -748,6 +757,18 @@ def draw_terrain(name, frame=0, season=0):
         rect(g, 1, 5, 14, 11, "#7a5030")
         rect(g, 2, 6, 13, 8, "#e0c060")
         speckle_within(g, rng, "#e0c060", ["#c8a040", "#f0d880"], 0.4)
+        return g
+    if name in ("case", "case_full"):            # the museum's cases
+        g = planks(rng, "#a07850", "#7a5838", vertical=True, width=5)
+        rect(g, 1, 3, 14, 14, "#6a4428")
+        rect(g, 2, 4, 13, 10, "#c8e0e8")
+        rect(g, 2, 4, 13, 4, "#f0f8ff")
+        rect(g, 2, 11, 13, 13, "#8a5a34")
+        if name == "case_full":
+            for x, c in ((3, "#f4d040"), (6, "#e0884a"), (9, "#a888f0"),
+                         (11, "#c02040")):
+                rect(g, x, 7, x + 1, 9, c)
+                g[7][x] = shade(c, 1.3)
         return g
     if name == "exit":
         g = planks(rng, "#c09060", "#9a7048")
@@ -5339,8 +5360,9 @@ SHOP_STOCK = {
     "bakery": [("bread", 50), ("pancakes", 90), ("honey cake", 130),
                ("apple pie", 180), ("chocolate", 80)],
     "smithy": [("sprinkler", 400), ("fine tools", 350),
-               ("silver ring", 500), ("copper can", 800),
-               ("short sword", 700), ("broadsword", 2500),
+               ("silver ring", 500), ("short sword", 700),
+               ("broadsword", 2500), ("copper bar", 50), ("iron bar", 150),
+               ("gold bar", 400),
                ("blossom pendant", 2000)],
     "carpentry": [("wood", 50), ("chicken coop", 1500), ("barn", 4000),
                   ("silo", 1000),
@@ -5349,7 +5371,7 @@ SHOP_STOCK = {
     "workshop": [("mayonnaise jar", 600), ("preserves jar", 700),
                  ("beehive", 900), ("cheese press", 1200), ("loom", 1500)],
 }
-EXTRA_COST = {"sprinkler": {"stone": 5}, "copper can": {"stone": 15},
+EXTRA_COST = {"sprinkler": {"stone": 5},
               "broadsword": {"stone": 20},
               "chicken coop": {"wood": 80},
               "barn": {"wood": 150, "stone": 50},
@@ -5703,9 +5725,9 @@ ROOMS = {
         "WWwWWWWWWWwWW",
         "WSSSSS.SSSSSW",
         "W...........W",
-        "WSS.T.1..T.SW",
+        "WVV.T.1..T.VW",
         "W...h.2..h.4W",
-        "WSS.......SSW",
+        "WVV.......VVW",
         "W.P...rr..P.W",
         "WWWWWWxWWWWWW")),
     "carpentry": ("boards", "W", (
@@ -5887,7 +5909,7 @@ EXTRA_ROOMS = {   # rooms that aren't buildings in the valley
 }
 ROOM_TILES = {"Y": "hay", "U": "churn", "H": "loohole", "j": "loobench",
               "m": "moonwin", "g": "loopaper", "e": "loobend", "n": "nest", "q": "trough", "W": "wall", "w": "iwin", "l": "logwall", "L": "toolrack",
-              "x": "exit", "B": "bed", "D": "bed2", "T": "table",
+              "V": "case", "x": "exit", "B": "bed", "D": "bed2", "T": "table",
               "h": "chair", "C": "counter", "S": "shelf", "G": "goods",
               "K": "seeds", "O": "stove", "F": "fireplace", "X": "forge",
               "A": "anvil", "R": "barrel", "c": "crates", "P": "plant",
@@ -5974,6 +5996,27 @@ ARTIFACTS = [   # (name, price, the shallowest floor it's found on)
 KING_PRIZE = "crown of the deep"
 for _n, _v, _f in ARTIFACTS + [(KING_PRIZE, 5000, MINE_FLOORS)]:
     ITEMS[_n] = (_v, 0, "artifact")
+ORES = {   # metal: the floors its veins are on, the pickaxe it needs,
+    #         and its colour
+    "copper": ((1, 5), 0, "#e0884a"), "iron": ((3, 8), 1, "#c8ccd8"),
+    "gold": ((6, 10), 2, "#f8d840")}
+METALS = ("copper", "iron", "gold")     # tool levels 1, 2 and 3
+SMELT = 3                       # ore to a bar, and bars to an upgrade
+UPGRADABLE = ("hoe", "watering can", "axe", "pickaxe", "scythe",
+              "short sword", "broadsword")
+UPGRADE_PRICE = (600, 1500, 4000)       # and SMELT bars of the metal
+CAN_SIZE = (20, 40, 70, 100)
+REACH = (1, 2, 3, 5)            # squares a hoe tills, a can waters, in a row
+AXE_CHOPS = (CHOPS, 2, 2, 1)
+for _i, _m in enumerate(METALS):
+    ITEMS[_m + " ore"] = (0, 0, "material")
+    ITEMS[_m + " bar"] = (0, 0, "material")
+    EXTRA_COST[_m + " bar"] = {_m + " ore": SMELT}
+    for _t in UPGRADABLE:
+        EXTRA_COST["%s %s" % (_m, _t)] = {_m + " bar": SMELT}
+MUSEUM_REWARDS = {   # artifacts given: what Juniper gives you
+    3: ("gold", 500), 6: ("copper bar", SMELT), 9: ("iron bar", SMELT),
+    12: ("gold bar", SMELT), len(ARTIFACTS) + 1: ("gold", 5000)}
 CHEST_ITEMS = (("energy tonic", 1, 1), ("bread", 1, 2), ("stone", 5, 15),
                ("coffee", 1, 1), ("honey cake", 1, 1))
 MINE_RESCUE = [
@@ -6047,6 +6090,12 @@ def make_mine_floor(seed, day, floor):
     for x, y in rng.sample(inner, min(len(inner), rng.randint(1, 3))):
         g[y][x] = "chest_%d" % th
         chests.append((x, y))
+    faces = [(x, y) for y in range(1, H - 1) for x in range(1, W - 1)
+             if g[y][x] == wall and any(g[y + dy][x + dx] == ground
+                                        for dx, dy in DIRS)]
+    metals = [k for k in METALS if ORES[k][0][0] <= floor <= ORES[k][0][1]]
+    for x, y in rng.sample(faces, min(len(faces), rng.randint(3, 6))):
+        g[y][x] = "ore_%s_%d" % (rng.choice(metals + metals[-1:]), th)
     kinds = [k for k, m in MONSTERS.items() if "boss" not in m.traits and
              m.floors[0] <= floor <= m.floors[1]]
     far = [p for p in spots if p not in chests and
@@ -7234,10 +7283,14 @@ grow up in 28 days and bear fruit in their season.
 
 The old mine, up in the north woods, goes down ten floors.
 Walk into monsters (or press Space) to fight them for gold;
-chests hold gold, food and artifacts (Juniper loves them).
-Each hit costs energy; at none you're carried out, without
-your gold and some of your bag.  Otto sells swords.  A rope
-hangs to every fifth floor you reach.
+chests hold gold, food and artifacts for Juniper's museum
+(the cases in the library).  Each hit costs energy; at none
+you're carried out, without your gold and some of your bag.
+A rope hangs to every fifth floor you reach.  Walk into a
+vein with a pickaxe for ore; Otto smelts 3 ore into a bar,
+and for 3 bars makes a tool (or sword) copper, iron, then
+gold: hoe and can work a row, the axe fells faster, and a
+better pickaxe cuts iron, then gold.
 
 Nell builds machines: jars for mayonnaise and preserves, a
 cheese press, a loom and beehives.  Set one on your farm
@@ -7953,6 +8006,9 @@ class Game:
         self.p = g["p"]
         self.st = st = g["st"]
         self.p.setdefault("built", [])
+        self.p.setdefault("tool_lv", {})
+        if self.p["can"] > 20 and not self.p["tool_lv"].get("watering can"):
+            self.p["tool_lv"]["watering can"] = 1   # the old copper can
         st.setdefault("statues", [])
         st.setdefault("swapped", [])
         st.setdefault("chickens", [])
@@ -7990,6 +8046,7 @@ class Game:
             self.p["tools"].append("magic wand")     # older saves
         self.build_world(st["seed"], self.p["built"])
         self.apply_felled()
+        self.museum_cases()
         for vid, (area, x, y) in st["npcs"].items():
             n = self.npcs.get(vid)
             if n and area in self.areas:
@@ -8384,6 +8441,9 @@ class Game:
         if t in ("shelf",):
             self.say(random.choice(SHELF_BOOKS), "info")
             return True
+        if t in ("case", "case_full"):
+            self.museum_menu()
+            return True
         return False
 
     def describe_building(self, x, y):
@@ -8484,6 +8544,7 @@ class Game:
         m = self.st.setdefault("mine", {"deepest": 0, "king": False})
         if m.get("day") != self.st["day"]:
             m.update(day=self.st["day"], cleared={}, opened={})
+        m.setdefault("mined", {})
         return m
 
     def mine_menu(self):
@@ -8515,6 +8576,9 @@ class Game:
         for xy in m["opened"].get(k, ()):
             x, y = map(int, xy.split(","))
             g[y][x] = "chest_open_%d" % mine_theme(floor)
+        for xy in m["mined"].get(k, ()):
+            x, y = map(int, xy.split(","))
+            g[y][x] = "mwall_%d" % mine_theme(floor)
         gone = set(m["cleared"].get(k, ()))
         self.area = Area("mine", g, "the old mine, floor %d" % floor)
         self.mine = {"floor": floor, "turn": 0, "mobs": [
@@ -8566,6 +8630,9 @@ class Game:
         if t.startswith("ladder_down"):
             self.enter_mine(floor + 1)
             return True
+        if t.startswith("ore_"):
+            self.dig_vein(x, y, t)
+            return True
         if t.startswith("chest_open"):
             self.say("An empty chest. You've had what was in it.", "info")
             self.render()
@@ -8574,6 +8641,34 @@ class Game:
             self.open_chest(x, y)
             return True
         return False
+
+    def dig_vein(self, x, y, t):
+        metal = t.split("_")[1]
+        if "pickaxe" not in self.p["tools"]:
+            self.say("A vein of %s. You'd need a pickaxe." % metal, "info")
+            self.render()
+            return
+        need, have = ORES[metal][1], self.lv("pickaxe")
+        if have < need:
+            self.say("A vein of %s, but it's too hard for your %s. Otto "
+                     "could make it %s." % (metal, self.hand_name("pickaxe"),
+                                            METALS[need - 1]), "info")
+            self.render()
+            return
+        if not self.spend("pickaxe"):
+            self.render()
+            return
+        n = 1 + random.randint(0, 1) + have // 2
+        self.give(metal + " ore", n)
+        floor = self.mine["floor"]
+        self.area.grid[y][x] = "mwall_%d" % mine_theme(floor)
+        self.mine_state()["mined"].setdefault(str(floor), []).append(
+            "%d,%d" % (x, y))
+        self.sound.play("chop")
+        self.say("You chip %d lump%s of %s ore out of the rock. (Otto "
+                 "smelts %d into a bar.)" % (n, "s" if n > 1 else "", metal,
+                                             SMELT), "good")
+        self.end_turn(TOOL_COST)
 
     def mob_at(self, x, y):
         for mob in self.mine["mobs"] if self.mine else ():
@@ -8596,13 +8691,22 @@ class Game:
         have = [w for w in WEAPONS if w in self.p["tools"]]
         if not have:
             return "fists", 1
-        w = max(have, key=WEAPONS.get)
-        return w, WEAPONS[w]
+        w = max(have, key=lambda w: WEAPONS[w] + self.lv(w))
+        return w, WEAPONS[w] + self.lv(w)
+
+    def lv(self, tool):
+        """0 for a plain tool; 1, 2 or 3 once Otto's made it copper, iron
+        or gold."""
+        return self.p.get("tool_lv", {}).get(tool, 0)
 
     def mine_swing(self):
-        mob = self.mob_at(*self.ahead())
+        x, y = self.ahead()
+        mob = self.mob_at(x, y)
         if mob:
             self.attack(mob)
+        elif self.area.inside(x, y) and \
+                self.area.grid[y][x].startswith("ore_"):
+            self.dig_vein(x, y, self.area.grid[y][x])
         else:
             self.say("You swing at the dark. The dark doesn't mind.",
                      "info")
@@ -8775,6 +8879,78 @@ class Game:
         self.pass_time(120, quiet=True)
         self.save()
 
+    # ── Juniper's museum ──
+
+    def museum_cases(self):
+        """Fill the library's cases as the collection grows."""
+        a = self.areas["library"]
+        cases = [(x, y) for y in range(a.h) for x in range(a.w)
+                 if a.grid[y][x] in ("case", "case_full")]
+        n, total = len(self.st.get("museum", ())), len(ARTIFACTS) + 1
+        for i, (x, y) in enumerate(cases):
+            a.grid[y][x] = "case_full" if n > i * total / len(cases) \
+                else "case"
+
+    def museum_menu(self):
+        given = self.st.setdefault("museum", [])
+        have = sorted(n for n, c in self.p["items"].items()
+                      if c and ITEMS.get(n, (0, 0, ""))[2] == "artifact"
+                      and n not in given)
+        rows = [("Donate %s" % an(n), lambda n=n: self.donate(n))
+                for n in have]
+        rows += [("Look at the collection", self.show_museum),
+                 ("Leave it", lambda: None)]
+        self.open_menu("Juniper's museum: %d of %d artifacts, each with a "
+                       "neat little card." % (len(given),
+                                              len(ARTIFACTS) + 1), rows)
+
+    def show_museum(self):
+        given = self.st.get("museum", [])
+        lines = ["JUNIPER'S MUSEUM", ""]
+        for n, v, f in ARTIFACTS + [(KING_PRIZE, 0, MINE_FLOORS)]:
+            lines.append("  %-20s %s" % (
+                cap(n) if n in given else "?" * len(n),
+                "" if n in given else "(floor %d or deeper)" % f
+                if n != KING_PRIZE else "(the Mine King's)"))
+        nxt = [k for k in sorted(MUSEUM_REWARDS) if k > len(given)]
+        if nxt:
+            lines += ["", "Juniper has something for you at %d." % nxt[0]]
+        self.show_text("\n".join(lines + ["", "Press any key to close."]))
+
+    def donate(self, n):
+        given = self.st.setdefault("museum", [])
+        if not self.take(n):
+            return
+        given.append(n)
+        self.befriend("juniper", 40, quiet=True)
+        self.sound.play("pick")
+        self.museum_cases()
+        self.say("You give %s to the museum. Juniper writes its card in her "
+                 "tidiest hand: where you found it, and when, and by "
+                 "whom." % an(n), "good")
+        prize = MUSEUM_REWARDS.get(len(given))
+        if prize:
+            what, k = prize
+            self.sound.play("quest")
+            if what == "gold":
+                self.p["gold"] += k
+                got = "%dg" % k
+            else:
+                self.give(what, k)
+                got = "%d %s" % (k, plural(what, k))
+            if len(given) == len(ARTIFACTS) + 1:
+                self.befriend("juniper", HEART, quiet=True)
+                self.say("The collection is complete! Juniper hangs a brass "
+                         "plaque over the cases: 'Gathered from the Old Mine "
+                         "by %s.' She hugs you, then goes very red. (%s from "
+                         "the valley's historical society.)" % (
+                             self.p["name"], got), "quest")
+            else:
+                self.say("%d artifacts! Juniper presses a parcel on you, "
+                         "\"for the next ones\": %s." % (len(given), got),
+                         "gold")
+        self.end_turn(1)
+
     # ── Tools ──
 
     def held(self):
@@ -8793,8 +8969,12 @@ class Game:
 
     def hand_name(self, h=None):
         h = h or self.held()
+        metal = METALS[self.lv(h) - 1] + " " if h and self.lv(h) else ""
         if h == "watering can":
-            return "watering can (%d/%d)" % (self.p["water"], self.p["can"])
+            return "%swatering can (%d/%d)" % (metal, self.p["water"],
+                                               self.p["can"])
+        if metal:
+            return metal + h
         if h == "magic wand":
             return "magic wand (%s)" % self.p.get("spell", "petrify")
         if h and h in self.p["items"]:
@@ -9956,8 +10136,8 @@ class Game:
         chops["n"] += 1
         self.chops = chops
         self.sound.play("chop")
-        if chops["n"] < CHOPS:
-            left = CHOPS - chops["n"]
+        if chops["n"] < AXE_CHOPS[self.lv("axe")]:
+            left = AXE_CHOPS[self.lv("axe")] - chops["n"]
             self.say("You chop at the %s. Chips fly. (%d more swing%s.)" % (
                 kind, left, "s" if left > 1 else ""), "info")
             self.end_turn(TOOL_COST)
@@ -12122,6 +12302,8 @@ class Game:
 
     def spend(self, h):
         need = TOOL_ENERGY.get(h, 0)
+        if need:
+            need = max(1, need - self.lv(h))
         if self.p["energy"] < need:
             self.say("You're too tired to swing the %s. Eat something, or "
                      "go to bed." % h, "bad")
@@ -12233,6 +12415,13 @@ class Game:
                     return
                 p["water"] -= 1
                 s[0] = 1
+                for nx, ny in self.row_ahead(x, y, h):
+                    s = st["soil"].get("%d,%d" % (nx, ny))
+                    if not s or p["water"] <= 0:
+                        break
+                    if not s[0]:
+                        s[0] = 1
+                        p["water"] -= 1
                 self.sound.play("water")
                 self.end_turn(TOOL_COST - 1)
             else:
@@ -12263,6 +12452,13 @@ class Game:
                 return
             st["soil"][k] = [1 if st["weather"] in ("rain", "storm") else 0,
                              None, 0, 0]
+            for nx, ny in self.row_ahead(x, y, h):
+                if not on_farm(nx, ny) or self.thing_at(nx, ny) or \
+                        self.tile_at(nx, ny) not in TILLABLE or \
+                        self.npc_at(nx, ny):
+                    break
+                st["soil"]["%d,%d" % (nx, ny)] = [st["soil"][k][0], None, 0,
+                                                  0]
             self.sound.play("till")
             self.end_turn(TOOL_COST)
             return
@@ -12348,9 +12544,9 @@ class Game:
             return
         if h == "scythe":
             if t == "tallgrass" or (t in ("grass", "meadow") and
-                                    random.random() < 0.1):
+                                    random.random() < 0.1 + 0.1 * self.lv(h)):
                 if self.spend(h):
-                    self.give("fiber")
+                    self.give("fiber", 1 + self.lv(h) // 2)
                     self.say("You cut some fiber.", "info")
                     self.end_turn(TOOL_COST)
                 return
@@ -12358,6 +12554,13 @@ class Game:
                      "info")
             return
         self.say("Nothing to do there.", "info")
+
+    def row_ahead(self, x, y, tool):
+        """The squares past (x, y), the way you face, that an upgraded hoe
+        or can reaches too."""
+        dx, dy = self.st["facing"]
+        return [(x + dx * i, y + dy * i)
+                for i in range(1, REACH[self.lv(tool)])]
 
     def clear_debris(self, x, y, kind, auto=False):
         need, (item, n) = DEBRIS[kind]
@@ -13728,7 +13931,7 @@ class Game:
             if name in ("cow", "sheep") and ("barn" not in self.built() or len(
                     self.st["cows"]) >= BARN_ROOM):
                 continue
-            if name == "copper can" and self.p["can"] > 20:
+            if name in WEAPONS and name in self.p["tools"]:
                 continue
             if name == "cabin extension" and self.p["extension"]:
                 continue
@@ -13743,6 +13946,12 @@ class Game:
             if name == "checkup" and "checkup" in self.flags_today():
                 continue
             out.append((name, price))
+        if kind == "smithy":
+            for tool in UPGRADABLE:
+                lv = self.lv(tool)
+                if tool in self.p["tools"] and lv < len(METALS):
+                    out.append(("%s %s" % (METALS[lv], tool),
+                                UPGRADE_PRICE[lv]))
         return out
 
     def shop_menu(self, vid):
@@ -13802,6 +14011,33 @@ class Game:
         for n, c in extra.items():
             self.take(n, c)
         self.sound.play("gold")
+        metal, _, tool = name.partition(" ")
+        if metal in METALS and tool in UPGRADABLE:
+            lv = METALS.index(metal) + 1
+            p.setdefault("tool_lv", {})[tool] = lv
+            if tool == "watering can":
+                p["can"] = p["water"] = CAN_SIZE[lv]
+            self.speak(vid, "(happy)%s" % {
+                "hoe": "There. It'll turn over %d squares in a row now, "
+                       "and it's lighter in the hand." % REACH[lv],
+                "watering can": "Holds %d now, and waters %d squares in a "
+                                "row." % (CAN_SIZE[lv], REACH[lv]),
+                "axe": "Keen as anything. %s" % (
+                    "One swing'll fell a tree." if AXE_CHOPS[lv] == 1 else
+                    "Two swings to fell a tree."),
+                "pickaxe": "That'll go through %s now." % (
+                    "anything in that mine" if lv == 3 else
+                    "a vein of " + METALS[lv]),
+                "scythe": "Cuts twice the fiber for half the sweat.",
+            }.get(tool, "Better balanced, and it bites deeper. Mind the "
+                        "edge."))
+            self.say("Otto makes your %s %s." % (tool, metal), "gold")
+            return
+        if name.endswith(" bar") and name.split()[0] in METALS:
+            self.give(name)
+            self.speak(vid, "(happy)Into the forge with it... There. One "
+                            "%s, still warm." % name)
+            return
         if name in ("fishing rod", "leash", "milk pail", "shears",
                     "short sword", "broadsword"):
             if name in p["tools"]:
@@ -13834,11 +14070,6 @@ class Game:
                 self.speak(vid, "(laugh)A leash? For a chicken? Well, it's "
                                 "your gold. Mind she doesn't lead YOU.")
                 return
-        elif name == "copper can":
-            p["can"] = p["water"] = 40
-            self.speak(vid, "(laugh)There! A copper can! Holds twice as "
-                            "much!")
-            return
         elif name == "cow":
             c = self.add_cow()
             self.speak(vid, "(happy)She's in your barn already. Her name's "
@@ -15481,8 +15712,8 @@ def describe_item(n):
     if kind == "gift":
         bits.append("A gift for someone special.")
     if kind == "artifact":
-        bits.append("Something old from the mine. Juniper at the library "
-                    "would love it.")
+        bits.append("Something old from the mine, for Juniper's museum "
+                    "at the library.")
     if kind == "romance":
         bits.append({"blossom bouquet": "Give it to someone at 8 hearts to "
                                         "ask them to go steady.",
@@ -17910,8 +18141,9 @@ TERRAIN = ["grass", "tallgrass", "meadow", "flowers", "path", "cobble",
            "trough", "loohole", "loobench", "hay", "churn", "moonwin",
            "loopaper", "loobend", "cave"]
 TERRAIN += ["%s_%d" % (k, th) for th in range(len(MINE_THEMES))
-            for k in ("mwall", "mfloor", "ladder_up", "ladder_down", "chest",
-                      "chest_open")]
+            for k in ["mwall", "mfloor", "ladder_up", "ladder_down", "chest",
+                      "chest_open"] + ["ore_" + m for m in METALS]]
+TERRAIN += ["case", "case_full"]
 TERRAIN += ["roof_" + r for r in ROOFS] + ["eave_" + r for r in ROOFS]
 TERRAIN += [k + "_" + m for m in WALLS for k in ("wall", "win", "door")]
 ANIMATED_TERRAIN = {"water", "river", "pond", "fountain", "lamp",
@@ -18320,7 +18552,7 @@ def selftest():
     for kind, stock in SHOP_STOCK.items():
         for entry in stock:
             if entry != "seeds" and entry[0] not in ITEMS and entry[0] not \
-                    in ("checkup", "copper can", "cabin extension",
+                    in ("checkup", "cabin extension",
                         "chicken", "chicken coop", "leash", "barn",
                         "cow", "milk pail", "sheep", "shears", "cat", "dog",
                         "fishing rod", "sprinkler", "short sword",

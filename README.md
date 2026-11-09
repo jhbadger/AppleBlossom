@@ -225,8 +225,7 @@ the best thing you carry: your fists, a farm tool, or one of Otto's swords
 (a short sword for 700g, a broadsword for 2,500g and 20 stone). Beaten
 monsters leave gold, and now and then something old. **Chests** hold
 gold, food, stone, or an **artifact**: old coins and clay pipes near the
-top, crystal skulls, dragon scales and star shards near the bottom. Ship
-artifacts or give them to Juniper, who loves them.
+top, crystal skulls, dragon scales and star shards near the bottom.
 
 Every hit you take costs **energy**. Eat from your bag (`I`) to keep going.
 If your energy runs out down there, everything goes black: Otto carries
@@ -242,6 +241,38 @@ gone. Monsters you beat and chests you open stay that way until tomorrow.
 
 Reach floor 5 or 10 and you tie a rope there, so next time you can climb
 straight down to it.
+
+### Ore and Otto's forge
+
+Here and there the rock walls glint with **ore**: copper near the top,
+iron from floor 3, gold from floor 6. Walk into a vein (or press Space
+facing it) with a pickaxe to chip out a lump or two. Copper comes out with
+any pickaxe; iron needs a copper one, and gold an iron one.
+
+Otto smelts 3 ore into a **bar** (50g for copper, 150g iron, 400g gold),
+and for 3 bars and a fee makes one of your tools copper, then iron, then
+gold. A better tool costs less energy to use, and:
+
+| Tool | Copper | Iron | Gold |
+| --- | --- | --- | --- |
+| Hoe | tills 2 squares in a row | 3 | 5 |
+| Watering can | holds 40, waters 2 in a row | holds 70, 3 | holds 100, 5 |
+| Axe | fells a tree in 2 swings | 2 | 1 |
+| Pickaxe | cuts iron | cuts gold | more ore |
+| Scythe | more fiber from grass | | twice the fiber |
+| Swords | +1 damage | +2 | +3 |
+
+Upgrades cost 600g, 1,500g and 4,000g. (An old copper can counts as a
+copper watering can.)
+
+### Juniper's museum
+
+The glass **cases in the library** are Juniper's museum. Walk into one to
+donate the artifacts you're carrying, or to see what's still missing (and
+how deep to look). The cases fill up as the collection grows. Juniper
+thanks you with a parcel at 3, 6, 9 and 12 artifacts (500g, then 3
+copper, iron and gold bars), and when all 15 are in, the Crown of the Deep
+included, she hangs a plaque with your name on it and gives you 5,000g.
 
 ## The magic wand
 
@@ -448,10 +479,10 @@ up to eight squares until it hits someone or something solid.
 | Pike's General Store | Mabel Pike | seeds for the season, fruit tree saplings, hay, hens, cows, sheep, cats and dogs, a milk pail, shears, a leash, gifts, the Blossom Bouquet |
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
-| Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, the copper watering can, swords for the old mine, fine gifts, the Blossom Pendant |
+| Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, swords for the old mine, smelting ore and upgrading tools, fine gifts, the Blossom Pendant |
 | Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, the barn, a silo, and the cabin extension |
 | The dock | Theo Fairweather | fishing rods and lures, 10 till 3 |
-| The Library | Juniper Marsh | books, and Pip's schoolroom |
+| The Library | Juniper Marsh | books, Pip's schoolroom, and the museum of artifacts from the old mine |
 | Mayor's House | Mayor Edmund Pell | festivals, history |
 | Rose's Cottage | Granny Rose Applewood | your grandmother's cousin, and pie |
 | Amy's Cottage | Amy Hartwell | the beekeeper, who sets the Gazette crossword |
