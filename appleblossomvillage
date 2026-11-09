@@ -698,6 +698,18 @@ def draw_terrain(name, frame=0, season=0):
         return planks(rng, "#a07850", "#7a5838", vertical=True, width=5)
     if name == "logfloor":
         return planks(rng, "#b08050", "#805a34", width=5)
+    if name == "pantry":                        # a cupboard of jars
+        g = planks(rng, "#b08050", "#805a34", width=5)
+        rect(g, 1, 0, 14, 14, "#7a5030")
+        rect(g, 2, 1, 13, 13, "#a07040")
+        for y in (4, 8, 12):
+            rect(g, 2, y, 13, y, "#5a3a20")
+        for x, y, c in ((3, 2, "#c04040"), (6, 2, "#e0b040"),
+                        (10, 2, "#80b050"), (4, 6, "#d08040"),
+                        (8, 6, "#f0e0c0"), (11, 6, "#a050a0"),
+                        (3, 10, "#e0e0d0"), (7, 10, "#c06030")):
+            rect(g, x, y, x + 1, y + 1, c)
+        return g
     if name in ("gbed", "gbed_w", "glasswall", "butt"):  # the greenhouse
         if name == "glasswall":
             g = wall_face(rng, "glass")
@@ -1355,6 +1367,70 @@ def base_item(n):
     'tomato'."""
     q, _, rest = n.partition(" ")
     return rest if q in QUALITY and rest in CROPS else n
+
+
+# Cooking: what you can make at your cabin stove, from what's in your
+# pantry and your bag.  An ingredient is an item, or "any fish", "any
+# fruit", "any vegetable" or "any jam".  Grandmother's recipe book has a
+# few; friends teach you the rest, by letter, at 3 hearts.
+RECIPES = {   # dish: (ingredients, who teaches it, or None)
+    "fried egg": ({"egg": 1}, None),
+    "baked potato": ({"potato": 1}, None),
+    "salad": ({"any vegetable": 2}, None),
+    "pancakes": ({"egg": 1, "milk": 1}, "marisol"),
+    "stew": ({"potato": 1, "turnip": 1, "milk": 1}, "bernard"),
+    "apple pie": ({"apple": 2, "egg": 1, "milk": 1}, "rose"),
+    "honey cake": ({"honey": 1, "egg": 1, "milk": 1}, "amy"),
+    "fish supper": ({"any fish": 1, "potato": 1}, "gus"),
+    "grilled fish": ({"any fish": 1}, "theo"),
+    "cheese omelette": ({"egg": 2, "cheese": 1}, "jonah"),
+    "blueberry muffins": ({"blueberry": 1, "egg": 1, "milk": 1}, "juniper"),
+    "midnight cocoa": ({"chocolate": 1, "milk": 1}, "dmitri"),
+    "miner's pasty": ({"potato": 1, "turnip": 1, "egg": 1}, "otto"),
+    "jam tarts": ({"any jam": 1, "egg": 1}, "agnes"),
+    "pumpkin soup": ({"pumpkin": 1, "milk": 1}, "wren"),
+    "vegetable curry": ({"any vegetable": 3, "spice berry": 1}, "nell"),
+    "fruit crumble": ({"any fruit": 2, "egg": 1}, "clara"),
+}
+for _n, _v in {   # dishes new to the valley: price, energy
+        "fried egg": (90, 50), "baked potato": (120, 55),
+        "grilled fish": (160, 60), "cheese omelette": (420, 90),
+        "blueberry muffins": (320, 70), "midnight cocoa": (220, 60),
+        "miner's pasty": (360, 120), "jam tarts": (380, 80),
+        "pumpkin soup": (480, 90), "vegetable curry": (420, 110),
+        "fruit crumble": (340, 85)}.items():
+    ITEMS[_n] = (_v[0], _v[1], "food")
+RECIPE_LETTERS = {   # who: how their letter with the recipe begins
+    "marisol": "My pancakes, the secret is not to stir too much. Don't "
+               "tell the inn!",
+    "bernard": "The Blossom Inn stew. Wren says I shouldn't give it away, "
+               "but you're family now.",
+    "rose": "Your grandmother's apple pie. She'd want you to have it.",
+    "amy": "Honey cake, the way my bees like it best.",
+    "gus": "A proper fish supper. Fry the fish last.",
+    "theo": "Grilled fish! Easiest thing in the world. Don't burn it.",
+    "jonah": "My cheese omelette. Duchess the goat gets the crusts.",
+    "juniper": "I found this in an old cookery book at the library. I "
+               "made them. They were... mostly fine!",
+    "dmitri": "Midnight cocoa, for long nights watching the stars.",
+    "otto": "A miner's pasty. My grandad took one down the old mine every "
+            "day. Keeps you going.",
+    "agnes": "Jam tarts, from my schoolroom days. The children adored "
+             "them.",
+    "wren": "Pumpkin soup, for cold evenings after a long day.",
+    "nell": "Vegetable curry. I tinkered with it for years. The spice "
+            "berry is essential.",
+    "clara": "Fruit crumble! Everyone at the post office asks for it.",
+}
+def ingredient(spec, n=1):
+    """'any 2 vegetables', 'any fish', 'egg', '2 eggs'."""
+    name = spec[4:] if spec.startswith("any ") else spec
+    return ("any " if spec.startswith("any ") else "") + (
+        "%d %s" % (n, plural(name, n)) if n > 1 else name)
+
+
+PANTRY_KINDS = ("crop", "fruit", "forage", "fish", "animal", "artisan",
+                "food")             # what the pantry will take
 
 # Nell's machines: put one on your farm, load it, come back for something
 # worth more.  Recipes: (what goes in, how many, what comes out, minutes;
@@ -5743,7 +5819,7 @@ def forage_spots(grid):
 ROOMS = {
     "cabin": ("logfloor", "l", (
         "llwllllwlll",
-        "lO..P...DDl",
+        "lOZ.P...DDl",
         "l..2....1.l",
         "l.TT..3.5.l",
         "l.hh...rr.l",
@@ -5973,7 +6049,7 @@ EXTRA_ROOMS = {   # rooms that aren't buildings in the valley
 }
 ROOM_TILES = {"Y": "hay", "U": "churn", "H": "loohole", "j": "loobench",
               "m": "moonwin", "g": "loopaper", "e": "loobend", "n": "nest", "q": "trough", "W": "wall", "w": "iwin", "l": "logwall", "L": "toolrack",
-              "V": "case", "I": "glasswall", "z": "gbed", "u": "butt",
+              "V": "case", "Z": "pantry", "I": "glasswall", "z": "gbed", "u": "butt",
               "x": "exit", "B": "bed", "D": "bed2", "T": "table",
               "h": "chair", "C": "counter", "S": "shelf", "G": "goods",
               "K": "seeds", "O": "stove", "F": "fireplace", "X": "forge",
@@ -7683,6 +7759,8 @@ Ivy builds chicken coops and Mabel sells hens; each hen
 lays an egg a night.  Walk into a hen to pet or rename her.
 Feed your animals: graze them (the trough opens the doors),
 put hay in the trough, or build a silo; happy ones give more.
+Cook at your cabin stove from what's in the pantry beside
+it (and your bag); friends send recipes at 3 hearts.
 Go to bed before 2 am.
 
 Someone in your way?  Talk to them: SQUEEZE PAST.
@@ -8519,6 +8597,7 @@ class Game:
         self.build_world(st["seed"], self.p["built"])
         self.apply_felled()
         self.museum_cases()
+        self.clear_cabin_furniture()
         for vid, (area, x, y) in st["npcs"].items():
             n = self.npcs.get(vid)
             if n and (area in self.areas or area == "carried"):
@@ -8939,8 +9018,10 @@ class Game:
             self.say("Somebody's bed. Better not.", "info")
             return True
         if t == "stove" and a.key == "cabin":
-            self.say("Grandmother's stove. You could eat something from "
-                     "your bag (I).", "info")
+            self.stove_menu()
+            return True
+        if t == "pantry" and a.key == "cabin":
+            self.pantry_menu()
             return True
         if t in ("shelf",):
             self.say(random.choice(SHELF_BOOKS), "info")
@@ -10313,6 +10394,180 @@ class Game:
                  "in the greenhouse, whatever the season." if not s[1] else
                  "The %s is coming along nicely." % s[1], "info")
         self.render()
+
+    # ── Cooking ──
+    #
+    # Grandmother's stove cooks the recipes you know ("recipes") from
+    # what's in the pantry beside it ("pantry": item -> how many) and, if
+    # that's not enough, your bag.
+
+    def pantry(self):
+        return self.st.setdefault("pantry", {})
+
+    @staticmethod
+    def fits(spec, item):
+        """Is this item one of what a recipe asks for?"""
+        plain = base_item(item)
+        if plain.startswith("large "):         # a large egg is an egg
+            plain = plain[6:]
+        kind = ITEMS.get(plain, (0, 0, ""))[2]
+        if spec == "any fish":
+            return kind == "fish"
+        if spec == "any fruit":
+            return kind == "fruit" or plain in JAM_FRUIT
+        if spec == "any vegetable":
+            return plain in PICKLE_VEG
+        if spec == "any jam":
+            return plain.endswith(" jam")
+        return plain == spec
+
+    def stock(self, spec, pantry_only=False):
+        """(store, item, how many) you could use for an ingredient: the
+        pantry first, plain before silver and gold."""
+        out = []
+        for store in (self.pantry(),) + (() if pantry_only else
+                                         (self.p["items"],)):
+            for item in sorted(store, key=lambda n: (base_item(n) != n, n)):
+                if store[item] and self.fits(spec, item):
+                    out.append((store, item, store[item]))
+        return out
+
+    def can_cook(self, dish, pantry_only=False):
+        return all(sum(c for _, _, c in self.stock(spec, pantry_only)) >= n
+                   for spec, n in RECIPES[dish][0].items())
+
+    def use_ingredients(self, dish, pantry_only=False):
+        for spec, n in RECIPES[dish][0].items():
+            for store, item, have in self.stock(spec, pantry_only):
+                k = min(n, have)
+                store[item] -= k
+                if not store[item]:
+                    del store[item]
+                n -= k
+                if not n:
+                    break
+
+    def stove_menu(self):
+        known = [d for d in RECIPES if d in self.st.setdefault(
+            "recipes", [d for d, (_, who) in RECIPES.items() if not who])]
+        rows = []
+        for d in known:
+            need = ", ".join(ingredient(spec, n)
+                             for spec, n in RECIPES[d][0].items())
+            ok = self.can_cook(d)
+            rows.append(("%s%s (%s)" % ("" if ok else "· ", cap(d),
+                                        need),
+                         lambda d=d: self.cook(d)))
+        self.open_menu("Grandmother's stove. Cook what? (%d of %d recipes; "
+                       "the pantry's used first)" % (len(known),
+                                                     len(RECIPES)),
+                       rows + [("Open the pantry", self.pantry_menu),
+                               ("Nothing", lambda: None)])
+
+    def cook(self, dish):
+        if not self.can_cook(dish):
+            missing = [ingredient(spec).replace("any ", "")
+                       for spec, n in RECIPES[dish][0].items()
+                       if sum(c for _, _, c in self.stock(spec)) < n]
+            self.say("You haven't got what you need for %s: no %s in your "
+                     "pantry or bag." % (dish, and_list(missing)), "info")
+            self.render()
+            return
+        self.use_ingredients(dish)
+        self.give(dish)
+        self.sound.play("potion")
+        self.say("You cook %s. Smells wonderful. (%d energy, in your "
+                 "bag)" % (an(dish), ITEMS[dish][1]), "good")
+        self.end_turn(20)
+
+    def pantry_menu(self):
+        pan = self.pantry()
+        bag = [n for n, c in sorted(self.p["items"].items()) if c and
+               ITEMS.get(n, (0, 0, ""))[2] in PANTRY_KINDS]
+        raw = [n for n in bag if ITEMS[n][2] != "food"]
+        rows = []
+        if raw:
+            rows.append(("Put away all your ingredients (%d)" % sum(
+                self.p["items"][n] for n in raw), self.pantry_all))
+        if bag:
+            rows.append(("Put away...", self.pantry_put_menu))
+        if pan:
+            rows.append(("Take out...", self.pantry_take_menu))
+        self.open_menu("The pantry: %s." % (and_list(
+            ["%d %s" % (c, plural(n, c)) for n, c in sorted(pan.items())])
+            if pan else "empty shelves"), rows + [("Close", lambda: None)])
+
+    def pantry_all(self):
+        n = 0
+        for item in [i for i, c in self.p["items"].items() if c and
+                     ITEMS.get(i, (0, 0, ""))[2] in PANTRY_KINDS and
+                     ITEMS[i][2] != "food"]:      # meals stay in your bag
+            c = self.p["items"].pop(item)
+            self.pantry()[item] = self.pantry().get(item, 0) + c
+            n += c
+        self.sound.play("pick")
+        self.say("You put %d things away in the pantry. (Your cooked "
+                 "food stays in your bag.)" % n, "info")
+        self.end_turn(1)
+
+    def pantry_put_menu(self):
+        self.open_menu("Put what away?", [
+            ("%s x%d" % (n, c), lambda n=n: self.pantry_move(n, True))
+            for n, c in sorted(self.p["items"].items())
+            if c and ITEMS.get(n, (0, 0, ""))[2] in PANTRY_KINDS] +
+            [("Back", self.pantry_menu)])
+
+    def pantry_take_menu(self):
+        self.open_menu("Take what out?", [
+            ("%s x%d" % (n, c), lambda n=n: self.pantry_move(n, False))
+            for n, c in sorted(self.pantry().items())] +
+            [("Back", self.pantry_menu)])
+
+    def pantry_move(self, item, put):
+        src, dst = (self.p["items"], self.pantry()) if put else \
+            (self.pantry(), self.p["items"])
+        c = src.pop(item, 0)
+        if c:
+            dst[item] = dst.get(item, 0) + c
+            self.sound.play("pick")
+            self.say("You %s %d %s." % ("put away" if put else "take out",
+                                        c, plural(item, c)), "info")
+        (self.pantry_put_menu if put else self.pantry_take_menu)()
+
+    def clear_cabin_furniture(self):
+        """Anything an older save left where furniture now stands in the
+        cabin (the pantry, say) is moved off it."""
+        a = self.areas["cabin"]
+        solid = lambda x, y: a.grid[y][x] not in WALKABLE
+        for m in self.st.get("mmaids", ()):
+            if solid(m["x"], m["y"]):
+                spot = self.mmaid_spot()
+                if spot:
+                    m["x"], m["y"] = spot
+        for k in [k for k in self.st.get("decor", {})
+                  if k.startswith("cabin:")]:
+            x, y = map(int, k[6:].split(","))
+            if solid(x, y):
+                d = self.st["decor"].pop(k)
+                self.give("golden " + MONSTERS[d["kind"]].name)
+        for c in self.st.get("pets", ()):
+            if c["where"] == "cabin" and solid(c["x"], c["y"]):
+                spot = self.free_pet_square("cabin")
+                if spot:
+                    c["x"], c["y"] = spot
+
+    def teach_recipes(self):
+        """A friend at 3 hearts sends you their recipe."""
+        known = self.st.setdefault(
+            "recipes", [d for d, (_, who) in RECIPES.items() if not who])
+        for dish, (need, who) in RECIPES.items():
+            if who and dish not in known and self.hearts(who) >= 3:
+                known.append(dish)
+                self.mail(VILLAGERS[who]["short"], "%s\n\nRECIPE: %s. %s." % (
+                    RECIPE_LETTERS[who], cap(dish), cap(and_list([
+                        ingredient(spec, n) for spec, n in need.items()]))))
+                self.say("%s has sent you a recipe: %s! (Cook it at your "
+                         "stove.)" % (VILLAGERS[who]["short"], dish), "quest")
 
     # ── Juniper's museum ──
 
@@ -12118,6 +12373,14 @@ class Game:
                 and_list(["%d %s" % (c, plural(n, c))
                           for n, c in sorted(goods.items())]), pay)
         if chore == "cook":
+            dishes = [d for d in self.st.get("recipes", ())
+                      if self.can_cook(d, pantry_only=True)]
+            if dishes:
+                food = max(dishes, key=lambda d: ITEMS[d][1])
+                self.use_ingredients(food, pantry_only=True)
+                self.give(food)
+                return "cooked you %s from the pantry (in your bag)" % an(
+                    food)
             food = random.choice(("pancakes", "bread", "honey cake",
                                   "stew"))
             self.give(food)
@@ -14813,6 +15076,8 @@ class Game:
             self.say("%s: %s" % (VILLAGERS[vid]["short"],
                                  "♥" * after + "♡" * (10 - after)),
                      "heart")
+        if after >= 3 > before:
+            self.teach_recipes()
 
     # ── Talking ──
 
@@ -15985,6 +16250,7 @@ class Game:
         if st["wedding"] == st["day"]:
             self.say("Today's your wedding day! Go to the square between "
                      "ten and three.", "heart")
+        self.teach_recipes()
         self.spouse_morning()
         self.pet_mornings()             # before the maids give today's fuss
         self.maid_morning()
@@ -19833,7 +20099,7 @@ TERRAIN = ["grass", "tallgrass", "meadow", "flowers", "path", "cobble",
            "cabinet", "piano", "easel", "nets", "toolrack", "straw", "nest",
            "trough", "loohole", "loobench", "hay", "churn", "moonwin",
            "loopaper", "loobend", "cave", "gbed", "gbed_w", "glasswall",
-           "butt"]
+           "butt", "pantry"]
 TERRAIN += ["%s_%d" % (k, th) for th in range(len(MINE_THEMES))
             for k in ["mwall", "mfloor", "ladder_up", "ladder_down", "chest",
                       "chest_open"] + ["ore_" + m for m in METALS] +
@@ -20279,6 +20545,13 @@ def selftest():
         for c in OUTFITS[kind][1]:
             if c not in COLOUR_NAMES:
                 problems.append("outfit colour %s unnamed" % c)
+    for dish, (need, who) in RECIPES.items():
+        if dish not in ITEMS or ITEMS[dish][2] != "food" or (
+                who and (who not in VILLAGERS or who not in RECIPE_LETTERS)):
+            problems.append("recipe %s" % dish)
+        for spec in need:
+            if not spec.startswith("any ") and spec not in ITEMS:
+                problems.append("recipe %s needs unknown %s" % (dish, spec))
     for kind in MONSTER_MAIDS:
         r = MONSTER_ROMANCE.get(kind)
         if not r or any(not r.get(k) for k in (

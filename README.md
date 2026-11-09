@@ -83,6 +83,34 @@ so fill your can at the water butt by the door, and no frost to kill them.
 Once it's up, Mabel sells every crop's seeds all year round. Maids on the
 watering and picking chores see to the greenhouse too.
 
+**Cooking.** Walk into Grandmother's **stove** in your cabin to cook. You
+start with her recipe book (fried egg, baked potato, salad), and friends
+send you their own recipes by letter once you reach 3 hearts with them:
+
+| Recipe | Ingredients | From |
+| --- | --- | --- |
+| Pancakes | egg, milk | Marisol |
+| Stew | potato, turnip, milk | Bernard |
+| Apple pie | 2 apples, egg, milk | Granny Rose |
+| Honey cake | honey, egg, milk | Amy |
+| Fish supper | any fish, potato | Gus |
+| Grilled fish | any fish | Theo |
+| Cheese omelette | 2 eggs, cheese | Jonah |
+| Blueberry muffins | blueberry, egg, milk | Juniper |
+| Midnight cocoa | chocolate, milk | Dmitri |
+| Miner's pasty | potato, turnip, egg (120 energy, for the mine) | Otto |
+| Jam tarts | any jam, egg | Agnes |
+| Pumpkin soup | pumpkin, milk | Wren |
+| Vegetable curry | any 3 vegetables, spice berry | Nell |
+| Fruit crumble | any 2 fruit, egg | Clara |
+
+The **pantry** beside the stove keeps your ingredients: walk into it to
+put away everything in your bag that's for cooking (your cooked food stays
+in your bag), or to put away or take out one thing. Cooking takes from the
+pantry first, then your bag, plain crops before silver and gold ones, and a
+large egg does for an egg. A maid on the cooking chore cooks the heartiest
+dish she can from the pantry each morning.
+
 Put anything sellable in the **shipping bin** and you're paid overnight.
 Grandmother's apple trees fruit in the fall. Wild things to forage turn up in
 the woods, the meadows and on the beach every morning. Otto's **sprinklers**
