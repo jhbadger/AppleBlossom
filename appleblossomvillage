@@ -1474,12 +1474,18 @@ MM_RECIPES = {   # a monster maid's own dish, taught at 4 hearts: kind ->
             "Fire-roasted corn! I usually roast it with my hands, but the "
             "stove will do."),
 }
+MM_RECIPES["poop"] = ("chocolate pudding", {"chocolate": 2, "milk": 1,
+                                            "egg": 1}, 400, 95,
+                      "Chocolate pudding! It's brown and swirly and "
+                      "delicious. ...Don't say it. Don't you dare say it.")
 MM_RECIPES["angel"] = ("angel food cake", {"egg": 3, "honey": 1}, 420, 100,
                        "Angel food cake. We ate it in the tower on feast "
                        "days. I suppose every day here is a feast day.")
 for _k, (_d, _need, _price, _energy, _say) in MM_RECIPES.items():
     RECIPES[_d] = (_need, "mm:" + _k)
     ITEMS[_d] = (_price, _energy, "food")
+MM_GOSSIP_POOP = "Is it true your maid {name} used to be a... you know? A " \
+    "you-know-what? She's ever so sweet. Smells of roses, mostly."
 MM_GOSSIP_ANGEL = "There's an angel keeping house for you? With wings? {name} " \
     "smiled at me at the fountain. I had to sit down."
 MM_GOSSIP = {   # what the village says about each kind of monster maid
@@ -6281,6 +6287,8 @@ MONSTERS = {   # traits: fast moves twice; slow every other turn; erratic
     "bat": Monster("cave bat", 2, 3, (1, 3), (1, 4), "fast erratic",
                    "nips"),
     "rat": Monster("giant rat", 4, 5, (2, 6), (1, 5), "", "bites"),
+    "poop": Monster("excrement blob", 6, 6, (3, 9), (2, 6), "slow",
+                    "splatters"),
     "spider": Monster("cave spider", 6, 7, (3, 8), (3, 7), "fast",
                       "bites"),
     "frost_slime": Monster("frost slime", 7, 8, (4, 10), (4, 7), "",
@@ -6403,6 +6411,13 @@ MONSTER_MAIDS = {   # a maidified monster in your cabin: her name, and what
         "I've only set the curtains alight once. Twice. Not since "
         "Tuesday, anyway.")),
 }
+MONSTER_MAIDS["poop"] = ("Poopy", (
+    "I hope I don't smell too bad. I had a bath this morning. Two baths, "
+    "actually. Just in case.",
+    "Being a maid is wonderful! Nobody steps around me any more. Well. Not "
+    "as much.",
+    "If anything ever smells funny in here, it wasn't me. Probably. Was it "
+    "me? Oh no."))
 MONSTER_MAIDS["angel"] = ("Seraphine", (
     "I was told humans keep their houses in a terrible state. Yours is... "
     "tolerable. I'm seeing to it.",
@@ -6653,6 +6668,30 @@ MONSTER_ROMANCE = {   # each monster maid's heart: gifts she loves, likes
         "morning": "lit the stove, boiled the kettle and warmed your boots "
                    "by the fire before you woke"},
 }
+MONSTER_ROMANCE["poop"] = {
+    "loves": ["rose", "sweet pea", "corn"],
+    "likes": ["fertilizer", "honey", "tea"],
+    "hates": ["salad", "energy tonic"],
+    "kiss": ["(blush)You kissed me! Even though I... oh, I do hope I don't "
+             "smell too bad.",
+             "(laugh)Oh! That was lovely. I had a bath this morning, just in "
+             "case!"],
+    "notyet": "(blush)Flowers? For ME? They smell so nice... nicer than me, "
+              "I expect. I'm not ready. Not yet.",
+    "accept": "(blush)You'd go steady with me? Me? Knowing what I used to "
+              "be? ...Yes! Oh, yes, yes!",
+    "proposal": "(happy)Marry me?! I'll scrub till I sparkle. I'll wear a "
+                "whole bottle of rose water. YES!",
+    "vows": "(blush)I was the thing everyone held their nose at. You never "
+            "did. Not once. I'll love you forever, and I promise I'll keep "
+            "having baths.",
+    "wife": ["(happy)Welcome home, love! I put flowers in every room. Just "
+             "in case.",
+             "(blush)Do I smell all right today? You'd tell me. You always "
+             "tell me the truth."],
+    "morning": "put fresh flowers in every room and aired the whole cabin, "
+               "\"just in case\"",
+}
 MONSTER_ROMANCE["angel"] = {
     "loves": ["angel feather", "sheet music", "honey"],
     "likes": ["milk", "rose", "book of poems"],
@@ -6710,7 +6749,7 @@ MONSTER_PET_NAMES = {   # what a monster led home and kept is called
     "goblin": "Gobbles", "ghost": "Boo", "golem": "Rocky", "imp": "Sparky",
     "magma_slime": "Cinder", "wraith": "Shade", "bone_knight": "Sir Bones",
     "obsidian_golem": "Flint", "cherub": "Puck", "angel": "Halo",
-    "seraph": "Blaze"}
+    "seraph": "Blaze", "poop": "Poopy"}
 LEADS_TO = {   # spell: the animal, and the room that takes her in
     "chickenfy": ("hen", "coop"), "cowify": ("cow", "barn"),
     "sheepify": ("sheep", "barn"), "catify": ("cat", "cabin"),
@@ -6787,6 +6826,13 @@ KID_TRAITS = {   # a monster maid's child: eye colour; what's odd about the
               "carried in the whole woodpile. Again", ("wood", 5),
               ["(happy)I lifted the table! With you on it! Nearly.",
                "(blush)I'm slow at running. But I never fall over."]),
+    "poop": ("#3a2a1a", "and the most cheerful little smile, and smells "
+             "faintly of roses", "picked a bunch of wildflowers for the "
+             "windowsill, \"so the cabin smells nice\", and left a little "
+             "something for the garden", ("fertilizer", 1),
+             ["(laugh)Mum calls me her little stinker. It's a nice thing "
+              "to say!",
+              "(happy)I helped in the garden! The plants LOVE me."]),
     "angel": ("#80b8f0", "and has the softest little white feathers on "
               "their shoulders", "hovered an inch off the floor all morning, "
               "humming, and left a tingle of magic behind", ("magic", 1),
@@ -7111,6 +7157,24 @@ ART.update({
 
 
 ART.update({
+    "mon_poop": ({"b": "#8a5a2e", "B": "#5e3a1a", "h": "#b07a44",
+                  "w": "#ffffff", "k": "#1a1a1a"}, (   # the famous swirl
+        "................",
+        ".......bb.......",
+        "......bbbh......",
+        ".....bBbbbb.....",
+        "....bbbBBbbb....",
+        "...bbbbbbbbhb...",
+        "...BbbbbbbbbB...",
+        "..bwwwbbbbwwwb..",
+        "..bwkwbbbbwkwb..",
+        "..bwwwbbbbwwwh..",
+        ".bbbbbbbbbbbbbb.",
+        ".bbkkkkkkkkkkbb.",
+        ".BBBkwwwwwwkBBB.",
+        "bbbbkkkkkkkkbbbb",
+        "BBBBBBBBBBBBBBBB",
+        "................")),
     "mon_magma_slime": ({"g": "#f07028", "G": "#b03810", "w": "#ffd080",
                          "k": "#3a1008"}, SLIME_ROWS),
     "mon_wraith": ({"w": "#5a4a7a", "W": "#2e2448", "k": "#f04060"},
@@ -9943,6 +10007,12 @@ class Game:
                      "gravel. On top of the heap sits his crown, cold "
                      "and heavy and glittering: the Crown of the Deep!",
                      "quest")
+        elif mob.kind == "poop":
+            n = random.randint(1, 2)
+            self.give("fertilizer", n)
+            self.say("...and leaves %s behind, too. Well. It would." % (
+                "a sack of fertilizer" if n == 1 else "two sacks of "
+                "fertilizer"), "good")
         elif mob.kind == "archangel":
             m["archangel"] = True
             self.give("archangel's halo")
@@ -16392,6 +16462,7 @@ class Game:
         for m in self.mmaids():
             was = MONSTERS[m["kind"]].name
             out.append((MM_GOSSIP_ANGEL if m["kind"] == "angel" else
+                        MM_GOSSIP_POOP if m["kind"] == "poop" else
                         MM_GOSSIP[m["kind"]]).replace("{name}", m["name"]))
             out.append({
                 None: "Is it true there's a maid in your cabin who used to "
@@ -21570,7 +21641,7 @@ def selftest():
         problems.append("the tower's door")
     for kind in MONSTER_MAIDS:
         if kind not in KID_TRAITS or kind not in MM_RECIPES or (
-                kind not in MM_GOSSIP and kind != "angel"):
+                kind not in MM_GOSSIP and kind not in ("angel", "poop")):
             problems.append("monster maid %s lacks kids, recipe or "
                             "gossip" % kind)
         r = MONSTER_ROMANCE.get(kind)

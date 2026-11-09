@@ -108,8 +108,8 @@ Monster maids have dishes of their own, and each teaches you hers when she
 reaches 4 hearts: Gloopy's wobbly jelly, Frostine's ice cream, Umbra's
 midnight blackberry pie, Flitter's dusk fruit bowl, Whiskers's cheese
 toastie, Silke's spun-sugar cake, Bonnie's custard, Gobbelina's forest
-goulash, Wisp's meringues, Pebble's rock cakes and Ember's fire-roasted
-corn.
+goulash, Wisp's meringues, Pebble's rock cakes, Ember's fire-roasted
+corn and Poopy's chocolate pudding ("Don't say it").
 
 The **pantry** beside the stove keeps your ingredients: walk into it to
 put away everything in your bag that's for cooking (your cooked food stays
@@ -289,7 +289,7 @@ something new in it after a week, and a dug vein or crystal grows back in
 
 | Floors | Monsters |
 | --- | --- |
-| 1-3 (earth) | green slimes, cave bats, giant rats |
+| 1-3 (earth) | green slimes, cave bats, giant rats, and from floor 2 to 6 excrement blobs (slow, and they leave a sack or two of fertilizer behind; you can guess what they look like) |
 | 4-6 (stone) | cave spiders, frost slimes, skeletons, goblins |
 | 7-9 (crystal) | ghosts, rock golems (armoured, but slow), fire imps, shadow slimes |
 | 10 (the deep) | the **Mine King**, once, who guards the Crown of the Deep, and the stair below his throne |
@@ -361,7 +361,8 @@ too old and wicked to change, but every spell burns him.
 
 **Monster maids.** Invite a maidified monster to your cabin and she
 comes to live there, with a name of her own (Ember the fire imp, Bonnie
-the skeleton, Wisp the ghost, Gobbelina the goblin...), and her hair the
+the skeleton, Wisp the ghost, Gobbelina the goblin, and Poopy the
+excrement blob, who very much hopes she doesn't smell too bad...), and her hair the
 monster's colour. Walk into her to talk, portrait and all: chat (she'll
 tell you about the monster she was), give her a chore (the
 same chores as any maid, done every morning; on a dry morning a maid
