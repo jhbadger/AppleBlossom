@@ -6368,6 +6368,14 @@ MM_GIFT = {   # a monster maid given something, by how she likes it
                 "(neutral)Hm. Well. It's the thought that counts."],
     "hate": ["(cross)Ugh! Even as a monster I wouldn't have touched that.",
              "(cross)Is this a joke? Take it away, please."]}
+MONSTER_PET_NAMES = {   # what a monster led home and kept is called
+    "slime": "Gloop", "frost_slime": "Frosty", "shadow_slime": "Smudge",
+    "bat": "Batty", "rat": "Nibbles", "spider": "Leggy", "skeleton": "Bones",
+    "goblin": "Gobbles", "ghost": "Boo", "golem": "Rocky", "imp": "Sparky"}
+LEADS_TO = {   # spell: the animal, and the room that takes her in
+    "chickenfy": ("hen", "coop"), "cowify": ("cow", "barn"),
+    "sheepify": ("sheep", "barn"), "catify": ("cat", "cabin"),
+    "dogify": ("dog", "cabin")}
 STATUE_HEFT = 20                # energy it takes to pick a statue up
 
 
@@ -7649,7 +7657,8 @@ wool, magic or energy, and a looified one is an outhouse.
 Invite a maidified monster to your cabin to do a chore;
 chat, kiss and give her gifts and she can become your
 sweetheart and wife, like any maid.  You can dismiss her,
-for good.
+for good.  Lead a monster's hen, cow, sheep,
+cat or dog home on the leash, into your coop, barn or cabin.
 
 The axe fells trees (three swings) for wood; they grow
 back in a season.
@@ -8696,9 +8705,13 @@ class Game:
 
     def move(self, dx, dy):
         before = (self.area.key, tuple(self.pos())) if self.area else None
+        mbefore = (self.where_key(), tuple(self.pos())) if self.area \
+            else None
         self.step(dx, dy)
         if before and self.st.get("leashed"):
             self.lead(before)
+        if mbefore and self.st.get("mlead"):
+            self.mlead_follow(mbefore)
 
     def step(self, dx, dy):
         if not self.ready():
@@ -8736,6 +8749,10 @@ class Game:
     def bump(self, x, y, t):
         """Walking into something: True if that was all the move did."""
         a = self.area
+        f = self.mlead_at(x, y)
+        if f:
+            self.mlead_swap(f)
+            return True
         if a.key == "mine":
             return self.mine_bump(x, y, t)
         if self.decor_at(x, y):
@@ -9190,7 +9207,7 @@ class Game:
         a = self.area
         return a.inside(x, y) and a.grid[y][x].startswith("mfloor_") and \
             (x, y) != self.pos() and self.mob_at(x, y) is None and \
-            not self.changed_at(x, y)
+            not self.changed_at(x, y) and not self.mlead_at(x, y)
 
     @staticmethod
     def the_mob(mob):
@@ -9363,6 +9380,8 @@ class Game:
             return
         invite = [("Invite her to your cabin", lambda: self.invite_maid(
             x, y))] if spell == "maidify" else []
+        if spell in LEADS_TO and "leash" in self.p["tools"]:
+            invite = [("Lead her home", lambda: self.mlead_start(x, y))]
         if not ready and not invite:
             self.squeeze_by(x, y, "You've had what %s has to give today. "
                                   "You squeeze past." % name)
@@ -9544,6 +9563,7 @@ class Game:
         gold and some of what was in your bag."""
         p = self.p
         self.stash_floor()
+        self.mlead_return()
         self.mine = None
         self.walking = None
         self.sound.play("death")
@@ -10024,6 +10044,137 @@ class Game:
                  "info")
         self.end_turn(1)
 
+    # ── Leading a monster's animal home ──
+    #
+    # A hen, cow, sheep, cat or dog that was a monster can be put on Mabel's
+    # leash and walked out of the mine, a step behind you, all the way to
+    # your coop, barn or cabin, where she's one of your animals.  "mlead":
+    # the changed monster, plus where she is ("area": "mine:3", "valley",
+    # ...) and the square she came from.
+
+    def where_key(self):
+        return "mine:%d" % self.mine["floor"] if self.area.key == "mine" \
+            and self.mine else self.area.key
+
+    def mlead_at(self, x, y):
+        f = self.st.get("mlead")
+        if f and f["area"] == self.where_key() and (f["x"], f["y"]) == (x, y):
+            return f
+        return None
+
+    def mlead_tile(self, f):
+        if f["spell"] == "sheepify":
+            return "sheepf_" + f["colour"]
+        return "%s_%s" % (LEADS_TO[f["spell"]][0], f["colour"])
+
+    def mlead_start(self, x, y):
+        st = self.st
+        if st.get("leashed") or st.get("mlead"):
+            self.say("You've only the one leash, and it's in use.", "info")
+            self.render()
+            return
+        floor = self.mine["floor"]
+        e = self.floor_state(floor)["changed"].pop("%d,%d" % (x, y))
+        st["mlead"] = dict(e, area=self.where_key(), x=x, y=y,
+                           home=[floor, x, y])
+        animal, room = LEADS_TO[e["spell"]]
+        self.say("You clip the leash on. The %s that was %s %s along "
+                 "behind you. (Lead her into your %s.)" % (
+                     animal, an(MONSTERS[e["kind"]].name), {
+                         "hen": "clucks and trots", "cow": "moos and plods",
+                         "sheep": "bleats and skips", "cat": "mews and "
+                         "pads", "dog": "wags and bounds"}[animal],
+                     {"coop": "coop", "barn": "barn",
+                      "cabin": "cabin"}[room]), "good")
+        self.end_turn(1)
+
+    def mlead_return(self):
+        """Lost hold of the leash: she wanders back to where she was."""
+        f = self.st.get("mlead")
+        if not f:
+            return
+        floor, x, y = f["home"]
+        e = {k: v for k, v in f.items() if k not in ("area", "x", "y",
+                                                     "home")}
+        self.floor_state(floor)["changed"]["%d,%d" % (x, y)] = e
+        self.st["mlead"] = None
+        self.say("The %s on your leash slipped away, back down into the "
+                 "mine." % LEADS_TO[e["spell"]][0], "info")
+
+    def mlead_follow(self, before):
+        """After you move she comes too: into your old square, or beside
+        you when you've changed places. Into the right room and she's
+        yours."""
+        f = self.st["mlead"]
+        area, pos = before
+        here = self.where_key()
+        animal, room = LEADS_TO[f["spell"]]
+        if here == room and area != room:
+            if self.mlead_home(f):
+                return
+        if here != "valley" and here not in BUILDINGS and \
+                not here.startswith("mine:"):
+            return                      # she waits outside the outhouse
+        if f["area"] != here or area != here:
+            x, y = self.pos()
+            spots = [(x + dx, y + dy) for dx, dy in DIRS]
+            spots = [p for p in spots if self.can_stand(*p) and
+                     not self.npc_at(*p) and not self.mob_at(*p) and
+                     not self.changed_at(*p) and (self.area.key != "mine" or
+                                                  self.area.grid[p[1]][
+                                                      p[0]].startswith(
+                                                      "mfloor_"))]
+            if spots:
+                f["area"] = here
+                f["x"], f["y"] = spots[0]
+        elif self.pos() != tuple(pos) and f["area"] == here:
+            f["x"], f["y"] = pos
+
+    def mlead_home(self, f):
+        """Into the coop, barn or cabin: one of your animals now, if
+        there's room. True if she's in."""
+        st = self.st
+        animal, room = LEADS_TO[f["spell"]]
+        full = (len(st["chickens"]) >= COOP_ROOM if animal == "hen" else
+                len(st["cows"]) >= BARN_ROOM if room == "barn" else
+                len(st["pets"]) >= PET_ROOM)
+        if full:
+            self.say("There's no room for another %s. She waits by the "
+                     "door with you." % animal, "info")
+            return False
+        c = (self.add_chicken() if animal == "hen" else self.add_cow()
+             if animal == "cow" else self.add_sheep() if animal == "sheep"
+             else self.add_pet(animal))
+        c["colour"] = f["colour"]
+        name = MONSTER_PET_NAMES[f["kind"]]
+        used = {o["name"] for o in st["chickens"] + st["cows"] + st["pets"]}
+        for i, roman in enumerate(("", " II", " III", " IV", " V")):
+            if name + roman not in used:
+                break
+        c["name"] = name + roman
+        c["was"] = f["kind"]
+        st["mlead"] = None
+        self.sound.play({"cat": "meow", "dog": "bark", "sheep": "baa"}.get(
+            animal, "pick"))
+        self.say("You unclip the leash. The %s that was %s is yours now: "
+                 "you call her %s.%s" % (
+                     animal, an(MONSTERS[f["kind"]].name), c["name"],
+                     " She trots out to the farmyard." if animal == "dog"
+                     else ""), "quest")
+        self.render()
+        return True
+
+    def mlead_bump(self, f):
+        self.open_menu("The %s on your leash" % LEADS_TO[f["spell"]][0], [
+            ("Let her go (back to the mine)", lambda: (
+                self.mlead_return(), self.render())),
+            ("Never mind", lambda: None)])
+
+    def mlead_swap(self, f):
+        x, y = self.pos()
+        f["x"], f["y"], self.st["pos"] = x, y, [f["x"], f["y"]]
+        self.end_turn(1)
+
     # ── Juniper's museum ──
 
     def museum_cases(self):
@@ -10220,6 +10371,10 @@ class Game:
 
     def use_tool(self):
         if not self.ready():
+            return
+        f = self.mlead_at(*self.ahead())
+        if f:
+            self.mlead_bump(f)
             return
         if self.area.key == "mine" and self.held() != "magic wand":
             self.mine_swing()
@@ -12764,6 +12919,9 @@ class Game:
         elif st.get("leashed"):
             self.say("You've only the one leash, and %s is on it." %
                      VILLAGERS[st["leashed"]]["short"], "info")
+        elif st.get("mlead"):
+            self.say("You've only the one leash, and the %s from the mine "
+                     "is on it." % LEADS_TO[st["mlead"]["spell"]][0], "info")
         else:
             st["leashed"] = vid
             n.goal, n.path, n.stuck, n.visit = None, [], 0, None
@@ -14040,6 +14198,7 @@ class Game:
 
     def collapse(self):
         self.stash_floor()
+        self.mlead_return()
         self.mine = None
         self.st["mine_loo"] = None
         self.end_talk()
@@ -16145,6 +16304,9 @@ class Game:
             for mob in self.mine["mobs"]:
                 if near(mob.x, mob.y):
                     people[(mob.x, mob.y)] = mob.tile
+        f = st.get("mlead")
+        if f and f["area"] == self.where_key():
+            people[(f["x"], f["y"])] = self.mlead_tile(f)
         if a.key == "cabin":
             for m in st.get("mmaids", ()):
                 people[(m["x"], m["y"])] = "mmaid_" + m["kind"]

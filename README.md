@@ -265,6 +265,15 @@ for what it gives:
 | Dogify | a dog | 20 energy |
 | Looify | a working outhouse | go in and use it like any other (the almanac, the Gazette riddle and the carvings are all there); empty its pit with a hoe for fertilizer |
 
+With Mabel's **leash** you can **lead a hen, cow, sheep, cat or dog home**:
+she follows a step behind you, up the ladders, out of the mine and across
+the valley (monsters leave her be). Lead her into your coop (a hen), barn
+(a cow or sheep) or cabin (a cat or dog, who then lives in the farmyard)
+and she's one of your animals, named for what she was: Gobbles the
+goblin, Bones the skeleton, Sparky the imp... Walk into her on the way
+and you swap places; use a tool on her to let her go back to the mine,
+which is also where she runs if you're knocked out or collapse.
+
 They stand in the way, but walk into one you've already had from today
 (or choose Squeeze Past) and you slip by. Monsters won't go near them.
 Genderswap just leaves a monster baffled for a few turns. The Mine King is
