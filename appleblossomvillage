@@ -9965,11 +9965,38 @@ class Game:
         m = self.mm_partner()
         return m["name"] if m else None
 
+    def mmaid_where(self, m):
+        """Where a monster maid is now: (area, x, y). On a dry morning a
+        maid with a chore out on the farm stands in the farmyard from six
+        till nine, like the villager maids; otherwise she's in the cabin."""
+        st = self.st
+        if m["chore"] in ("water", "harvest", "weed") and \
+                st["weather"] not in ("rain", "storm", "snow") and \
+                600 <= self.hhmm() < 900:
+            if m.get("out") != st["day"]:
+                if getattr(self, "placing_maids", False):
+                    return "nowhere", -1, -1    # (being found a spot)
+                self.placing_maids = True
+                try:
+                    taken = {(n.where, n.x, n.y) for n in self.npcs.values()}
+                    taken |= {("valley", o["ox"], o["oy"])
+                              for o in self.mmaids() if o is not m and
+                              o.get("out") == st["day"]}
+                    x, y = OUT_SPOTS["farmyard"]
+                    m["ox"], m["oy"] = self.free_spot("valley", x, y + 1,
+                                                      taken)
+                    m["out"] = st["day"]
+                finally:
+                    self.placing_maids = False
+            return "valley", m["ox"], m["oy"]
+        return "cabin", m["x"], m["y"]
+
     def mmaid_at(self, x, y, area=None):
-        if (area or self.area).key != "cabin":
+        key = (area or self.area).key
+        if key not in ("cabin", "valley"):
             return None
         for m in self.mmaids():
-            if (m["x"], m["y"]) == (x, y):
+            if self.mmaid_where(m) == (key, x, y):
                 return m
         return None
 
@@ -9983,7 +10010,8 @@ class Game:
                 if a.grid[y][x] in WALKABLE and a.grid[y][x] != "exit"
                 and (x, y) not in spots and abs(x - ex) + abs(y - ey) > 1
                 and not self.npc_at(x, y, a) and not self.decor_at(x, y, a)
-                and not self.mmaid_at(x, y, a)
+                and not any((m["x"], m["y"]) == (x, y)
+                            for m in self.mmaids())
                 and self.pet_at("cabin", x, y) is None
                 and not (self.area is a and (x, y) == self.pos())]
         if not free:
@@ -10225,7 +10253,9 @@ class Game:
     def squeeze_mmaid(self, m):
         self.end_talk()
         x, y = self.pos()
-        m["x"], m["y"], self.st["pos"] = x, y, [m["x"], m["y"]]
+        out = self.mmaid_where(m)[0] == "valley"
+        kx, ky = ("ox", "oy") if out else ("x", "y")
+        m[kx], m[ky], self.st["pos"] = x, y, [m[kx], m[ky]]
         self.say("You squeeze past %s, who flattens herself against the "
                  "wall." % m["name"], "info")
         self.end_turn(1)
@@ -16915,9 +16945,11 @@ class Game:
         f = st.get("mlead")
         if f and f["area"] == self.where_key():
             people[(f["x"], f["y"])] = self.mlead_tile(f)
-        if a.key == "cabin":
-            for m in st.get("mmaids", ()):
-                people[(m["x"], m["y"])] = "mmaid_" + m["kind"]
+        if a.key in ("cabin", "valley"):
+            for m in self.mmaids():
+                where, x, y = self.mmaid_where(m)
+                if where == a.key:
+                    people[(x, y)] = "mmaid_" + m["kind"]
         for pet in st.get("pets", ()):
             if pet["where"] == a.key:
                 people[(pet["x"], pet["y"])] = "%s_%s" % (pet["kind"],

@@ -332,7 +332,9 @@ comes to live there, with a name of her own (Ember the fire imp, Bonnie
 the skeleton, Wisp the ghost, Gobbelina the goblin...), and her hair the
 monster's colour. Walk into her to talk, portrait and all: chat (she'll
 tell you about the monster she was), give her a chore (the
-same chores as any maid, done every morning), or squeeze past. Nothing
+same chores as any maid, done every morning; on a dry morning a maid
+watering, picking or clearing the fields is out in the farmyard from six
+till nine, like the villager maids), or squeeze past. Nothing
 turns her back, so instead you can **dismiss** her (you're asked to make
 sure): she folds her apron and is gone for good.
 
