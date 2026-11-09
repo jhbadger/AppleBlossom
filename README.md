@@ -70,6 +70,19 @@ dies if its season ends before you pick it. There are 14 crops: turnip, potato,
 strawberry, cauliflower and pea in spring; tomato, corn, melon, blueberry and
 sunflower in summer; and pumpkin, cranberry, yam, eggplant and corn in fall.
 
+**Crop quality.** A crop that was watered every day it grew (rain counts)
+may come up **gold**, worth half as much again; one watered most days may
+come up **silver**, worth a quarter more. Fertilizer makes both likelier.
+Silver and gold crops are still that crop to anyone you give them to, and
+in Nell's preserves jar.
+
+**The greenhouse.** Ivy will build you a glass greenhouse beside your coop
+(6,000g, 100 wood and 100 stone). Inside are 24 beds, already dug, where
+**any crop grows in any season**, out of the weather: no rain to water them,
+so fill your can at the water butt by the door, and no frost to kill them.
+Once it's up, Mabel sells every crop's seeds all year round. Maids on the
+watering and picking chores see to the greenhouse too.
+
 Put anything sellable in the **shipping bin** and you're paid overnight.
 Grandmother's apple trees fruit in the fall. Wild things to forage turn up in
 the woods, the meadows and on the beach every morning. Otto's **sprinklers**
@@ -546,7 +559,7 @@ gift.
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
 | Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, swords for the old mine, smelting ore and upgrading tools, fine gifts, the Blossom Pendant |
-| Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, the barn, a silo, and the cabin extension |
+| Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, the barn, a greenhouse, a silo, and the cabin extension |
 | The dock | Theo Fairweather | fishing rods and lures, 10 till 3 |
 | The Library | Juniper Marsh | books, Pip's schoolroom, and the museum of artifacts from the old mine |
 | Mayor's House | Mayor Edmund Pell | festivals, history |

@@ -101,7 +101,7 @@ WALKABLE = {
     "floor", "boards", "rug", "tile", "exit", "logfloor", "stone_floor",
     "straw",
     # the old mine
-    "mfloor_0", "mfloor_1", "mfloor_2", "mfloor_3"}
+    "mfloor_0", "mfloor_1", "mfloor_2", "mfloor_3", "gbed"}
 WATER = {"water", "river", "pond"}
 TILLABLE = {"grass", "meadow", "flowers", "path", "tallgrass"}
 OUTDOOR_GROUND = {"grass", "meadow", "flowers", "path", "cobble", "sand",
@@ -292,10 +292,10 @@ def thatch(rng, base):
 
 ROOFS = {"red": "#c05a40", "blue": "#5a7ab0", "green": "#5a9a5a",
          "slate": "#6a6a80", "purple": "#8a5aa0", "thatch": "#d8b060",
-         "pink": "#e08aa8"}
+         "pink": "#e08aa8", "glass": "#9ccce0"}
 WALLS = {"wood": ("#a87850", "#7a5430"), "white": ("#f0e8d0", "#6a4428"),
          "brick": ("#b05a44", "#6a3424"), "stone": ("#a8a090", "#7a7468"),
-         "log": ("#8a5a34", "#5a3a20")}
+         "log": ("#8a5a34", "#5a3a20"), "glass": ("#bfe2ee", "#e8f4f8")}
 
 
 def wall_face(rng, mat):
@@ -312,6 +312,17 @@ def wall_face(rng, mat):
         return stone_blocks(rng, base, "#d8c8b0", 6, 4)
     if mat == "stone":
         return stone_blocks(rng, base, line, 5, 4)
+    if mat == "glass":                          # panes in white frames
+        g = grid_of(base)
+        for i in range(0, 16, 5):
+            rect(g, i, 0, i, 15, line)
+            rect(g, 0, i, 15, i, line)
+        for _ in range(6):
+            x, y = rng.randrange(1, 15), rng.randrange(1, 15)
+            if g[y][x] == base:
+                g[y][x] = "#dff2f8"
+        speckle_within(g, rng, base, ["#7ab070", "#8ac080"], 0.12)
+        return g
     g = grid_of(base)                           # half-timbered
     speckle(g, rng, ["#e8e0c8"], 0.2)
     for x in (0, 15):
@@ -657,7 +668,9 @@ def draw_terrain(name, frame=0, season=0):
     # buildings: roof_<colour>, eave_<colour>, wall_/win_/door_<material>
     if name.startswith("roof_") or name.startswith("eave_"):
         col = ROOFS[name[5:]]
-        g = thatch(rng, col) if name.endswith("thatch") else roof(rng, col)
+        g = thatch(rng, col) if name.endswith("thatch") else \
+            wall_face(rng, "glass") if name.endswith("glass") else \
+            roof(rng, col)
         if s == 3:
             for y in range(16):
                 for x in range(16):
@@ -685,6 +698,23 @@ def draw_terrain(name, frame=0, season=0):
         return planks(rng, "#a07850", "#7a5838", vertical=True, width=5)
     if name == "logfloor":
         return planks(rng, "#b08050", "#805a34", width=5)
+    if name in ("gbed", "gbed_w", "glasswall", "butt"):  # the greenhouse
+        if name == "glasswall":
+            g = wall_face(rng, "glass")
+            rect(g, 0, 13, 15, 15, "#8a6a4a")
+            return g
+        g = stone_blocks(rng, "#9a948a", "#7a7468", 8, 8)
+        if name == "butt":
+            rect(g, 3, 2, 12, 14, "#7a5030")
+            rect(g, 3, 2, 12, 4, "#4a7ab0")
+            for y in (6, 11):
+                rect(g, 3, y, 12, y, "#5a5a60")
+            return g
+        rect(g, 0, 0, 15, 15, "#8a5a30")
+        rect(g, 1, 1, 14, 14, "#5a3a20" if name == "gbed_w" else "#7a5a3a")
+        speckle_within(g, rng, g[2][2], [shade(g[2][2], 0.85),
+                                         shade(g[2][2], 1.15)], 0.3)
+        return g
     if name == "stone_floor":
         return stone_blocks(rng, "#9a948a", "#7a7468", 8, 8)
     if name == "rug":
@@ -1313,6 +1343,18 @@ ITEMS = {
 }
 for _c in CROPS:
     ITEMS[_c] = (crop(_c, "price"), crop(_c, "energy"), "crop")
+QUALITY = {"silver": 1.25, "gold": 1.5}     # a well-kept crop sells for more
+for _c in CROPS:
+    for _q, _f in QUALITY.items():
+        ITEMS["%s %s" % (_q, _c)] = (int(crop(_c, "price") * _f),
+                                     crop(_c, "energy"), "crop")
+
+
+def base_item(n):
+    """A silver or gold crop is still that crop: 'gold tomato' ->
+    'tomato'."""
+    q, _, rest = n.partition(" ")
+    return rest if q in QUALITY and rest in CROPS else n
 
 # Nell's machines: put one on your farm, load it, come back for something
 # worth more.  Recipes: (what goes in, how many, what comes out, minutes;
@@ -5374,6 +5416,7 @@ SHOP_STOCK = {
                ("gold bar", 400),
                ("blossom pendant", 2000)],
     "carpentry": [("wood", 50), ("chicken coop", 1500), ("barn", 4000),
+                  ("greenhouse", 6000),
                   ("silo", 1000),
                   ("cabin extension", 3000)],
     "tackle": [("fishing rod", 100), ("fishing lure", 120)],
@@ -5384,6 +5427,7 @@ EXTRA_COST = {"sprinkler": {"stone": 5},
               "broadsword": {"stone": 20},
               "chicken coop": {"wood": 80},
               "barn": {"wood": 150, "stone": 50},
+              "greenhouse": {"wood": 100, "stone": 100},
               "cabin extension": {"wood": 150},
               "mayonnaise jar": {"stone": 10},
               "preserves jar": {"wood": 10, "stone": 10},
@@ -5434,6 +5478,7 @@ BUILDINGS = {
     "shack": (86, 43, 6, 5, "blue", "wood", "Theo's Shack"),
     "coop": (25, 21, 5, 4, "red", "wood", "your chicken coop"),
     "barn": (26, 8, 8, 5, "red", "wood", "your barn"),
+    "greenhouse": (31, 19, 9, 5, "glass", "glass", "your greenhouse"),
     # the east quarter
     "bakery": (99, 21, 7, 5, "red", "brick", "Vega's Bakery"),
     "postoffice": (107, 21, 7, 5, "blue", "white", "the Post Office"),
@@ -5446,7 +5491,7 @@ BUILDINGS = {
     "amy": (55, 9, 7, 5, "thatch", "wood", "Amy's Cottage"),
     "rusty": (76, 42, 7, 5, "purple", "white", "Rusty's Studio"),
 }
-ON_ORDER = {"coop", "barn"}             # buildings that stand only once you've
+ON_ORDER = {"coop", "barn", "greenhouse"}             # buildings that stand only once you've
                                 # paid for them
 
 
@@ -5909,6 +5954,16 @@ LOO_FLOWERS = ("daffodil", "sweet pea", "crocus", "rose", "sunflower",
                "dandelion")
 LOO_DECOR = {"flowers": "a jar of flowers", "wreath": "a holly wreath",
              "curtains": "curtains for the moon window"}
+ROOMS["greenhouse"] = ("stone_floor", "W", (   # beds where anything grows
+    "IIIIIIIIIII",
+    "Iu........I",
+    "I.zzz.zzz.I",
+    "I.zzz.zzz.I",
+    "I.........I",
+    "I.zzz.zzz.I",
+    "I.zzz.zzz.I",
+    "I.........I",
+    "IIIIIxIIIII"))
 EXTRA_ROOMS = {   # rooms that aren't buildings in the valley
     "loo": ("boards", "l", (     # inside whichever outhouse you're in
         "lllmlll",
@@ -5918,7 +5973,8 @@ EXTRA_ROOMS = {   # rooms that aren't buildings in the valley
 }
 ROOM_TILES = {"Y": "hay", "U": "churn", "H": "loohole", "j": "loobench",
               "m": "moonwin", "g": "loopaper", "e": "loobend", "n": "nest", "q": "trough", "W": "wall", "w": "iwin", "l": "logwall", "L": "toolrack",
-              "V": "case", "x": "exit", "B": "bed", "D": "bed2", "T": "table",
+              "V": "case", "I": "glasswall", "z": "gbed", "u": "butt",
+              "x": "exit", "B": "bed", "D": "bed2", "T": "table",
               "h": "chair", "C": "counter", "S": "shelf", "G": "goods",
               "K": "seeds", "O": "stove", "F": "fireplace", "X": "forge",
               "A": "anvil", "R": "barrel", "c": "crates", "P": "plant",
@@ -6733,6 +6789,7 @@ def parse_line(line):
 
 
 def gift_taste(vid, item):
+    item = base_item(item)
     v = VILLAGERS[vid]
     kind = "kind:" + ITEMS.get(item, (0, 0, "?"))[2]
     for taste in ("loves", "hates", "dislikes", "likes"):
@@ -7618,7 +7675,9 @@ V / B           sound / music on and off
 
 The hoe tills, the can waters (fill it at water or the
 well), seeds go in tilled soil.  Watered crops grow a day
-each night.  Pick ripe crops by using anything on them.
+each night.  Crops watered every day may come up silver
+or gold, worth more; fertilizer helps.  Ivy builds a
+greenhouse where anything grows, all year.  Pick ripe crops by using anything on them.
 Put things in the shipping bin and you're paid overnight.
 Ivy builds chicken coops and Mabel sells hens; each hen
 lays an egg a night.  Walk into a hen to pet or rename her.
@@ -8934,7 +8993,7 @@ class Game:
         """Homes are open while someone's home and awake; shops in their
         hours; your own cabin always."""
         h = self.hhmm()
-        if key in ("cabin", "coop", "barn"):
+        if key in ("cabin", "coop", "barn", "greenhouse"):
             return True
         if self.festival_on() and key not in ("inn",):
             return False
@@ -9880,6 +9939,7 @@ class Game:
 
     def mm_taste(self, m, item):
         r = MONSTER_ROMANCE[m["kind"]]
+        item = base_item(item)
         for taste, key in (("love", "loves"), ("hate", "hates"),
                            ("like", "likes")):
             if item in r[key]:
@@ -10175,6 +10235,85 @@ class Game:
         f["x"], f["y"], self.st["pos"] = x, y, [f["x"], f["y"]]
         self.end_turn(1)
 
+    # ── The greenhouse ──
+    #
+    # Ivy's glasshouse on your farm: beds ("gh": "x,y" -> the same
+    # [watered, crop, days grown, dead] as the fields) where any crop grows
+    # in any season, out of the weather.  Water them from the butt.
+
+    def gh_tool(self, x, y, h):
+        st, p = self.st, self.p
+        a = self.area
+        t = a.grid[y][x] if a.inside(x, y) else None
+        k = "%d,%d" % (x, y)
+        if t == "butt":
+            if h == "watering can":
+                p["water"] = p["can"]
+                self.sound.play("water")
+                self.say("You fill the watering can from the butt.", "info")
+                self.end_turn(1)
+            else:
+                self.say("A water butt, full of rainwater off the glass.",
+                         "info")
+                self.render()
+            return
+        if t != "gbed":
+            self.say("Not in here.", "info")
+            self.render()
+            return
+        beds = st.setdefault("gh", {})
+        s = beds.setdefault(k, [0, None, 0, 0])
+        if s[1] and self.ripe(s):
+            self.harvest(x, y, beds, "gh:")
+            return
+        if h and h.endswith(" seeds"):
+            if s[1]:
+                self.say("Something's already growing there.", "info")
+                self.render()
+                return
+            s[1], s[2], s[3] = h[:-6], 0, 0
+            st.setdefault("care", {})["gh:" + k] = [0, 0, 0]
+            self.take(h)
+            self.sound.play("pick")
+            self.end_turn(1)
+            return
+        if h == "watering can":
+            if not s[1]:
+                self.say("Nothing's planted there yet.", "info")
+            elif s[0]:
+                self.say("That's already damp.", "info")
+            elif p["water"] <= 0:
+                self.say("The can's empty. Fill it at the water butt.", "bad")
+            elif self.spend(h):
+                for kk in [k] + ["%d,%d" % q for q in self.row_ahead(x, y, h)]:
+                    b = beds.get(kk)
+                    if b and b[1] and not b[0] and p["water"] > 0:
+                        b[0] = 1
+                        p["water"] -= 1
+                self.sound.play("water")
+                self.end_turn(TOOL_COST - 1)
+                return
+            self.render()
+            return
+        if h == "fertilizer" and s[1]:
+            if st["fertilized"].get("gh:" + k) == st["day"]:
+                self.say("You've already fed that one today.", "info")
+                self.render()
+                return
+            st["fertilized"]["gh:" + k] = st["day"]
+            st.setdefault("care", {}).setdefault("gh:" + k, [0, 0, 0])[2] += 1
+            s[2] += 1
+            self.take("fertilizer")
+            self.sound.play("pick")
+            self.say("You work fertilizer in round the %s. A day's growth "
+                     "overnight." % s[1], "good")
+            self.end_turn(1)
+            return
+        self.say("A bed of good dark soil. Plant seeds here: anything grows "
+                 "in the greenhouse, whatever the season." if not s[1] else
+                 "The %s is coming along nicely." % s[1], "info")
+        self.render()
+
     # ── Juniper's museum ──
 
     def museum_cases(self):
@@ -10315,6 +10454,16 @@ class Game:
                                     y - self.pos()[1]) is not None
         if h in STATUE_OF:
             return self.statue_spot(x, y)
+        if a.key == "greenhouse" and a.inside(x, y):
+            t = a.grid[y][x]
+            s = self.st.get("gh", {}).get("%d,%d" % (x, y))
+            if t == "butt":
+                return h == "watering can"
+            return t == "gbed" and bool(
+                (s and self.ripe(s)) or (h and h.endswith(" seeds") and not
+                                          (s and s[1])) or
+                (h == "watering can" and s and s[1] and not s[0]) or
+                (h == "fertilizer" and s and s[1] and not self.ripe(s)))
         if h == "milk pail" and a.key == "barn":
             i = self.cow_at(x, y)
             return i is not None and self.milk_ready(self.st["cows"][i])
@@ -11793,32 +11942,35 @@ class Game:
         do."""
         st = self.st
         if chore == "water":
-            soil = [s for s in st["soil"].values() if s[1] and not s[3]]
-            if not soil or st["weather"] in ("rain", "storm"):
+            gh = st.setdefault("gh", {})
+            dry = [s for s in list(st["soil"].values()) + list(gh.values())
+                   if s[1] and not s[3] and not s[0]]
+            if not dry or (st["weather"] in ("rain", "storm") and
+                           not any(s[1] for s in gh.values())):
                 return None
-            for s in st["soil"].values():
+            for s in list(st["soil"].values()) + list(gh.values()):
                 s[0] = 1
-            return "watered all the crops"
+            return "watered all the crops" + (
+                ", the greenhouse's too" if any(s[1] for s in gh.values())
+                else "")
         if chore == "harvest":
             got = {}
-            for k, s in st["soil"].items():
-                if self.ripe(s):
-                    name = s[1]
-                    got[name] = got.get(name, 0) + 1
-                    regrow = crop(name, "regrow")
-                    if regrow:
-                        s[2] = crop(name, "days") - regrow
-                    else:
-                        s[1], s[2] = None, 0
+            for beds, pre in ((st["soil"], ""),
+                              (st.setdefault("gh", {}), "gh:")):
+                for k, s in beds.items():
+                    if self.ripe(s):
+                        item, n = self.pick_crop(pre + k, s)
+                        self.take(item, n)
+                        got[item] = got.get(item, 0) + n
             for t in st["orchard"].values():
                 if t.get("fruit"):
                     got[t["kind"]] = got.get(t["kind"], 0) + t["fruit"]
+                    st["stats"]["harvested"] += t["fruit"]
                     t["fruit"] = 0
             if not got:
                 return None
             for item, c in got.items():
                 self.give(item, c)
-            st["stats"]["harvested"] += sum(got.values())
             return "picked %s and put %s in your bag" % (and_list(
                 ["%d %s" % (c, plural(n, c)) for n, c in sorted(got.items())]),
                 "it" if sum(got.values()) == 1 else "them")
@@ -13540,11 +13692,14 @@ class Game:
         out = []
         for need, n, made, mins in MACHINES[kind]:
             if need in ("jam", "pickle"):
-                for c in (JAM_FRUIT if need == "jam" else PICKLE_VEG):
-                    if have.get(c, 0) >= n:
-                        prod = c + " jam" if need == "jam" else "pickled " + c
-                        out.append(("Make %s (1 %s, have %d)" % (
-                            prod, c, have[c]), c, n, prod, mins))
+                for plain in (JAM_FRUIT if need == "jam" else PICKLE_VEG):
+                    for c in [plain] + ["%s %s" % (q, plain)
+                                        for q in QUALITY]:
+                        if have.get(c, 0) >= n:
+                            prod = plain + " jam" if need == "jam" else \
+                                "pickled " + plain
+                            out.append(("Make %s (1 %s, have %d)" % (
+                                prod, c, have[c]), c, n, prod, mins))
             elif have.get(need, 0) >= n:
                 out.append(("Make %s (%d %s, have %d)" % (
                     an(made) if made in ("wool scarf",) else made, n, need,
@@ -13691,6 +13846,9 @@ class Game:
             return
         if h in STATUE_OF:
             self.place_statue(x, y, h)
+            return
+        if self.area.key == "greenhouse":
+            self.gh_tool(x, y, h)
             return
         a = self.area
         k = "%d,%d" % (x, y)
@@ -13852,6 +14010,7 @@ class Game:
             st["soil"][k][1] = cname
             st["soil"][k][2] = 0
             st["soil"][k][3] = 0
+            st.setdefault("care", {})[k] = [0, 0, 0]
             self.take(h)
             self.sound.play("pick")
             self.end_turn(1)
@@ -13878,6 +14037,7 @@ class Game:
                 self.say("You've already fed that one today.", "info")
                 return
             st["fertilized"][k] = st["day"]
+            st.setdefault("care", {}).setdefault(k, [0, 0, 0])[2] += 1
             th[1][2] += 1
             self.take("fertilizer")
             self.sound.play("pick")
@@ -13982,22 +14142,46 @@ class Game:
         return "c_%s_%d" % (s[1], 3 if f >= 1 else 0 if s[2] == 0 else
                             1 if f < 0.5 else 2)
 
-    def harvest(self, x, y):
-        k = "%d,%d" % (x, y)
-        s = self.st["soil"][k]
+    def quality(self, k):
+        """How well a crop was kept decides what you pick: watered every
+        day it was growing and it may come up gold; most days, silver.
+        Fertilizer makes it likelier. Returns '', 'silver ' or 'gold '."""
+        days, wet, fed = self.st.setdefault("care", {}).get(k, [0, 0, 0])
+        if not days:
+            return ""
+        r, kept, fed = random.random(), wet / days, min(fed, 2)
+        if kept >= 1 and r < 0.12 + 0.18 * fed:
+            return "gold "
+        if kept >= 0.75 and r < 0.4 + 0.15 * fed:
+            return "silver "
+        return ""
+
+    def pick_crop(self, k, s):
+        """Take what's ripe in a bed: what you got (one crop, perhaps two,
+        of one quality), and the bed ready to grow again."""
         name = s[1]
+        got = self.quality(k) + name
         n = 2 if random.random() < 0.12 else 1
-        self.give(name, n)
+        self.give(got, n)
         regrow = crop(name, "regrow")
         if regrow:
             s[2] = crop(name, "days") - regrow
         else:
             s[1], s[2] = None, 0
+        self.st["care"][k] = [0, 0, 0]
         self.st["stats"]["harvested"] += n
-        self.sound.play("pick")
+        return got, n
+
+    def harvest(self, x, y, beds=None, pre=""):
+        k = "%d,%d" % (x, y)
+        s = (beds or self.st["soil"])[k]
+        got, n = self.pick_crop(pre + k, s)
+        fine = base_item(got) != got
+        self.sound.play("gold" if fine else "pick")
         self.flash(x, y, "sparkle")
-        self.say("You pick %s%s!" % ("two " if n > 1 else "a ",
-                                     plural(name, n)), "good")
+        self.say("You pick %s!%s" % (
+            "two " + plural(got, 2) if n > 1 else an(got),
+            " Beautifully kept." if fine else ""), "gold" if fine else "good")
         self.end_turn(1)
 
     def pick_apples(self, x, y):
@@ -14248,11 +14432,17 @@ class Game:
             self.say("%s laid %s overnight." % (
                 "Your hen" if n == 1 else "Your %d hens" % n,
                 "an egg" if n == 1 else "an egg each"), "good")
-        # the crops
-        for k, s in st["soil"].items():
-            if s[1] and s[0] and not s[3]:
-                s[2] += 1
-            s[0] = 0
+        # the crops, and the greenhouse's
+        care = st.setdefault("care", {})
+        for beds, pre in ((st["soil"], ""), (st.setdefault("gh", {}), "gh:")):
+            for k, s in beds.items():
+                if s[1] and not s[3] and not self.ripe(s):
+                    c = care.setdefault(pre + k, [0, 0, 0])
+                    c[0] += 1
+                    if s[0]:
+                        c[1] += 1
+                        s[2] += 1
+                s[0] = 0
         fest = self.festival_today()
         prank = fest and fest[0] == "Harvest Fair" and [
             v for v in st["loos"] if not self.loo_state(v)["tipped"]]
@@ -15320,15 +15510,16 @@ class Game:
         out = []
         for entry in SHOP_STOCK[kind]:
             if entry == "seeds":
-                for c in sorted(CROPS):
-                    if self.season() in crop(c, "seasons"):
+                for c in sorted(CROPS):         # all year, for a greenhouse
+                    if self.season() in crop(c, "seasons") or \
+                            "greenhouse" in self.built():
                         out.append((c + " seeds", crop(c, "seed")))
                 continue
             name, price = entry
             if name in ("fishing rod", "leash", "milk pail", "shears") and \
                     name in self.p["tools"]:
                 continue
-            if name == "barn" and "barn" in self.built():
+            if name in ("barn", "greenhouse") and name in self.built():
                 continue
             if name in ("cat", "dog") and len(self.st["pets"]) >= PET_ROOM:
                 continue
@@ -15498,6 +15689,12 @@ class Game:
                             "Her name's %s. Milk her every other day, and "
                             "shear her when she's gone all fluffy, every "
                             "third day or so." % c["name"])
+            return
+        elif name == "greenhouse":
+            self.build_on_farm("greenhouse")
+            self.speak(vid, "(happy)There! Glass on every side, up past "
+                            "your coop. Anything'll grow in there, summer or "
+                            "snow. You still have to water it, mind.")
             return
         elif name == "barn":
             self.build_barn()
@@ -16357,6 +16554,12 @@ class Game:
                         mid = "egg"
                     if a.key == "loo":
                         mid = self.loo_inside().get((x, y), mid)
+                    if t == "gbed":
+                        s = st.get("gh", {}).get(k)
+                        if s and s[0]:
+                            base = "gbed_w"
+                        if s and s[1]:
+                            mid = self.stage(s)
                     if a.key in ("coop", "barn") and t == "trough" and \
                             st["trough"].get(a.key):
                         mid = "haypile"
@@ -16399,7 +16602,8 @@ class Game:
                                      state="normal")
         # the square you're facing
         fx, fy = self.ahead()
-        if (a.outdoor or self.held() == "magic wand") and not self.talk \
+        if (a.outdoor or a.key == "greenhouse" or
+                self.held() == "magic wand") and not self.talk \
                 and self.tool_applies(fx, fy):
             sx, sy = ox + (fx - cx) * ts, oy + (fy - cy) * ts
             c.coords(self.cursor, sx + 1, sy + 1, sx + ts - 1, sy + ts - 1)
@@ -17143,6 +17347,8 @@ def and_list(words):
 
 
 def plural(s, n):
+    if base_item(s) != s:                       # gold corn, silver peas
+        return s.split()[0] + " " + plural(base_item(s), n)
     if n == 1 or s.endswith(("s", "fish")) or s in (
             "wood", "stone", "fiber", "corn", "holly", "coral", "bread",
             "tea", "coffee", "stew", "salad", "chocolate", "salmon", "tuna",
@@ -17195,6 +17401,9 @@ def describe_item(n):
     if kind == "artifact":
         bits.append("Something old from the mine, for Juniper's museum "
                     "at the library.")
+    if base_item(n) != n:
+        bits.append("A %s %s, kept just so: worth more than a plain one." %
+                    (n.split()[0], base_item(n)))
     if kind == "statue":
         bits.append("Heavy, golden and gleaming. Hold it and set it down on "
                     "your farm or in your cabin.")
@@ -19623,7 +19832,8 @@ TERRAIN = ["grass", "tallgrass", "meadow", "flowers", "path", "cobble",
            "fireplace", "forge", "anvil", "barrel", "crates", "plant", "cot",
            "cabinet", "piano", "easel", "nets", "toolrack", "straw", "nest",
            "trough", "loohole", "loobench", "hay", "churn", "moonwin",
-           "loopaper", "loobend", "cave"]
+           "loopaper", "loobend", "cave", "gbed", "gbed_w", "glasswall",
+           "butt"]
 TERRAIN += ["%s_%d" % (k, th) for th in range(len(MINE_THEMES))
             for k in ["mwall", "mfloor", "ladder_up", "ladder_down", "chest",
                       "chest_open"] + ["ore_" + m for m in METALS] +
@@ -20046,6 +20256,7 @@ def selftest():
             if entry != "seeds" and entry[0] not in ITEMS and entry[0] not \
                     in ("checkup", "cabin extension",
                         "chicken", "chicken coop", "leash", "barn",
+                        "greenhouse",
                         "cow", "milk pail", "sheep", "shears", "cat", "dog",
                         "fishing rod", "sprinkler", "short sword",
                         "broadsword"):
