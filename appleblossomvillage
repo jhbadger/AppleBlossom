@@ -1400,6 +1400,76 @@ for _n, _v in {   # dishes new to the valley: price, energy
         "pumpkin soup": (480, 90), "vegetable curry": (420, 110),
         "fruit crumble": (340, 85)}.items():
     ITEMS[_n] = (_v[0], _v[1], "food")
+MM_RECIPES = {   # a monster maid's own dish, taught at 4 hearts: kind ->
+    # (dish, ingredients, price, energy, what she says)
+    "slime": ("wobbly jelly", {"any fruit": 2, "honey": 1}, 360, 90,
+              "I've a recipe for you! Wobbly jelly. It reminds me of home. "
+              "Is that strange?"),
+    "frost_slime": ("ice cream", {"milk": 2, "any fruit": 1}, 380, 85,
+                    "I can make ice cream with my bare hands! Here's how. "
+                    "You'll need a cold kitchen, though."),
+    "shadow_slime": ("midnight blackberry pie", {"blackberry": 2, "egg": 1},
+                     400, 95, "My blackberry pie. Bake it late, when it's "
+                     "dark. It just tastes better."),
+    "bat": ("dusk fruit bowl", {"any fruit": 3}, 300, 80,
+            "A dusk fruit bowl! I used to fly miles for fruit like this. "
+            "Now I just pick it."),
+    "rat": ("cheese toastie", {"bread": 1, "cheese": 1}, 380, 100,
+            "The perfect cheese toastie. I've thought about it more than "
+            "you'd believe."),
+    "spider": ("spun-sugar cake", {"honey": 1, "egg": 1, "milk": 1}, 420,
+               95, "Spun-sugar cake. I spin the sugar into lace on top. "
+               "You can just drizzle it."),
+    "skeleton": ("custard", {"milk": 2, "egg": 1}, 340, 90,
+                 "Custard! Lots of milk, for strong bones. Trust me on "
+                 "this."),
+    "goblin": ("forest goulash", {"chanterelle": 1, "any vegetable": 2},
+               440, 110, "Goblin goulash! Forest goulash, I mean. "
+               "Everything goes in. Well, nearly everything."),
+    "ghost": ("meringues", {"egg": 2, "honey": 1}, 360, 75,
+              "Meringues, light as a ghost. I'd know."),
+    "golem": ("rock cakes", {"egg": 1, "any fruit": 1, "milk": 1}, 360, 110,
+              "Rock cakes. They're not rocks. I checked."),
+    "imp": ("fire-roasted corn", {"corn": 2, "spice berry": 1}, 380, 100,
+            "Fire-roasted corn! I usually roast it with my hands, but the "
+            "stove will do."),
+}
+for _k, (_d, _need, _price, _energy, _say) in MM_RECIPES.items():
+    RECIPES[_d] = (_need, "mm:" + _k)
+    ITEMS[_d] = (_price, _energy, "food")
+MM_GOSSIP = {   # what the village says about each kind of monster maid
+    "slime": "{name} left a shiny trail all the way down the high street. "
+             "Very clean, though!",
+    "frost_slime": "{name} froze the fountain solid in the middle of "
+                   "summer. The children loved it.",
+    "shadow_slime": "I keep seeing {name} out of the corner of my eye. "
+                    "She's very shy, isn't she?",
+    "bat": "{name} was hanging upside down from the inn sign last night, "
+           "singing.",
+    "rat": "{name} was sniffing round the bakery bins. Marisol gave her a "
+           "bun.",
+    "spider": "Have you seen the lace {name} makes? Rusty wants to hire "
+              "her!",
+    "skeleton": "{name} came into Mabel's for milk. Six pints! For her "
+                "bones, she said.",
+    "goblin": "{name} tried to buy every shiny button in Mabel's shop.",
+    "ghost": "{name} gave the postman a terrible fright. She says she only "
+             "said hello.",
+    "golem": "{name} carried the mayor's piano upstairs for him. On her "
+             "own!",
+    "imp": "Somebody saw smoke coming out of your cabin window. Was that "
+           "{name} again?",
+}
+MINE_NEWS_SELF = {   # gossip told by the very person it's about
+    "mabel": [("came into Mabel's", "came into my shop"),
+              ("in Mabel's shop", "in my shop")],
+    "marisol": [("Marisol gave her a bun", "I gave her a bun")],
+    "rusty": [("Rusty wants to hire her", "I want to hire her")],
+    "edmund": [("carried the mayor's piano upstairs for him",
+                "carried my piano upstairs for me")],
+    "clara": [("gave the postman a terrible fright",
+               "gave my postman a terrible fright")],
+}
 RECIPE_LETTERS = {   # who: how their letter with the recipe begins
     "marisol": "My pancakes, the secret is not to stir too much. Don't "
                "tell the inn!",
@@ -9874,6 +9944,8 @@ class Game:
         if pts > 0 and self.area.key == "cabin":
             self.flash(m["x"], m["y"], "heart")
         after = self.mm_hearts(m)
+        if after >= 4:
+            self.mm_teach(m)
         if after > before and not quiet:
             self.sound.play("heart")
             self.say("%s: %s" % (m["name"], "♥" * after + "♡" * (
@@ -10534,6 +10606,19 @@ class Game:
                                         c, plural(item, c)), "info")
         (self.pantry_put_menu if put else self.pantry_take_menu)()
 
+    def mm_teach(self, m):
+        """A monster maid at 4 hearts shows you her own dish."""
+        dish, need, _, _, words = MM_RECIPES[m["kind"]]
+        known = self.st.setdefault(
+            "recipes", [d for d, (_, who) in RECIPES.items() if not who])
+        if dish in known:
+            return
+        known.append(dish)
+        self.say("\"%s\" says %s." % (words, m["name"]), "talk")
+        self.say("%s taught you a recipe: %s (%s)! Cook it at your stove." % (
+            m["name"], dish, and_list([ingredient(sp, n) for sp, n in
+                                       need.items()])), "quest")
+
     def clear_cabin_furniture(self):
         """Anything an older save left where furniture now stands in the
         cabin (the pantry, say) is moved off it."""
@@ -10561,7 +10646,8 @@ class Game:
         known = self.st.setdefault(
             "recipes", [d for d, (_, who) in RECIPES.items() if not who])
         for dish, (need, who) in RECIPES.items():
-            if who and dish not in known and self.hearts(who) >= 3:
+            if who and who in VILLAGERS and dish not in known and \
+                    self.hearts(who) >= 3:
                 known.append(dish)
                 self.mail(VILLAGERS[who]["short"], "%s\n\nRECIPE: %s. %s." % (
                     RECIPE_LETTERS[who], cap(dish), cap(and_list([
@@ -15539,8 +15625,64 @@ class Game:
         if st["tomorrow"] in ("rain", "storm"):
             opts.append("Theo says it'll rain tomorrow. He's usually "
                         "right. About weather.")
+        opts += self.mine_news(vid)
         opts += GENERIC_NEWS
         return random.choice(opts)
+
+    def mine_news(self, vid):
+        """What the village says about the mine, and what you've brought
+        out of it: monster maids above all."""
+        st, out = self.st, []
+        for m in self.mmaids():
+            was = MONSTERS[m["kind"]].name
+            out.append(MM_GOSSIP[m["kind"]].replace("{name}", m["name"]))
+            out.append({
+                None: "Is it true there's a maid in your cabin who used to "
+                      "be %s? %s, she's called? She waved at me!" % (
+                          an(was), m["name"]),
+                "dating": "You and %s? The one who used to be %s? Well! "
+                          "Love's love, I always say." % (m["name"], an(was)),
+                "engaged": "You're marrying %s! I've never been to a "
+                           "wedding with %s for a bride. I've bought a "
+                           "hat." % (m["name"], an(was)),
+                "married": "You married a maid who used to be %s! The "
+                           "whole valley's still talking about it. In a "
+                           "nice way." % an(was)}[m["status"]])
+        mine = st.get("mine", {})
+        if mine.get("king"):
+            out.append("(happy)You beat the Mine King! My grandad would've "
+                       "bought you a drink. I'll buy you two." if vid ==
+                       "otto" else "Is it true you beat the Mine King? Otto "
+                       "hasn't stopped telling everybody.")
+        elif mine.get("deepest", 0) >= 5:
+            out.append("They say you've been down to floor %d of the old "
+                       "mine. Rather you than me." % mine["deepest"])
+        n = len(st.get("museum", ()))
+        if n >= len(ARTIFACTS) + 1:
+            out.append("Juniper's museum is complete! There's a plaque with "
+                       "your name on it. I've been twice.")
+        elif n >= 3:
+            out.append("(blush)%d pieces in the museum now, thanks to you." %
+                       n if vid == "juniper" else "Juniper's ever so proud "
+                       "of her museum. %d pieces now!" % n)
+        was = [c for c in st["chickens"] + st["cows"] + st["pets"]
+               if c.get("was")]
+        if was:
+            c = random.choice(was)
+            out.append("Is it true %s on your farm used to be %s? %s" % (
+                c["name"], an(MONSTERS[c["was"]].name), random.choice((
+                    "Perfectly ordinary, I'm told.",
+                    "You'd never know to look at her.",
+                    "I'm not sure I'd turn my back on her."))))
+        if any(k.startswith("valley:") for k in st.get("decor", ())):
+            out.append("There's a golden monster standing on your farm! "
+                       "People walk all the way out just to look at it.")
+        if "greenhouse" in self.built():
+            out.append("Fresh crops in the dead of winter! That greenhouse "
+                       "of yours is the talk of the valley.")
+        for old, new in MINE_NEWS_SELF.get(vid, ()):    # about themselves
+            out = [line.replace(old, new) for line in out]
+        return out
 
     def farm_talk(self, vid):
         n = len(self.st["soil"])
@@ -16251,6 +16393,9 @@ class Game:
             self.say("Today's your wedding day! Go to the square between "
                      "ten and three.", "heart")
         self.teach_recipes()
+        for m in self.mmaids():
+            if self.mm_hearts(m) >= 4:
+                self.mm_teach(m)
         self.spouse_morning()
         self.pet_mornings()             # before the maids give today's fuss
         self.maid_morning()
@@ -17597,9 +17742,15 @@ def measure(item):
                 item, an(item))
 
 
+MASS_NOUNS = {"milk", "honey", "cheese", "custard", "ice cream", "wobbly jelly",
+              "forest goulash", "fire-roasted corn", "midnight cocoa",
+              "pumpkin soup", "vegetable curry", "fruit crumble", "stew",
+              "mayonnaise", "cloth", "corn", "fertilizer", "tea", "coffee"}
+
+
 def an(s):
     if s in ITEMS and ITEMS[s][2] in ("material",) or s.endswith("s") and \
-            s not in ("cress",):
+            s not in ("cress",) or s in MASS_NOUNS:
         return "some " + s
     return ("an " if s[:1] in "aeiou" else "a ") + s
 
@@ -17617,6 +17768,7 @@ def plural(s, n):
         return s.split()[0] + " " + plural(base_item(s), n)
     if n == 1 or s.endswith(("s", "fish")) or s in (
             "wood", "stone", "fiber", "corn", "holly", "coral", "bread",
+            "milk", "honey", "cheese", "custard", "ice cream",
             "tea", "coffee", "stew", "salad", "chocolate", "salmon", "tuna",
             "trout", "perch", "pike", "carp", "bream", "herring",
             "flounder", "catfish", "sunfish", "golden carp", "eel"):
@@ -20547,7 +20699,8 @@ def selftest():
                 problems.append("outfit colour %s unnamed" % c)
     for dish, (need, who) in RECIPES.items():
         if dish not in ITEMS or ITEMS[dish][2] != "food" or (
-                who and (who not in VILLAGERS or who not in RECIPE_LETTERS)):
+                who and not who.startswith("mm:") and (
+                    who not in VILLAGERS or who not in RECIPE_LETTERS)):
             problems.append("recipe %s" % dish)
         for spec in need:
             if not spec.startswith("any ") and spec not in ITEMS:

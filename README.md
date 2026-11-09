@@ -104,6 +104,13 @@ send you their own recipes by letter once you reach 3 hearts with them:
 | Vegetable curry | any 3 vegetables, spice berry | Nell |
 | Fruit crumble | any 2 fruit, egg | Clara |
 
+Monster maids have dishes of their own, and each teaches you hers when she
+reaches 4 hearts: Gloopy's wobbly jelly, Frostine's ice cream, Umbra's
+midnight blackberry pie, Flitter's dusk fruit bowl, Whiskers's cheese
+toastie, Silke's spun-sugar cake, Bonnie's custard, Gobbelina's forest
+goulash, Wisp's meringues, Pebble's rock cakes and Ember's fire-roasted
+corn.
+
 The **pantry** beside the stove keeps your ingredients: walk into it to
 put away everything in your bag that's for cooking (your cooked food stays
 in your bag), or to put away or take out one thing. Cooking takes from the
@@ -610,6 +617,11 @@ Everyone keeps a daily schedule. They open their shops, take lunch by the
 fountain, fish, read on benches, visit each other, gather at the inn in the
 evening and go home to bed. Their routine changes on their day off and on
 rainy days. You'll see them walk from place to place.
+
+The village **talks about you**, too: your monster maids (Ember and the
+smoke from your cabin window, Bonnie buying six pints of milk), whom
+you're courting, the Mine King, the museum, your greenhouse, the golden
+monster on your farm and the hen that used to be a goblin.
 
 The **notice board** in the square posts requests (bring someone what they
 need for a reward), and your **mailbox** gets letters: birthday reminders,
