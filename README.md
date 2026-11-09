@@ -292,7 +292,39 @@ something new in it after a week, and a dug vein or crystal grows back in
 | 1-3 (earth) | green slimes, cave bats, giant rats |
 | 4-6 (stone) | cave spiders, frost slimes, skeletons, goblins |
 | 7-9 (crystal) | ghosts, rock golems (armoured, but slow), fire imps, shadow slimes |
-| 10 (the deep) | the **Mine King**, once, who guards the Crown of the Deep |
+| 10 (the deep) | the **Mine King**, once, who guards the Crown of the Deep, and the stair below his throne |
+| 11-15 (the abyss) | magma slimes, wraiths, bone knights (armoured), obsidian golems (armoured, but slow) |
+
+Beat the Mine King and the stair beneath his throne opens on five more
+floors, darker than any above. At the very bottom, on a black stone
+pedestal, lies the **winged key**: a golden key with a pair of white wings.
+(A knockout never costs you the key.)
+
+### The Sky Tower
+
+In the woods in the north-east of the valley stands a white tower whose top
+is lost in cloud, with a golden door and a keyhole shaped like a pair of
+wings. The winged key opens it, for good, and inside a marble stair climbs
+**up**: five floors of white halls in daylight, with grey stairs back down
+and golden stairs on up. It's the mine turned upside down, and it keeps the
+same way (monsters come back, chests refill), but the monsters are
+**angels**: cherubs (quick, and flighty), angels, and six-winged seraphs.
+Their chests hold **angel feathers** (300g), and they sometimes drop one.
+
+At the top waits the **Archangel**, who believes your kind is cruel, and
+who must be beaten. No spell changes the Archangel (each one stings
+instead). Beaten, the Archangel kneels, wonders aloud whether the angels
+were wrong about humans, and gives you a golden **halo** (8,000g).
+
+The other angels are changed by spells like any monster, and a maidified
+angel, cherub or seraph can be invited home as an **angel maid**,
+Seraphine. She comes to live among you to watch and to judge. Her heart
+has a story: at 2, 4, 6, 8 and 10 hearts she tells you something more of
+what she's coming to understand, that the angels in the tower believed
+all humans cruel and heartless, and that, knowing you, she has found
+humans can be good. She can be courted and married like any monster maid
+(her vows are about it), teaches you angel food cake, and her children have
+soft little feathers on their shoulders, and float.
 
 Reach floor 5 or 10 and you tie a rope there, so next time you can climb
 straight down to it.
