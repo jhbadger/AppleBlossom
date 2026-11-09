@@ -5961,6 +5961,46 @@ def make_room(key):
 MINE_DOOR = (90, 2)
 MINE_FLOORS = 10
 MINE_ROPE = 5                   # a rope hangs down to every fifth floor
+RESPAWN_DAYS = 3                # a beaten monster's place is taken again
+CHEST_DAYS = 7                  # an opened chest has something new in it
+VEIN_DAYS = 4                   # a dug vein, or crystal, grows back
+CHANGED = {   # spell: what the monster is now, what happens, what you do
+    #         once a day, and what that gives you
+    "petrify": ("golden statue", "turns to solid gold with a CLANK, and "
+                "stays that way. You could chip a little off now and then.",
+                "Chip off a little gold",
+                "You chip a little gold off the toe of {who}: {g}g."),
+    "maidify": ("little maid", "shrinks into a tiny maid in a frilly "
+                "apron, who curtsies and sets about sweeping the tunnel. "
+                "She'll hand over whatever she sweeps up.",
+                "Ask what she's swept up",
+                "{who} curtsies and hands you the {g}g she's swept out of "
+                "the corners."),
+    "chickenfy": ("hen", "turns into a startled hen, who fluffs up and "
+                  "settles down to stay. She'll lay you an egg a day.",
+                  "Look for an egg",
+                  "{who} clucks and shuffles off a warm egg. (+1 egg)"),
+    "treeify": ("tree", "sprouts roots and branches: a little tree, right "
+                "there in the rock, growing in the dark somehow. It sheds "
+                "wood.", "Gather fallen branches",
+                "You gather the dead wood under {who}."),
+    "looify": ("outhouse", "becomes a small, sulky outhouse, door and "
+               "moon and all. It works, too.", None, None),
+    "cowify": ("cow", "turns into a bewildered cow, who decides the mine "
+               "will do. She'll give milk once a day.", "Milk her",
+               "You milk {who}. She moos, echoing. (+1 milk)"),
+    "sheepify": ("sheep", "turns into a woolly sheep, who bleats at the "
+                 "dark. Her fleece will be ready every few days.",
+                 "Shear her", "You shear {who}. (+1 wool)"),
+    "catify": ("cat", "becomes a little cat, who sits down and washes, "
+               "quite at home. Pet her for a tingle of magic.", "Pet her",
+               "{who} purrs round your ankles. A tingle of magic comes "
+               "back to you. (+1 magic)"),
+    "dogify": ("dog", "becomes a scruffy dog, who wags at you and decides "
+               "to guard this tunnel. A lick from her perks you up.",
+               "Pet her", "{who} licks your face all over. You feel much "
+               "better. (+20 energy)"),
+}
 MINE_THEMES = (   # wall, its shadow and glints; floor and its speckles
     ("#523826", "#342216", "#8a6a48", "#957452", ("#856446", "#a68662")),
     ("#55555e", "#38383f", "#8e8e98", "#909096", ("#7e7e84", "#a2a2a8")),
@@ -6043,10 +6083,11 @@ def mine_theme(floor):
     return min(3, (floor - 1) // 3)
 
 
-def make_mine_floor(seed, day, floor):
-    """One floor of the old mine for one day: (grid, the up ladder, the
-    down ladder or None, the monsters [(kind, x, y)], the chests)."""
-    rng = random.Random("mine:%s:%d:%d" % (seed, day, floor))
+def make_mine_floor(seed, floor):
+    """One floor of the old mine, the same every time: (grid, the up
+    ladder, the down ladder or None, the first monsters [(kind, x, y)],
+    the chests)."""
+    rng = random.Random("mine:%s:%d" % (seed, floor))
     W, H = 36, 24
     th = mine_theme(floor)
     wall, ground = "mwall_%d" % th, "mfloor_%d" % th
@@ -7283,7 +7324,8 @@ catify and dogify, into a cat or a dog.  Cast the same
 spell again to undo it.  Each spell costs a point of magic
 (5 a day, back when you sleep); magic crystals from the
 mine give 2 more.  In the mine, spells change monsters for
-good, and each leaves something behind.
+good: walk into one once a day for gold, eggs, milk, wood,
+wool, magic or energy, and a looified one is an outhouse.
 
 The axe fells trees (three swings) for wood; they grow
 back in a season.
@@ -7307,6 +7349,8 @@ Walk into monsters (or press Space) to fight them for gold;
 chests hold gold, food and artifacts for Juniper's museum
 (the cases in the library).  Each hit costs energy; at none
 you're carried out, without your gold and some of your bag.
+The mine keeps: monsters come back in 3 days, chests refill
+in a week, veins regrow in 4.
 A rope hangs to every fifth floor you reach.  Walk into a
 vein with a pickaxe for ore; Otto smelts 3 ore into a bar,
 and for 3 bars makes a tool (or sword) copper, iron, then
@@ -7593,7 +7637,8 @@ class Game:
                                             "shen_", "cow_", "scow_",
                                             "sheep", "ssheep", "cat_",
                                             "scat_", "dog_", "sdog_",
-                                            "hen_", "mon_")):
+                                            "hen_", "mon_", "smon_",
+                                            "mmaid_", "mtree_", "mloo_")):
                     continue
                 img = tk.PhotoImage(width=16, height=16)
                 if sprite:
@@ -7948,6 +7993,7 @@ class Game:
         self.end_talk()
         self.menu = None
         self.overlay = None
+        self.mine = None
         seed = random.randrange(1 << 30)
         self.build_world(seed)
         self.p = {"name": who["name"], "farm": who["farm"],
@@ -8085,10 +8131,20 @@ class Game:
                 for c in st["pets"]:
                     if c.get("vid") == vid:
                         n.where, n.x, n.y = c["where"], c["x"], c["y"]
-        if st["area"] == "mine":            # saved underground: come up
-            st["area"] = "valley"
-            st["pos"] = [MINE_DOOR[0], MINE_DOOR[1] + 1]
-        self.area = self.areas[st["area"]]
+        self.mine = None
+        if st["area"] == "loo" and st.get("mine_loo"):  # a mine outhouse
+            ml, st["mine_loo"] = st["mine_loo"], None
+            st["area"], st["pos"] = "mine", ml["pos"]
+            self.mine_state()["at"] = ml["floor"]
+        if st["area"] == "mine":            # saved underground
+            self.load_floor(self.mine_state().get("at", 1))
+            x, y = st["pos"]
+            if not self.area.inside(x, y) or not self.area.grid[y][
+                    x].startswith("mfloor_") or self.mob_at(x, y):
+                up = self.mine["up"]
+                st["pos"] = [up[0], up[1] + 1]
+        else:
+            self.area = self.areas[st["area"]]
         if self.area.key == "loo" and st["loo_in"] not in st["loos"]:
             self.area = self.areas["valley"]
             st["pos"] = list(door_of("cabin"))
@@ -8108,6 +8164,9 @@ class Game:
             return
         st = self.st
         st["area"] = self.area.key
+        if self.mine:
+            self.stash_floor()
+            self.mine_state()["at"] = self.mine["floor"]
         st["npcs"] = {vid: [n.where, n.x, n.y] for vid, n in
                       self.npcs.items() if n.where}
         data = {"muted": self.sound.muted, "music_off": self.sound.music_off,
@@ -8532,6 +8591,9 @@ class Game:
 
     def leave_room(self):
         key = self.area.key
+        if key == "loo" and self.st.get("mine_loo"):
+            self.leave_mine_loo()
+            return
         self.area = self.areas["valley"]
         if key == "loo" and self.st["loo_in"] not in self.st["loos"]:
             key = "cabin"           # (an outhouse that's gone: home)
@@ -8561,15 +8623,80 @@ class Game:
         self.save()
 
     # ── The old mine ──
+    #
+    # The mine is always there: each floor keeps its monsters where they
+    # stand (beaten ones come back after a few days), its chests (they
+    # fill again) and its veins (they grow back), and whatever your wand
+    # made of a monster stays on its floor for good.
 
     def mine_state(self):
-        """What's been done in the mine: the deepest floor (a rope hangs to
-        every fifth), the king, and today's beaten monsters and chests."""
+        """The deepest floor (a rope hangs to every fifth), the king, and
+        each floor's state."""
         m = self.st.setdefault("mine", {"deepest": 0, "king": False})
-        if m.get("day") != self.st["day"]:
-            m.update(day=self.st["day"], cleared={}, opened={})
-        m.setdefault("mined", {})
+        m.setdefault("floors", {})
         return m
+
+    def floor_state(self, floor):
+        """What a floor's like now: its monsters [kind, x, y, hp, stun],
+        days when beaten ones come back, opened chests [day, times], dug
+        veins [tile, day], and the monsters your wand changed."""
+        fs = self.mine_state()["floors"].get(str(floor))
+        if fs is None:
+            g, up, down, mobs, chests = make_mine_floor(self.st["seed"],
+                                                        floor)
+            fs = self.mine_state()["floors"][str(floor)] = {
+                "mobs": [[k, x, y, MONSTERS[k].hp, 0] for k, x, y in mobs
+                         if not (k == "king" and self.mine_state()["king"])],
+                "due": [], "chests": {}, "veins": {}, "changed": {}}
+        return fs
+
+    def stash_floor(self):
+        """Write the monsters on the floor you're on back into the save."""
+        if self.mine:
+            self.floor_state(self.mine["floor"])["mobs"] = [
+                [m.kind, m.x, m.y, m.hp, m.stun] for m in self.mine["mobs"]]
+
+    def load_floor(self, floor):
+        """Make the floor's map as it now stands, bringing back what's had
+        time to come back."""
+        day = self.st["day"]
+        fs = self.floor_state(floor)
+        g, up, down, mobs, chests = make_mine_floor(self.st["seed"], floor)
+        th = mine_theme(floor)
+        for k, (opened, times) in list(fs["chests"].items()):
+            if day >= opened + CHEST_DAYS:
+                del fs["chests"][k]
+            else:
+                x, y = map(int, k.split(","))
+                g[y][x] = "chest_open_%d" % th
+        for k, (tile, dug) in list(fs["veins"].items()):
+            if day >= dug + VEIN_DAYS:
+                del fs["veins"][k]
+            else:
+                x, y = map(int, k.split(","))
+                g[y][x] = "mwall_%d" % th
+        self.area = Area("mine", g, "the old mine, floor %d" % floor)
+        self.mine = {"floor": floor, "turn": 0, "up": up, "down": down,
+                     "mobs": [Mob(0, k, x, y) for k, x, y, hp, stun in
+                              fs["mobs"]]}
+        for mob, (_, _, _, hp, stun) in zip(self.mine["mobs"], fs["mobs"]):
+            mob.hp, mob.stun = hp, stun
+        back = [d for d in fs["due"] if d <= day]
+        fs["due"] = [d for d in fs["due"] if d > day]
+        kinds = [k for k, m in MONSTERS.items() if "boss" not in m.traits
+                 and m.floors[0] <= floor <= m.floors[1]]
+        keep = {up, (up[0], up[1] + 1)} | ({down, (down[0], down[1] + 1)}
+                                           if down else set())
+        spots = [(x, y) for y in range(len(g)) for x in range(len(g[0]))
+                 if g[y][x].startswith("mfloor_") and (x, y) not in keep
+                 and "%d,%d" % (x, y) not in fs["changed"]
+                 and abs(x - up[0]) + abs(y - up[1]) >= 6]
+        for _ in back:
+            spots = [p for p in spots if not self.mob_at(*p)]
+            if spots:
+                x, y = random.choice(spots)
+                self.mine["mobs"].append(Mob(0, random.choice(kinds), x, y))
+        self.stash_floor()
 
     def mine_menu(self):
         if self.st.get("leashed"):
@@ -8594,21 +8721,9 @@ class Game:
 
     def enter_mine(self, floor, from_below=False):
         m = self.mine_state()
-        g, up, down, mobs, chests = make_mine_floor(
-            self.st["seed"], self.st["day"], floor)
-        k = str(floor)
-        for xy in m["opened"].get(k, ()):
-            x, y = map(int, xy.split(","))
-            g[y][x] = "chest_open_%d" % mine_theme(floor)
-        for xy in m["mined"].get(k, ()):
-            x, y = map(int, xy.split(","))
-            g[y][x] = "mwall_%d" % mine_theme(floor)
-        gone = set(m["cleared"].get(k, ()))
-        self.area = Area("mine", g, "the old mine, floor %d" % floor)
-        self.mine = {"floor": floor, "turn": 0, "mobs": [
-            Mob(i, kind, x, y) for i, (kind, x, y) in enumerate(mobs)
-            if i not in gone and not (kind == "king" and m["king"])]}
-        x, y = down if from_below else up
+        self.stash_floor()
+        self.load_floor(floor)
+        x, y = self.mine["down"] if from_below else self.mine["up"]
         self.st["pos"] = [x, y + 1]
         self.face(0, 1)
         self.sound.play("stairs")
@@ -8627,6 +8742,7 @@ class Game:
         self.end_turn(WALK_COST)
 
     def leave_mine(self):
+        self.stash_floor()
         self.mine = None
         self.area = self.areas["valley"]
         x, y = MINE_DOOR
@@ -8644,6 +8760,9 @@ class Game:
         if mob:
             self.attack(mob)
             return True
+        if self.changed_at(x, y):
+            self.visit_changed(x, y)
+            return True
         floor = self.mine["floor"]
         if t.startswith("ladder_up"):
             if floor == 1:
@@ -8658,7 +8777,12 @@ class Game:
             self.dig_vein(x, y, t)
             return True
         if t.startswith("chest_open"):
-            self.say("An empty chest. You've had what was in it.", "info")
+            fs = self.floor_state(floor)
+            left = fs["chests"]["%d,%d" % (x, y)][0] + CHEST_DAYS - \
+                self.st["day"]
+            self.say("An empty chest. Things have a way of turning up in "
+                     "this mine: look again in %d day%s." % (
+                         left, "s" if left > 1 else ""), "info")
             self.render()
             return True
         if t.startswith("chest"):
@@ -8669,11 +8793,11 @@ class Game:
     def dig_vein(self, x, y, t):
         metal = t.split("_")[1]
         floor = self.mine["floor"]
+        dug = [t, self.st["day"]]
         if metal == "crystal":
             self.give(CRYSTAL)
             self.area.grid[y][x] = "mwall_%d" % mine_theme(floor)
-            self.mine_state()["mined"].setdefault(str(floor), []).append(
-                "%d,%d" % (x, y))
+            self.floor_state(floor)["veins"]["%d,%d" % (x, y)] = dug
             self.sound.play("potion")
             self.say("You snap a magic crystal off the rock. It hums in "
                      "your hand. (Crush it for %d magic.)" % CRYSTAL_MAGIC,
@@ -8697,8 +8821,7 @@ class Game:
         n = 1 + random.randint(0, 1) + have // 2
         self.give(metal + " ore", n)
         self.area.grid[y][x] = "mwall_%d" % mine_theme(floor)
-        self.mine_state()["mined"].setdefault(str(floor), []).append(
-            "%d,%d" % (x, y))
+        self.floor_state(floor)["veins"]["%d,%d" % (x, y)] = dug
         self.sound.play("chop")
         self.say("You chip %d lump%s of %s ore out of the rock. (Otto "
                  "smelts %d into a bar.)" % (n, "s" if n > 1 else "", metal,
@@ -8711,10 +8834,18 @@ class Game:
                 return mob
         return None
 
+    def changed_at(self, x, y):
+        """A monster your wand changed, standing at (x, y), or None."""
+        if not self.mine:
+            return None
+        return self.floor_state(self.mine["floor"])["changed"].get(
+            "%d,%d" % (x, y))
+
     def mob_can(self, x, y):
         a = self.area
         return a.inside(x, y) and a.grid[y][x].startswith("mfloor_") and \
-            (x, y) != self.pos() and self.mob_at(x, y) is None
+            (x, y) != self.pos() and self.mob_at(x, y) is None and \
+            not self.changed_at(x, y)
 
     @staticmethod
     def the_mob(mob):
@@ -8739,6 +8870,8 @@ class Game:
         mob = self.mob_at(x, y)
         if mob:
             self.attack(mob)
+        elif self.changed_at(x, y):
+            self.visit_changed(x, y)
         elif self.area.inside(x, y) and \
                 self.area.grid[y][x].startswith("ore_"):
             self.dig_vein(x, y, self.area.grid[y][x])
@@ -8778,11 +8911,19 @@ class Game:
         found = [n for n, v, f in ARTIFACTS if f <= floor]
         return rng.choice(found[-4:] if rng.random() < 0.6 else found)
 
-    def slay(self, mob):
+    def gone(self, mob):
+        """A monster off the floor: another will wander in, in a few
+        days (but there's only ever one Mine King)."""
         self.mine["mobs"].remove(mob)
+        if mob.kind != "king":
+            self.floor_state(self.mine["floor"])["due"].append(
+                self.st["day"] + RESPAWN_DAYS)
+        self.stash_floor()
+
+    def slay(self, mob):
+        self.gone(mob)
         m = self.mine_state()
         floor = self.mine["floor"]
-        m["cleared"].setdefault(str(floor), []).append(mob.idx)
         gold = random.randint(*mob.m.gold)
         self.p["gold"] += gold
         self.sound.play("kill")
@@ -8803,8 +8944,9 @@ class Game:
                      an(n), "gold")
 
     def zap_mob(self, mob, spell):
-        """The wand on a monster: it stays changed, and leaves something
-        behind. The Mine King shrugs the change off, but it burns."""
+        """The wand on a monster: it stays changed, for good, on its floor,
+        and you can call on it once a day. The Mine King shrugs the change
+        off, but it burns."""
         the = self.the_mob(mob)
         self.flash(mob.x, mob.y, "sparkle")
         mob.aware = True
@@ -8823,59 +8965,145 @@ class Game:
                      "all about you for a bit." % cap(the), "good")
             self.end_turn(TOOL_COST)
             return
-        p = self.p
-        what = {
-            "petrify": "%s turns to solid gold with a CLANK. You chip it "
-                       "into pieces: %dg.",
-            "maidify": "%s shrinks into a tiny maid in a frilly apron, who "
-                       "curtsies, sweeps the floor (finding %dg under the "
-                       "dust, which she hands you) and bustles off to find "
-                       "somewhere messier.",
-            "chickenfy": "%s turns into a startled hen, who lays an egg in "
-                         "fright and flaps off up the tunnel.",
-            "treeify": "%s sprouts roots and branches: a little tree, right "
-                       "there in the rock. You chop it up for wood.",
-            "looify": "%s becomes a small, sulky outhouse, which hops off "
-                      "into the dark, leaving a sack of fertilizer behind.",
-            "cowify": "%s turns into a bewildered cow, who lets you fill a "
-                      "pail before she wanders off mooing.",
-            "sheepify": "%s turns into a woolly sheep. You grab a handful "
-                        "of fleece as she bolts.",
-            "catify": "%s becomes a little cat, who winds round your ankles "
-                      "purring. A tingle of magic comes back to you.",
-            "dogify": "%s becomes a scruffy dog, who licks your face all "
-                      "over and trots off wagging. You feel much better.",
-        }[spell]
+        colours = {"chickenfy": HEN_COLOURS, "cowify": COW_COLOURS,
+                   "sheepify": SHEEP_COLOURS, "catify": CAT_COLOURS,
+                   "dogify": DOG_COLOURS}.get(spell, (None,))
+        self.floor_state(self.mine["floor"])["changed"][
+            "%d,%d" % (mob.x, mob.y)] = {
+                "spell": spell, "kind": mob.kind, "day": -1, "pit": 0,
+                "colour": random.choice(colours)}
+        self.gone(mob)
+        self.say("%s %s" % (cap(the), CHANGED[spell][1]), "gold")
+        self.end_turn(TOOL_COST)
+
+    def changed_name(self, e):
+        return "the %s that was %s" % (CHANGED[e["spell"]][0],
+                                       an(MONSTERS[e["kind"]].name))
+
+    def changed_tile(self, e):
+        spell, kind, c = e["spell"], e["kind"], e["colour"]
+        if spell == "sheepify":
+            ready = self.st["day"] - e["day"] >= SHEAR_DAYS
+            return ("sheepf_" if ready else "sheep_") + c
+        return {"petrify": "smon_" + kind, "maidify": "mmaid_" + kind,
+                "treeify": "mtree_" + kind, "looify": "mloo_" + kind,
+                "chickenfy": "hen_%s" % c, "cowify": "cow_%s" % c,
+                "catify": "cat_%s" % c, "dogify": "dog_%s" % c}[spell]
+
+    def visit_changed(self, x, y):
+        """Walking into a monster you changed: what it gives you today,
+        or squeeze past it."""
+        e = self.changed_at(x, y)
+        spell = e["spell"]
+        name = self.changed_name(e)
+        squeeze = ("Squeeze past", lambda: self.squeeze_by(x, y))
+        if spell == "looify":
+            rows = [("Go in", lambda: self.enter_mine_loo(x, y))]
+            if e["pit"] >= PIT_PER_FERT:
+                rows.append(("Empty the pit (%d fertilizer)" % (
+                    e["pit"] // PIT_PER_FERT), lambda: self.empty_mine_pit(
+                        e)))
+            self.open_menu(cap(name), rows + [squeeze,
+                                              ("Leave it", lambda: None)])
+            return
+        ready = self.st["day"] - e["day"] >= (
+            SHEAR_DAYS if spell == "sheepify" else 1)
+        if not ready:
+            self.squeeze_by(x, y, "You've had what %s has to give today. "
+                                  "You squeeze past." % name)
+            return
+        self.open_menu(cap(name), [
+            (CHANGED[spell][2], lambda: self.tend_changed(e, name)),
+            squeeze, ("Leave it", lambda: None)])
+
+    def tend_changed(self, e, name):
+        spell, p, m = e["spell"], self.p, MONSTERS[e["kind"]]
+        need = {"cowify": "milk pail", "sheepify": "shears"}.get(spell)
+        if need and need not in p["tools"]:
+            self.say("You'd need %s for that. Mabel sells them." % an(need),
+                     "info")
+            self.render()
+            return
+        e["day"] = self.st["day"]
         gold = 0
         if spell == "petrify":
-            gold = 3 * random.randint(*mob.m.gold)
+            gold = max(1, random.randint(*m.gold) // 2)
         elif spell == "maidify":
-            gold = random.randint(*mob.m.gold)
+            gold = random.randint(*m.gold)
         p["gold"] += gold
-        loot = {"chickenfy": ("egg", 1), "treeify": ("wood", 5),
-                "looify": ("fertilizer", 1), "cowify": ("milk", 1),
-                "sheepify": ("wool", 1)}.get(spell)
+        loot = {"chickenfy": ("egg", 1), "treeify": ("wood",
+                                                     3 + self.lv("axe")),
+                "cowify": ("milk", 1), "sheepify": ("wool", 1)}.get(spell)
         if loot:
             self.give(*loot)
         if spell == "catify":
             p["magic"] = min(p["max_magic"], p["magic"] + 1)
         if spell == "dogify":
             p["energy"] = min(p["max_energy"], p["energy"] + 20)
-        self.say((what % (cap(the), gold)) if "%d" in what else
-                 what % cap(the), "gold" if gold else "good")
-        self.mine["mobs"].remove(mob)
-        self.mine_state()["cleared"].setdefault(
-            str(self.mine["floor"]), []).append(mob.idx)
+        self.sound.play("gold" if gold else "pick")
+        text = CHANGED[spell][3]
+        self.say(cap(text.replace("{who}", name).replace("{g}", str(gold))),
+                 "gold" if gold else "good")
+        self.end_turn(TOOL_COST)
+
+    def squeeze_by(self, x, y, text=None):
+        self.st["pos"] = [x, y]
+        self.say(text or "You squeeze past.", "info")
+        self.end_turn(WALK_COST)
+
+    def enter_mine_loo(self, x, y):
+        """In through the door of the outhouse that was a monster."""
+        self.stash_floor()
+        self.st["mine_loo"] = {"floor": self.mine["floor"],
+                               "at": "%d,%d" % (x, y),
+                               "pos": list(self.pos())}
+        self.st["loo_in"] = None
+        self.mine = None
+        a = self.areas["loo"]
+        self.sound.play("door")
+        self.area = a
+        self.st["pos"] = list(a.entry)
+        self.face(0, -1)
+        self.say("You step into the outhouse and latch the door. The walls "
+                 "creak, grumpily, the way only a monster's can.", "info")
+        self.walking = None
+        self.layout()
+        self.end_turn(WALK_COST)
+
+    def leave_mine_loo(self):
+        ml, self.st["mine_loo"] = self.st["mine_loo"], None
+        self.load_floor(ml["floor"])
+        self.st["pos"] = list(ml["pos"])
+        self.face(0, 1)
+        self.sound.play("door")
+        self.walking = None
+        self.say("You step out of the outhouse, back into the dark of the "
+                 "mine.", "info")
+        self.layout()
+        self.end_turn(WALK_COST)
+
+    def empty_mine_pit(self, e):
+        sacks = e["pit"] // PIT_PER_FERT
+        if not sacks or not self.spend("hoe"):
+            return
+        e["pit"] -= sacks * PIT_PER_FERT
+        self.give("fertilizer", sacks)
+        self.sound.play("chop")
+        self.say("Holding your breath, you dig out the pit behind the "
+                 "outhouse and bag it up. (+%d fertilizer)" % sacks, "good")
         self.end_turn(TOOL_COST)
 
     def open_chest(self, x, y):
         f = self.mine["floor"]
         st = self.st
-        rng = random.Random("chest:%s:%d:%d:%d:%d" % (st["seed"], st["day"],
-                                                      f, x, y))
+        k = "%d,%d" % (x, y)
+        fs = self.floor_state(f)
+        times = fs.setdefault("opens", {}).get(k, 0)
+        fs["opens"][k] = times + 1
+        fs["chests"][k] = [st["day"], times + 1]
+        rng = random.Random("chest:%s:%d:%d:%d:%d" % (st["seed"], f, x, y,
+                                                      times))
         self.area.grid[y][x] = "chest_open_%d" % mine_theme(f)
-        self.mine_state()["opened"].setdefault(str(f), []).append(
-            "%d,%d" % (x, y))
         r, art = rng.random(), 0.2 + 0.04 * f
         if r < art:
             n = self.dig_artifact(f, rng)
@@ -8892,11 +9120,11 @@ class Game:
                      gold, "gold")
         else:
             item, lo, hi = rng.choice(CHEST_ITEMS)
-            k = rng.randint(lo, hi)
-            self.give(item, k)
+            n = rng.randint(lo, hi)
+            self.give(item, n)
             self.sound.play("pick")
             self.say("You prise the chest open. Inside: %s." % (
-                an(item) if k == 1 else "%d %s" % (k, plural(item, k))),
+                an(item) if n == 1 else "%d %s" % (n, plural(item, n))),
                 "good")
         self.end_turn(WALK_COST)
 
@@ -8959,6 +9187,7 @@ class Game:
         """Knocked out down the mine: carried to the Clinic, without your
         gold and some of what was in your bag."""
         p = self.p
+        self.stash_floor()
         self.mine = None
         self.walking = None
         self.sound.play("death")
@@ -9212,6 +9441,8 @@ class Game:
             mob = self.mob_at(x, y) if self.area.key == "mine" else None
             if mob:
                 return mob
+            if self.area.key == "mine" and self.changed_at(x, y):
+                return None
             n = self.npc_at(x, y)
             if n:
                 return n
@@ -9784,7 +10015,7 @@ class Game:
     def outside_door(self):
         """The square outside the room you're in."""
         key = self.area.key
-        if key == "mine":
+        if key == "mine" or self.st.get("mine_loo"):
             return MINE_DOOR
         if key == "loo":
             vid = self.st.get("loo_in")
@@ -10096,6 +10327,17 @@ class Game:
                          "good clean.", "bad")
             elif grime == LOO_GRUBBY:
                 self.say("It's getting a bit grubby in here.", "info")
+        ml = self.st.get("mine_loo")
+        if ml:
+            e = self.floor_state(ml["floor"])["changed"].get(ml["at"])
+            if e:
+                e["pit"] += 1
+            if random.random() < 0.4:
+                self.say(random.choice((
+                    "The walls give a low, grumpy creak.",
+                    "Somewhere in the planks, something mutters about "
+                    "the indignity of it all.",
+                    "A drip echoes, far off down the tunnels.")), "info")
         if vid and random.random() < 0.5:
             self.say(random.choice(
                 LOO_VOICE_LIKE if self.likes_change(vid, "looify") else
@@ -12940,7 +13182,9 @@ class Game:
         self.new_day(0.8 if late else 1.0)
 
     def collapse(self):
+        self.stash_floor()
         self.mine = None
+        self.st["mine_loo"] = None
         self.end_talk()
         self.menu = None
         self.say("It's two in the morning. You collapse...", "bad")
@@ -15000,10 +15244,16 @@ class Game:
                         people[(beast["ox"], beast["oy"])] = (
                             "hen_" + beast["colour"] if pen == "chickens"
                             else self.barn_tile(beast))
-        for mob in self.mine["mobs"] if a.key == "mine" and self.mine \
-                else ():
-            if (mob.x - px) ** 2 + (mob.y - py) ** 2 <= 30:
-                people[(mob.x, mob.y)] = mob.tile
+        if a.key == "mine" and self.mine:
+            near = lambda x, y: (x - px) ** 2 + (y - py) ** 2 <= 30
+            for k, e in self.floor_state(self.mine["floor"])[
+                    "changed"].items():
+                x, y = map(int, k.split(","))
+                if near(x, y):
+                    people[(x, y)] = self.changed_tile(e)
+            for mob in self.mine["mobs"]:
+                if near(mob.x, mob.y):
+                    people[(mob.x, mob.y)] = mob.tile
         for pet in st.get("pets", ()):
             if pet["where"] == a.key:
                 people[(pet["x"], pet["y"])] = "%s_%s" % (pet["kind"],
@@ -18323,6 +18573,16 @@ def all_tiles(season=0):
         sprites["tv_" + vid] = tree_art(v["look"], season)
         sprites["lh_" + vid] = loo_art(v["look"], season)
         sprites["sm_" + vid] = golden(sprites["vm_" + vid])
+    for k in MONSTERS:                   # monsters the wand has changed
+        col = list(ART["mon_" + k][0].values())[0]
+        sprites["smon_" + k] = golden(sprites["mon_" + k])
+        sprites["mmaid_" + k] = art_pixels(*person_art(maid_look({
+            "face": "F", "body": "F", "skin": 1, "hair": col,
+            "style": "bob", "eyes": "#1a1a1a", "shirt": col,
+            "pants": col})))
+        sprites["mtree_" + k] = tree_art({"hair": col, "shirt": col},
+                                         season)
+        sprites["mloo_" + k] = loo_art({"shirt": col}, season)
     for colour in HEN_COLOURS:
         sprites["hen_" + colour] = hen_art(colour)
     sprites["egg"] = egg_art()
@@ -18637,7 +18897,7 @@ def selftest():
     tile_names = set(all_tiles(0))
     for seed in (1, 2, 3):
         for f in range(1, MINE_FLOORS + 1):
-            g, up, down, mobs, chests = make_mine_floor(seed, 0, f)
+            g, up, down, mobs, chests = make_mine_floor(seed, f)
             start = (up[0], up[1] + 1)
             seen, q = {start}, deque([start])
             while q:

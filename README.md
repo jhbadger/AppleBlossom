@@ -216,9 +216,9 @@ love.
 
 Up in the north woods, past the carpentry, a timbered cave mouth leads
 down into the **old mine** the Brandts' grandfather worked before the
-monsters moved in. It goes down ten floors, and each day it's laid out
-afresh: rooms and tunnels, a ladder up, a ladder down, a few chests, and
-monsters that come for you once they see your lantern.
+monsters moved in. It goes down ten floors of rooms and tunnels, each with
+a ladder up, a ladder down, a few chests, and monsters that come for you
+once they see your lantern.
 
 Walk into a monster, or press Space facing it, to hit it. You fight with
 the best thing you carry: your fists, a farm tool, or one of Otto's swords
@@ -230,7 +230,14 @@ top, crystal skulls, dragon scales and star shards near the bottom.
 Every hit you take costs **energy**. Eat from your bag (`I`) to keep going.
 If your energy runs out down there, everything goes black: Otto carries
 you out to the Clinic, but your purse is empty and some of your bag is
-gone. Monsters you beat and chests you open stay that way until tomorrow.
+gone.
+
+The mine is **permanent**: every floor keeps its layout, and its monsters
+stay where they are, hurt or not, until you come back (save down there and
+you carry on from the same spot). Things come back slowly: a beaten
+monster's place is taken by a new one after 3 days, an opened chest has
+something new in it after a week, and a dug vein or crystal grows back in
+4 days.
 
 | Floors | Monsters |
 | --- | --- |
@@ -242,14 +249,26 @@ gone. Monsters you beat and chests you open stay that way until tomorrow.
 Reach floor 5 or 10 and you tie a rope there, so next time you can climb
 straight down to it.
 
-The wand works on monsters too, and they stay changed: petrify one into
-gold you chip apart (three times what it would drop), maidify it into a
-tiny maid who sweeps up some gold for you, chickenfy it for an egg,
-treeify it for wood, cowify or sheepify it for milk or wool, looify it
-for fertilizer, catify it for a little magic back, or dogify it for a
-lick that restores energy. Genderswap just leaves it baffled for a few
-turns. The Mine King is too old and wicked to change, but every spell
-burns him.
+The wand works on monsters too, and a monster you change **stays changed
+for good**, right where it stood on its floor. Walk into it once a day
+for what it gives:
+
+| Spell | It becomes | Once a day |
+| --- | --- | --- |
+| Petrify | a golden statue | chip a little gold off its toe |
+| Maidify | a little maid in the monster's colours | the gold she's swept up |
+| Chickenfy | a hen | an egg |
+| Treeify | a tree, growing in the dark | wood |
+| Cowify | a cow | milk (with a pail) |
+| Sheepify | a sheep | wool every third day (with shears) |
+| Catify | a cat | a point of magic |
+| Dogify | a dog | 20 energy |
+| Looify | a working outhouse | go in and use it like any other (the almanac, the Gazette riddle and the carvings are all there); empty its pit with a hoe for fertilizer |
+
+They stand in the way, but walk into one you've already had from today
+(or choose Squeeze Past) and you slip by. Monsters won't go near them.
+Genderswap just leaves a monster baffled for a few turns. The Mine King is
+too old and wicked to change, but every spell burns him.
 
 ### Ore and Otto's forge
 
