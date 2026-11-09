@@ -401,7 +401,7 @@ gift.
   | Shear the sheep | shears every woolly sheep (if you've the shears) |
   | Mind the pets | feeds your cats and dogs and gives them their daily fuss |
   | Tend the machines | takes out whatever's ready and fills the empty machines from your bag |
-  | See to the outhouses | scrubs them clean, empties the pits into fertilizer for you, and rights any the pranksters tipped |
+  | Collect fertilizer | scoops up the animals' droppings in the pastures, scrubs the outhouses clean, empties their pits, rights any the pranksters tipped, and bags it all as fertilizer for you |
   | Ship the harvest | takes the crops and fruit in your bag to the shipping bin |
   | Cook breakfast | leaves you pancakes, bread, honey cake or stew |
   | Just rest | nothing at all |

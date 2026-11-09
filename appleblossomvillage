@@ -11085,9 +11085,11 @@ class Game:
                     loaded, "" if loaded == 1 else "s") if loaded else "")
         if chore == "loos":
             loos = [v for v in st["loos"] if not self.statue(v)]
-            if not loos:
+            dropped = len(st["droppings"])
+            if not loos and not dropped:
                 return None
-            sacks = righted = 0
+            st["droppings"].clear()
+            sacks, righted = dropped, 0
             for v in loos:
                 ls = self.loo_state(v)
                 ls["grime"] = 0
@@ -11099,11 +11101,18 @@ class Game:
                     righted += 1
             if sacks:
                 self.give("fertilizer", sacks)
-            return "scrubbed %s%s%s" % (
-                "the outhouse" if len(loos) == 1 else
-                "all %d outhouses" % len(loos),
-                ", set one back on its feet" if righted else "",
-                " and bagged %d fertilizer for you" % sacks if sacks else "")
+            done = []
+            if loos:
+                done.append("scrubbed %s%s" % (
+                    "the outhouse" if len(loos) == 1 else
+                    "all %d outhouses" % len(loos),
+                    ", set one back on its feet" if righted else ""))
+            if dropped:
+                done.append("scooped up %d dropping%s in the pastures" % (
+                    dropped, "" if dropped == 1 else "s"))
+            return and_list(done) + (
+                ", and bagged %d fertilizer for you" % sacks if sacks
+                else "")
         if chore == "ship":
             goods = {n: c for n, c in self.p["items"].items()
                      if c and ITEMS.get(n, (0, 0, ""))[2] in ("crop",
@@ -17559,8 +17568,8 @@ MAID_CHORES = {   # what you can tell a maid to do: menu, and in her words
     "pets": ("Mind the pets", "feed the pets and give them a fuss"),
     "machines": ("Tend the machines", "empty the machines and fill them "
                  "up again"),
-    "loos": ("See to the outhouses", "scrub out the outhouses and empty "
-             "the pits"),
+    "loos": ("Collect fertilizer", "empty the outhouse pits and scoop up "
+             "after the animals, and bag it all for fertilizer"),
     "ship": ("Ship the harvest", "take the crops and fruit to the "
              "shipping bin"),
     "cook": ("Cook breakfast", "cook you breakfast"),
