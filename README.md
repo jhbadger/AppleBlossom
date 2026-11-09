@@ -212,6 +212,37 @@ opinions: Bernard likes cheese, Agnes honey, Rusty cloth, and Marisol
 anything handmade. The wool scarf is a gift Granny Rose, Jonah and Clara
 love.
 
+## The old mine
+
+Up in the north woods, past the carpentry, a timbered cave mouth leads
+down into the **old mine** the Brandts' grandfather worked before the
+monsters moved in. It goes down ten floors, and each day it's laid out
+afresh: rooms and tunnels, a ladder up, a ladder down, a few chests, and
+monsters that come for you once they see your lantern.
+
+Walk into a monster, or press Space facing it, to hit it. You fight with
+the best thing you carry: your fists, a farm tool, or one of Otto's swords
+(a short sword for 700g, a broadsword for 2,500g and 20 stone). Beaten
+monsters leave gold, and now and then something old. **Chests** hold
+gold, food, stone, or an **artifact**: old coins and clay pipes near the
+top, crystal skulls, dragon scales and star shards near the bottom. Ship
+artifacts or give them to Juniper, who loves them.
+
+Every hit you take costs **energy**. Eat from your bag (`I`) to keep going.
+If your energy runs out down there, everything goes black: Otto carries
+you out to the Clinic, but your purse is empty and some of your bag is
+gone. Monsters you beat and chests you open stay that way until tomorrow.
+
+| Floors | Monsters |
+| --- | --- |
+| 1-3 (earth) | green slimes, cave bats, giant rats |
+| 4-6 (stone) | cave spiders, frost slimes, skeletons, goblins |
+| 7-9 (crystal) | ghosts, rock golems (armoured, but slow), fire imps, shadow slimes |
+| 10 (the deep) | the **Mine King**, once, who guards the Crown of the Deep |
+
+Reach floor 5 or 10 and you tie a rope there, so next time you can climb
+straight down to it.
+
 ## The magic wand
 
 Among Grandmother's tools is a **magic wand**. (Someday it will be the reward
@@ -417,7 +448,7 @@ up to eight squares until it hits someone or something solid.
 | Pike's General Store | Mabel Pike | seeds for the season, fruit tree saplings, hay, hens, cows, sheep, cats and dogs, a milk pail, shears, a leash, gifts, the Blossom Bouquet |
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
-| Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, the copper watering can, fine gifts, the Blossom Pendant |
+| Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, the copper watering can, swords for the old mine, fine gifts, the Blossom Pendant |
 | Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, the barn, a silo, and the cabin extension |
 | The dock | Theo Fairweather | fishing rods and lures, 10 till 3 |
 | The Library | Juniper Marsh | books, and Pip's schoolroom |
@@ -500,8 +531,8 @@ confession at eight hearts.
 
 | Key | Action |
 | --- | --- |
-| Arrows / WASD | move; walk into people, doors, beds, the bin and the mailbox |
-| Space / E | use what you're holding on the square ahead |
+| Arrows / WASD | move; walk into people, doors, beds, the bin and the mailbox (and monsters, in the mine) |
+| Space / E | use what you're holding on the square ahead (in the mine, hit what's there) |
 | Q / Tab, 1-9 | hold the next tool, or a particular one |
 | I | your bag: eat, hold, look |
 | Z | wait (or sleep, at home) |

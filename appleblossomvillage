@@ -67,7 +67,7 @@ import tkinter as tk
 import wave
 import zlib
 import base64
-from collections import deque
+from collections import deque, namedtuple
 from tkinter import font as tkfont
 
 SAVE_FILE = os.path.expanduser("~/.appleblossomvillage.json")
@@ -98,7 +98,9 @@ WALKABLE = {
     "soil", "soil_w", "tallgrass", "snowpath", "plaza",
     # indoors
     "floor", "boards", "rug", "tile", "exit", "logfloor", "stone_floor",
-    "straw"}
+    "straw",
+    # the old mine
+    "mfloor_0", "mfloor_1", "mfloor_2", "mfloor_3"}
 WATER = {"water", "river", "pond"}
 TILLABLE = {"grass", "meadow", "flowers", "path", "tallgrass"}
 OUTDOOR_GROUND = {"grass", "meadow", "flowers", "path", "cobble", "sand",
@@ -335,10 +337,77 @@ def door(g):
     g[10][9] = "#f0d040"
 
 
+def mine_tile(name, rng):
+    """The mine's rock and floor, in the colours of its depth, and the
+    ladders and chests on it."""
+    if name.startswith(("ladder_", "chest")):
+        th = int(name[-1]) if name[-1].isdigit() else 0
+        g = mine_tile("mfloor_%d" % th, rng)
+        if name.startswith("ladder_down"):
+            disc(g, 7.5, 8, 6, "#0e0a08")
+            for x in (5, 10):
+                rect(g, x, 2, x, 9, "#8a5a30")
+            for y in (3, 6, 9):
+                rect(g, 5, y, 10, y, "#a06a38")
+        elif name.startswith("ladder_up"):
+            disc(g, 7.5, 7.5, 6.5, mix(g[0][0], "#f8f0c0", 0.35))
+            for x in (4, 11):
+                rect(g, x, 0, x, 15, "#8a5a30")
+            for y in range(1, 16, 3):
+                rect(g, 4, y, 11, y, "#a06a38")
+        elif name.startswith("chest_open"):
+            rect(g, 2, 3, 13, 6, "#5a3a1e")
+            rect(g, 2, 7, 13, 14, "#8a5a30")
+            rect(g, 3, 8, 12, 9, "#2a1a0e")
+            rect(g, 2, 7, 13, 7, "#d0a040")
+        else:
+            rect(g, 2, 5, 13, 14, "#8a5a30")
+            rect(g, 2, 5, 13, 8, "#a06a38")
+            rect(g, 2, 9, 13, 9, "#d0a040")
+            rect(g, 2, 5, 2, 14, "#d0a040")
+            rect(g, 13, 5, 13, 14, "#d0a040")
+            rect(g, 7, 8, 8, 11, "#f4d070")
+        return g
+    th = int(name[-1])
+    wall, shadow, glint, floor, specks = MINE_THEMES[th]
+    if name.startswith("mfloor_"):
+        g = grid_of(floor)
+        speckle(g, rng, list(specks), 0.18)
+        for _ in range(3):
+            x, y = rng.randrange(1, 15), rng.randrange(1, 15)
+            g[y][x] = g[y][x + 1] = shade(floor, 0.75)
+        return g
+    g = grid_of(wall)
+    speckle(g, rng, [shade(wall, 1.12), shade(wall, 0.88)], 0.35)
+    for _ in range(5):
+        x, y = rng.randrange(0, 13), rng.randrange(0, 15)
+        rect(g, x, y, x + rng.randrange(1, 4), y, shadow)
+    for _ in range(2 + th):
+        x, y = rng.randrange(1, 15), rng.randrange(1, 15)
+        g[y][x] = glint
+    rect(g, 0, 13, 15, 15, shadow)
+    return g
+
+
 def draw_terrain(name, frame=0, season=0):
     """The pixels of a terrain tile (a list of 16 rows of colours)."""
     rng = random.Random("%s%d%d" % (name, frame, season))
     s = season
+    if name.startswith(("mwall_", "mfloor_", "ladder_", "chest")):
+        return mine_tile(name, rng)
+    if name == "cave":
+        g = ground(rng, s, 0)
+        disc(g, 7.5, 9, 7.6, "#7a746a", rng, 0.6)
+        disc(g, 6, 6.5, 4, "#9a948a", rng, 0.5)
+        speckle_within(g, rng, "#7a746a", ["#6a645a", "#8a847a"], 0.3)
+        rect(g, 4, 8, 11, 15, "#1a1410")
+        disc(g, 7.5, 8.5, 3.6, "#1a1410")
+        for y in (8, 15):
+            rect(g, 3, y if y == 15 else 7, 12, y if y == 15 else 7,
+                 "#7a5030")
+        rect(g, 3, 7, 3, 15, "#7a5030")
+        rect(g, 12, 7, 12, 15, "#7a5030")
+        return g
     if name == "grass":
         return ground(rng, s)
     if name == "tallgrass":
@@ -1310,14 +1379,17 @@ FISH = {   # where -> season -> fish, the first the likeliest
 }
 
 TOOLS = ("hoe", "watering can", "axe", "pickaxe", "scythe", "fishing rod",
-         "magic wand", "leash", "milk pail", "shears")
+         "magic wand", "leash", "milk pail", "shears", "short sword",
+         "broadsword")
 TOOL_KEYS = {"hoe": "Hoe", "watering can": "Can", "axe": "Axe",
              "pickaxe": "Pick", "scythe": "Scythe", "fishing rod": "Rod",
              "magic wand": "Wand", "leash": "Leash", "milk pail": "Pail",
-             "shears": "Shears"}
+             "shears": "Shears", "short sword": "Sword",
+             "broadsword": "Sword"}
 TOOL_ENERGY = {"hoe": 2, "watering can": 1, "axe": 3, "pickaxe": 3,
                "scythe": 1, "fishing rod": 4, "magic wand": 2, "leash": 0,
-               "milk pail": 1, "shears": 2}
+               "milk pail": 1, "shears": 2, "short sword": 0,
+               "broadsword": 0}
 WAND_RANGE = 8                  # how far a spell flies
 SPELLS = {   # the wand's spells: what each one does, for the menu
     "petrify": "turns someone to gold, and back",
@@ -2459,7 +2531,8 @@ VILLAGERS = {
                  "pants": "#6a5a4a", "bg": "#b8c8e8",
                  "extras": ("glasses",)},
         "birthday": (0, 18), "home": "juniper", "rest": 6,
-        "loves": ["book of poems", "crocus", "strawberry", "sketchbook"],
+        "loves": ["book of poems", "crocus", "strawberry", "sketchbook",
+                  "kind:artifact"],
         "likes": ["tea", "sweet pea", "apple pie", "hazelnut", "daffodil"],
         "dislikes": ["kind:fish", "stone"],
         "hates": ["wood", "fiber"],
@@ -5267,6 +5340,7 @@ SHOP_STOCK = {
                ("apple pie", 180), ("chocolate", 80)],
     "smithy": [("sprinkler", 400), ("fine tools", 350),
                ("silver ring", 500), ("copper can", 800),
+               ("short sword", 700), ("broadsword", 2500),
                ("blossom pendant", 2000)],
     "carpentry": [("wood", 50), ("chicken coop", 1500), ("barn", 4000),
                   ("silo", 1000),
@@ -5276,6 +5350,7 @@ SHOP_STOCK = {
                  ("beehive", 900), ("cheese press", 1200), ("loom", 1500)],
 }
 EXTRA_COST = {"sprinkler": {"stone": 5}, "copper can": {"stone": 15},
+              "broadsword": {"stone": 20},
               "chicken coop": {"wood": 80},
               "barn": {"wood": 150, "stone": 50},
               "cabin extension": {"wood": 150},
@@ -5524,6 +5599,15 @@ def make_valley(seed, built=()):
                for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
             continue
         put(x, y, rng.choice(("tree", "tree", "pine", "bush", "flowers")))
+    mx, my = MINE_DOOR                  # the old mine, up in the woods
+    for y in range(my - 1, my + 8):
+        for x in range(mx - 1, mx + 2):
+            if y >= my:
+                put(x, y, "path" if x == mx and y > my else "meadow")
+    put(mx - 1, my, "rock")
+    put(mx + 1, my, "rock")
+    put(mx, my, "cave")
+    labels[MINE_DOOR] = "the old mine"
     labels[(80, BEACH_Y + 2)] = "the dock"
     labels[(RIVER[0] + 1, 26)] = "the bridge"
     return g, labels
@@ -5836,6 +5920,335 @@ def make_room(key):
     return grid, spots, (exit_[0], exit_[1] - 1), exit_
 
 
+# ── The old mine ─────────────────────────────────────────────────────────────
+#
+# Under the north woods, ten floors of tunnels, laid out afresh each day the
+# way the dungeons below Clover Vale are: rooms and passages, a ladder up and
+# a ladder down, chests, and monsters that come for you.  They knock the
+# energy out of you; run out down there and you're carried out, robbed.
+
+MINE_DOOR = (90, 2)
+MINE_FLOORS = 10
+MINE_ROPE = 5                   # a rope hangs down to every fifth floor
+MINE_THEMES = (   # wall, its shadow and glints; floor and its speckles
+    ("#523826", "#342216", "#8a6a48", "#957452", ("#856446", "#a68662")),
+    ("#55555e", "#38383f", "#8e8e98", "#909096", ("#7e7e84", "#a2a2a8")),
+    ("#4a3a6a", "#2e2448", "#a888f0", "#5c4e6c", ("#4e4260", "#6c5e80")),
+    ("#3e2420", "#261410", "#e86a2a", "#664236", ("#56362c", "#785042")))
+
+Monster = namedtuple("Monster", "name hp dmg gold floors traits verb")
+MONSTERS = {   # traits: fast moves twice; slow every other turn; erratic
+    #           wanders; armour turns half your blows; boss is the king
+    "slime": Monster("green slime", 3, 4, (1, 4), (1, 3), "", "splats"),
+    "bat": Monster("cave bat", 2, 3, (1, 3), (1, 4), "fast erratic",
+                   "nips"),
+    "rat": Monster("giant rat", 4, 5, (2, 6), (1, 5), "", "bites"),
+    "spider": Monster("cave spider", 6, 7, (3, 8), (3, 7), "fast",
+                      "bites"),
+    "frost_slime": Monster("frost slime", 7, 8, (4, 10), (4, 7), "",
+                           "smothers"),
+    "skeleton": Monster("skeleton", 9, 10, (6, 14), (4, 9), "",
+                        "clonks"),
+    "goblin": Monster("goblin", 10, 11, (10, 22), (5, 10), "",
+                      "whacks"),
+    "ghost": Monster("ghost", 8, 12, (8, 18), (6, 10), "erratic",
+                     "chills"),
+    "golem": Monster("rock golem", 18, 14, (15, 30), (7, 10),
+                     "slow armour", "pounds"),
+    "imp": Monster("fire imp", 11, 13, (12, 26), (8, 10), "fast",
+                   "scorches"),
+    "shadow_slime": Monster("shadow slime", 15, 13, (14, 28), (8, 10), "",
+                            "engulfs"),
+    "king": Monster("the Mine King", 45, 16, (400, 600), (10, 10), "boss",
+                    "smites"),
+}
+WEAPONS = {"broadsword": 6, "short sword": 4, "pickaxe": 2, "axe": 2,
+           "hoe": 2, "scythe": 2}       # your best one is the one you use
+ARTIFACTS = [   # (name, price, the shallowest floor it's found on)
+    ("old coin", 60, 1), ("clay pipe", 80, 1), ("chipped arrowhead", 70, 1),
+    ("rusty key", 90, 1), ("miner's lamp", 180, 3), ("amber bead", 200, 3),
+    ("dwarf spectacles", 250, 4), ("fossil fern", 300, 4),
+    ("ancient doll", 400, 5), ("silver chalice", 600, 6),
+    ("crystal skull", 900, 7), ("golden goblet", 1100, 8),
+    ("dragon scale", 1200, 8), ("star shard", 1500, 9)]
+KING_PRIZE = "crown of the deep"
+for _n, _v, _f in ARTIFACTS + [(KING_PRIZE, 5000, MINE_FLOORS)]:
+    ITEMS[_n] = (_v, 0, "artifact")
+CHEST_ITEMS = (("energy tonic", 1, 1), ("bread", 1, 2), ("stone", 5, 15),
+               ("coffee", 1, 1), ("honey cake", 1, 1))
+MINE_RESCUE = [
+    "Everything goes black...",
+    "You wake on a cot in the Clinic, aching all over. Otto found you "
+    "face down in the old mine and carried you out over his shoulder.",
+    "\"Monsters,\" says Dr. Thorne, shaking his head. \"Down there with "
+    "your pockets full. Of course something helped itself.\""]
+
+
+def mine_theme(floor):
+    return min(3, (floor - 1) // 3)
+
+
+def make_mine_floor(seed, day, floor):
+    """One floor of the old mine for one day: (grid, the up ladder, the
+    down ladder or None, the monsters [(kind, x, y)], the chests)."""
+    rng = random.Random("mine:%s:%d:%d" % (seed, day, floor))
+    W, H = 36, 24
+    th = mine_theme(floor)
+    wall, ground = "mwall_%d" % th, "mfloor_%d" % th
+    while True:
+        g = blank(W, H, wall)
+        rooms = []
+        for _ in range(400):
+            if len(rooms) >= 7:
+                break
+            w, h = rng.randint(4, 8), rng.randint(3, 6)
+            x, y = rng.randint(1, W - w - 1), rng.randint(1, H - h - 1)
+            if any(x <= r[2] + 2 and r[0] <= x + w + 1 and
+                   y <= r[3] + 2 and r[1] <= y + h + 1 for r in rooms):
+                continue
+            rooms.append((x, y, x + w - 1, y + h - 1))
+        if len(rooms) >= 5:
+            break
+    rooms.sort(key=lambda r: r[0] + r[2] + rng.random())
+    centres = [((r[0] + r[2]) // 2, (r[1] + r[3]) // 2) for r in rooms]
+
+    def carve(a, b):
+        (ax, ay), (bx, by) = a, b
+        if rng.random() < 0.5:
+            pts = [(x, ay) for x in range(min(ax, bx), max(ax, bx) + 1)]
+            pts += [(bx, y) for y in range(min(ay, by), max(ay, by) + 1)]
+        else:
+            pts = [(ax, y) for y in range(min(ay, by), max(ay, by) + 1)]
+            pts += [(x, by) for x in range(min(ax, bx), max(ax, bx) + 1)]
+        for x, y in pts:
+            g[y][x] = ground
+    for r in rooms:
+        for y in range(r[1], r[3] + 1):
+            for x in range(r[0], r[2] + 1):
+                g[y][x] = ground
+    for a, b in zip(centres, centres[1:]):
+        carve(a, b)
+    for _ in range(2):                  # a loop or two
+        i, j = sorted(rng.sample(range(len(rooms)), 2))
+        carve(centres[i], centres[j])
+    up = centres[0]
+    g[up[1]][up[0]] = "ladder_up_%d" % th
+    down = None
+    end = centres[-1]
+    if floor < MINE_FLOORS:
+        down = end
+        g[end[1]][end[0]] = "ladder_down_%d" % th
+    keep = {up, (up[0], up[1] + 1), end, (end[0], end[1] + 1)}
+    spots = [(x, y) for y in range(H) for x in range(W)
+             if g[y][x] == ground and (x, y) not in keep]
+    chests = []
+    inner = [(x, y) for r in rooms[1:] for x in range(r[0] + 1, r[2])
+             for y in range(r[1] + 1, r[3]) if (x, y) not in keep]
+    for x, y in rng.sample(inner, min(len(inner), rng.randint(1, 3))):
+        g[y][x] = "chest_%d" % th
+        chests.append((x, y))
+    kinds = [k for k, m in MONSTERS.items() if "boss" not in m.traits and
+             m.floors[0] <= floor <= m.floors[1]]
+    far = [p for p in spots if p not in chests and
+           abs(p[0] - up[0]) + abs(p[1] - up[1]) >= 6]
+    mobs = [(rng.choice(kinds), x, y) for x, y in rng.sample(
+        far, min(len(far), 3 + floor // 2 + rng.randint(0, 2)))]
+    if floor == MINE_FLOORS:
+        mobs.append(("king", end[0], end[1]))
+    return g, up, down, mobs, chests
+
+
+SLIME_ROWS = (
+    "................", "................", "................",
+    "................", "................", "................",
+    "......gggg......",
+    "....gggggggg....",
+    "...ggwwgggggg...",
+    "..ggwggggggggg..",
+    "..ggkggggkgggg..",
+    "..ggkggggkgggg..",
+    ".gggggggggggggg.",
+    ".ggggGGGGGGgggg.",
+    "..GGGGGGGGGGGG..",
+    "................")
+GOLEM_ROWS = (
+    "................", "................",
+    ".....ssssss.....",
+    "....swssssss....",
+    "....srssssrs....",
+    "....ssSSSSss....",
+    "..ssssssssssss..",
+    ".sswsssssssssss.",
+    ".ssssSssssSssss.",
+    ".ss.ssssssss.ss.",
+    ".SS.ssssssss.SS.",
+    "....SSSSSSSS....",
+    "....sss..sss....",
+    "....sss..sss....",
+    "...SSSS..SSSS...",
+    "................")
+SKELETON_ROWS = (
+    "................",
+    "......wwww......",
+    ".....wwwwww.....",
+    ".....wkwwkw.....",
+    ".....wwwwww.....",
+    "......wkkw......",
+    ".......ww.......",
+    "....wwwwwwww....",
+    "...w.wWwwWw.w...",
+    "...w.wWwwWw.w...",
+    "..w...wwww...w..",
+    "......w..w......",
+    "......w..w......",
+    ".....w....w.....",
+    "....ww....ww....",
+    "................")
+HIT_ROWS = (
+    "................",
+    ".......y........",
+    ".......y........",
+    "..y....y....y...",
+    "...y...y...y....",
+    "....y.www.y.....",
+    ".....wwwww......",
+    "yyyywwwwwwwyyyy.",
+    ".....wwwww......",
+    "....y.www.y.....",
+    "...y...y...y....",
+    "..y....y....y...",
+    ".......y........",
+    ".......y........",
+    "................", "................")
+ART.update({
+    "hit": ({"y": "#fff060", "w": "#ffffff"}, HIT_ROWS),
+    "ouch": ({"y": "#f04040", "w": "#ffc0c0"}, HIT_ROWS),
+    "mon_slime": ({"g": "#5ac04a", "G": "#3a8a30", "w": "#c8f0b0",
+                   "k": "#1a2a1a"}, SLIME_ROWS),
+    "mon_frost_slime": ({"g": "#70b8f0", "G": "#4080c0", "w": "#e0f4ff",
+                         "k": "#1a2040"}, SLIME_ROWS),
+    "mon_shadow_slime": ({"g": "#6a3a9a", "G": "#42206a", "w": "#b090e0",
+                          "k": "#f0e040"}, SLIME_ROWS),
+    "mon_bat": ({"b": "#6a5a6a", "B": "#3a2e3a", "r": "#f04040"}, (
+        "................", "................", "................",
+        "................",
+        ".B............B.",
+        ".BB...b..b...BB.",
+        ".BBB..bbbb..BBB.",
+        ".BBBBbrbbrbBBBB.",
+        "..BBBBbbbbBBBB..",
+        "...BB.bbbb.BB...",
+        "..B....bb....B..",
+        "................", "................", "................",
+        "................", "................")),
+    "mon_rat": ({"r": "#8a8a8a", "R": "#5a5a5a", "p": "#e8a0a8",
+                 "k": "#1a1a1a"}, (
+        "................", "................", "................",
+        "................", "................", "................",
+        "................", "................",
+        "...RR...........",
+        "..rrrrrrrrr.....",
+        ".krrrrrrrrrr....",
+        "prrrrrrrrrrrr..p",
+        "..rRrrrrrRrrppp.",
+        "...p.p...p.p....",
+        "................", "................")),
+    "mon_spider": ({"s": "#503a50", "S": "#2a1e2a", "r": "#f03030"}, (
+        "................", "................", "................",
+        "................", "................", "................",
+        "..S..........S..",
+        "...S..ssss..S...",
+        "S...SssssssS...S",
+        ".S..SsrssrsS..S.",
+        "..SSssssssssSS..",
+        "...S.SssssS.S...",
+        "..S..S....S..S..",
+        ".S..S......S..S.",
+        "................", "................")),
+    "mon_skeleton": ({"w": "#ece6d4", "W": "#a8a090", "k": "#1a1a1a"},
+                     SKELETON_ROWS),
+    "mon_goblin": ({"g": "#6aa040", "G": "#4a7428", "c": "#7a5030",
+                    "k": "#f0e040", "y": "#f4f0d0"}, (
+        "................", "................", "................",
+        ".g....gggg....g.",
+        ".gg..gggggg..gg.",
+        "..gggkggggkggg..",
+        "....gggGGggg....",
+        ".....gGyyGg.....",
+        "......gggg......",
+        "....cccccccc....",
+        "...gccccccccg...",
+        "...g.cccccc.g...",
+        ".....cc..cc.....",
+        ".....gg..gg.....",
+        "....GGG..GGG....",
+        "................")),
+    "mon_ghost": ({"w": "#e8eef8", "W": "#a8b4c8", "k": "#2a2a3a"}, (
+        "................", "................",
+        "......wwww......",
+        "....wwwwwwww....",
+        "...wwwwwwwwww...",
+        "...wwkwwwwkww...",
+        "..wwwkwwwwkwww..",
+        "..wwwwwkkwwwww..",
+        "..wwwwwkkwwwww..",
+        "..wwwwwwwwwwww..",
+        "..wwwwwwwwwwwW..",
+        "..WwwwwwwwwwWW..",
+        "..WWwwWWwwWWWW..",
+        "..W..WW..WW..W..",
+        "................", "................")),
+    "mon_golem": ({"s": "#8a8478", "S": "#5a554c", "w": "#b8b2a4",
+                   "r": "#f08030"}, GOLEM_ROWS),
+    "mon_imp": ({"r": "#d03a2a", "R": "#8a2018", "y": "#f8e040",
+                 "o": "#f8a030"}, (
+        "................",
+        "....o......o....",
+        "....R......R....",
+        ".....RrrrrrR....",
+        ".....ryrrryr....",
+        ".....rrRRRrr....",
+        "......rrrrr.....",
+        "...R.rrrrrrr.R..",
+        "...RrrrrrrrrrR..",
+        "......rrrrr.....",
+        ".....rr...rr...o",
+        ".....rr...rr..o.",
+        ".....RR...RR.R..",
+        "............R...",
+        "................", "................")),
+    "mon_king": ({"w": "#ece6d4", "k": "#c02020", "y": "#f4c830",
+                  "r": "#d02040", "p": "#6a2a8a", "P": "#42185a"}, (
+        "....y.y..y.y....",
+        "....yyyyyyyy....",
+        "....yryyyyry....",
+        ".....wwwwww.....",
+        ".....wkwwkw.....",
+        ".....wwwwww.....",
+        "......wkkw......",
+        "...pppppppppp...",
+        "..ppPppppppPp...",
+        "..w.ppyyyypp.w..",
+        "..w.pppppppp.w..",
+        "...ppppppppppp..",
+        "...pPpppppppPp..",
+        "...PPPPPPPPPPP..",
+        "....w......w....",
+        "................")),
+})
+
+
+class Mob:
+    """A monster in the mine."""
+
+    def __init__(self, idx, kind, x, y):
+        self.idx, self.kind, self.x, self.y = idx, kind, x, y
+        self.m = MONSTERS[kind]
+        self.hp = self.m.hp
+        self.aware = False
+        self.tile = "mon_" + kind
+
+
 # ── Areas and people ─────────────────────────────────────────────────────────
 
 
@@ -5919,6 +6332,19 @@ MUSIC_VOLUME = 0.55             # relative to the sound effects
 # out of doors, one for night, one for indoors and one for festivals.
 
 MUSIC = {
+    "mine": {    # spooky, but not very
+        "tempo": 170, "bar": 8,
+        "chords": "Am Am F E  Am Dm E E",
+        "lead": ("square", 0.125, 0.065),
+        "melody": """
+            A4 - C5 - E5 - - -   | F5 - E5 - C5 - - -   |
+            A4 - - - C5 - F5 -   | E5 - - - G#4 - - -   |
+            A4 - C5 - E5 - A5 -  | F5 - D5 - A4 - - -   |
+            B4 - D5 - G#4 - - -  | E4 - - - . . . .""",
+        "voices": [("triangle", 0.5, 0.22, "R2 - R2 - R3 - R2 -"),
+                   ("square", 0.125, 0.025, "R3 . F3 . R4 . F3 .")],
+        "drums": "k . . h k . s .",
+    },
     "spring": {
         "tempo": 112, "bar": 8,
         "chords": "G D Em C  G D C D",
@@ -6806,6 +7232,13 @@ into one to pet her, once a day; fill their water bowls,
 and a devoted pet brings presents. Her fruit tree saplings
 grow up in 28 days and bear fruit in their season.
 
+The old mine, up in the north woods, goes down ten floors.
+Walk into monsters (or press Space) to fight them for gold;
+chests hold gold, food and artifacts (Juniper loves them).
+Each hit costs energy; at none you're carried out, without
+your gold and some of your bag.  Otto sells swords.  A rope
+hangs to every fifth floor you reach.
+
 Nell builds machines: jars for mayonnaise and preserves, a
 cheese press, a loom and beehives.  Set one on your farm
 and walk into it to load it or take what it's made.
@@ -6929,6 +7362,7 @@ class Game:
         self.menu_rows = []
         self.walking = None
         self.busy = False
+        self.mine = None            # the floor of the mine you're on
         self.portraits = {}
         self.naming = None
         self.heard = []
@@ -7085,7 +7519,7 @@ class Game:
                                             "shen_", "cow_", "scow_",
                                             "sheep", "ssheep", "cat_",
                                             "scat_", "dog_", "sdog_",
-                                            "hen_")):
+                                            "hen_", "mon_")):
                     continue
                 img = tk.PhotoImage(width=16, height=16)
                 if sprite:
@@ -7570,6 +8004,9 @@ class Game:
                 for c in st["pets"]:
                     if c.get("vid") == vid:
                         n.where, n.x, n.y = c["where"], c["x"], c["y"]
+        if st["area"] == "mine":            # saved underground: come up
+            st["area"] = "valley"
+            st["pos"] = [MINE_DOOR[0], MINE_DOOR[1] + 1]
         self.area = self.areas[st["area"]]
         if self.area.key == "loo" and st["loo_in"] not in st["loos"]:
             self.area = self.areas["valley"]
@@ -7692,6 +8129,8 @@ class Game:
         if self.area is None:
             return
         self.pass_time(cost)
+        if self.mine and self.area.key == "mine":
+            self.mine_turn()
         st = self.st
         if st["wedding"] == st["day"] and 1000 <= self.hhmm() < 1500 and \
                 self.area.outdoor and not self.scene:
@@ -7821,6 +8260,8 @@ class Game:
     def bump(self, x, y, t):
         """Walking into something: True if that was all the move did."""
         a = self.area
+        if a.key == "mine":
+            return self.mine_bump(x, y, t)
         i = self.pet_at(a.key, x, y)
         if i is not None:
             self.walking = None
@@ -7848,6 +8289,9 @@ class Game:
                 return True
             if t == "bin":
                 self.ship_menu()
+                return True
+            if t == "cave":
+                self.mine_menu()
                 return True
             if t == "mailbox":
                 self.read_mail()
@@ -8032,6 +8476,305 @@ class Game:
         self.end_turn(WALK_COST)
         self.save()
 
+    # ── The old mine ──
+
+    def mine_state(self):
+        """What's been done in the mine: the deepest floor (a rope hangs to
+        every fifth), the king, and today's beaten monsters and chests."""
+        m = self.st.setdefault("mine", {"deepest": 0, "king": False})
+        if m.get("day") != self.st["day"]:
+            m.update(day=self.st["day"], cleared={}, opened={})
+        return m
+
+    def mine_menu(self):
+        if self.st.get("leashed"):
+            self.say("Not with %s on a leash. Take her home first." %
+                     self.display_name(self.st["leashed"]), "info")
+            self.render()
+            return
+        if self.p["energy"] <= 0:
+            self.say("You're far too tired to go poking about in a mine.",
+                     "bad")
+            self.render()
+            return
+        m = self.mine_state()
+        rows = [("Climb down to floor 1", lambda: self.enter_mine(1))]
+        for f in range(MINE_ROPE, m["deepest"] + 1, MINE_ROPE):
+            rows.append(("Take your rope down to floor %d" % f,
+                         lambda f=f: self.enter_mine(f)))
+        rows.append(("Not now", lambda: None))
+        self.open_menu("The old mine. A cold draught breathes out of the "
+                       "dark.%s" % (" (Deepest: floor %d.)" % m["deepest"]
+                                    if m["deepest"] else ""), rows)
+
+    def enter_mine(self, floor, from_below=False):
+        m = self.mine_state()
+        g, up, down, mobs, chests = make_mine_floor(
+            self.st["seed"], self.st["day"], floor)
+        k = str(floor)
+        for xy in m["opened"].get(k, ()):
+            x, y = map(int, xy.split(","))
+            g[y][x] = "chest_open_%d" % mine_theme(floor)
+        gone = set(m["cleared"].get(k, ()))
+        self.area = Area("mine", g, "the old mine, floor %d" % floor)
+        self.mine = {"floor": floor, "turn": 0, "mobs": [
+            Mob(i, kind, x, y) for i, (kind, x, y) in enumerate(mobs)
+            if i not in gone and not (kind == "king" and m["king"])]}
+        x, y = down if from_below else up
+        self.st["pos"] = [x, y + 1]
+        self.face(0, 1)
+        self.sound.play("stairs")
+        self.walking = None
+        self.say("Floor %d of the old mine." % floor, "info")
+        if floor > m["deepest"]:
+            m["deepest"] = floor
+            if floor % MINE_ROPE == 0:
+                self.say("You tie a rope to the ladder here: next time you "
+                         "can climb straight down to floor %d." % floor,
+                         "good")
+        if any(mob.kind == "king" for mob in self.mine["mobs"]):
+            self.say("A voice like grinding stone echoes out of the dark: "
+                     "\"WHO COMES DOWN TO MY HALL?\"", "bad")
+        self.layout()
+        self.end_turn(WALK_COST)
+
+    def leave_mine(self):
+        self.mine = None
+        self.area = self.areas["valley"]
+        x, y = MINE_DOOR
+        self.st["pos"] = [x, y + 1]
+        self.face(0, 1)
+        self.sound.play("stairs")
+        self.walking = None
+        self.say("You climb out of the old mine, blinking.", "info")
+        self.layout()
+        self.end_turn(WALK_COST)
+        self.save()
+
+    def mine_bump(self, x, y, t):
+        mob = self.mob_at(x, y)
+        if mob:
+            self.attack(mob)
+            return True
+        floor = self.mine["floor"]
+        if t.startswith("ladder_up"):
+            if floor == 1:
+                self.leave_mine()
+            else:
+                self.enter_mine(floor - 1, from_below=True)
+            return True
+        if t.startswith("ladder_down"):
+            self.enter_mine(floor + 1)
+            return True
+        if t.startswith("chest_open"):
+            self.say("An empty chest. You've had what was in it.", "info")
+            self.render()
+            return True
+        if t.startswith("chest"):
+            self.open_chest(x, y)
+            return True
+        return False
+
+    def mob_at(self, x, y):
+        for mob in self.mine["mobs"] if self.mine else ():
+            if (mob.x, mob.y) == (x, y):
+                return mob
+        return None
+
+    def mob_can(self, x, y):
+        a = self.area
+        return a.inside(x, y) and a.grid[y][x].startswith("mfloor_") and \
+            (x, y) != self.pos() and self.mob_at(x, y) is None
+
+    @staticmethod
+    def the_mob(mob):
+        n = mob.m.name
+        return n if n.startswith("the ") else "the " + n
+
+    def weapon(self):
+        """The best thing you carry to hit with, and how hard it hits."""
+        have = [w for w in WEAPONS if w in self.p["tools"]]
+        if not have:
+            return "fists", 1
+        w = max(have, key=WEAPONS.get)
+        return w, WEAPONS[w]
+
+    def mine_swing(self):
+        mob = self.mob_at(*self.ahead())
+        if mob:
+            self.attack(mob)
+        else:
+            self.say("You swing at the dark. The dark doesn't mind.",
+                     "info")
+            self.end_turn(WALK_COST)
+
+    def attack(self, mob):
+        w, power = self.weapon()
+        the = self.the_mob(mob)
+        mob.aware = True
+        verb = {"fists": "punch", "broadsword": "slash", "short sword":
+                "slash", "axe": "hack at", "scythe": "slash"}.get(w, "whack")
+        if random.random() < 0.15:
+            self.sound.play("miss")
+            self.say("You swing at %s and miss." % the, "info")
+        else:
+            crit = random.random() < 0.1
+            n = (power + random.randint(0, 1)) * (2 if crit else 1)
+            if "armour" in mob.m.traits and not crit and \
+                    random.random() < 0.5:
+                self.sound.play("miss")
+                self.say("CLANG! Your blow glances off %s." % the, "info")
+            else:
+                mob.hp -= n
+                self.flash(mob.x, mob.y, "hit")
+                if mob.hp <= 0:
+                    self.slay(mob)
+                else:
+                    self.sound.play("hit")
+                    self.say("You %s %s%s." % (
+                        verb, the, ", hard" if crit else ""), "good")
+        self.end_turn(WALK_COST)
+
+    def dig_artifact(self, floor, rng=random):
+        found = [n for n, v, f in ARTIFACTS if f <= floor]
+        return rng.choice(found[-4:] if rng.random() < 0.6 else found)
+
+    def slay(self, mob):
+        self.mine["mobs"].remove(mob)
+        m = self.mine_state()
+        floor = self.mine["floor"]
+        m["cleared"].setdefault(str(floor), []).append(mob.idx)
+        gold = random.randint(*mob.m.gold)
+        self.p["gold"] += gold
+        self.sound.play("kill")
+        self.say("%s is beaten! It leaves %dg behind." % (
+            cap(self.the_mob(mob)), gold), "gold")
+        if mob.kind == "king":
+            m["king"] = True
+            self.give(KING_PRIZE)
+            self.sound.play("quest")
+            self.say("The Mine King crumbles into a heap of old bones and "
+                     "gravel. On top of the heap sits his crown, cold "
+                     "and heavy and glittering: the Crown of the Deep!",
+                     "quest")
+        elif random.random() < 0.06:
+            n = self.dig_artifact(floor)
+            self.give(n)
+            self.say("...and something else glints in the dust: %s!" %
+                     an(n), "gold")
+
+    def open_chest(self, x, y):
+        f = self.mine["floor"]
+        st = self.st
+        rng = random.Random("chest:%s:%d:%d:%d:%d" % (st["seed"], st["day"],
+                                                      f, x, y))
+        self.area.grid[y][x] = "chest_open_%d" % mine_theme(f)
+        self.mine_state()["opened"].setdefault(str(f), []).append(
+            "%d,%d" % (x, y))
+        r, art = rng.random(), 0.2 + 0.04 * f
+        if r < art:
+            n = self.dig_artifact(f, rng)
+            self.give(n)
+            self.sound.play("quest")
+            self.say("You prise the chest open. Inside, wrapped in rotten "
+                     "sacking: %s! Juniper would love to see that." % an(n),
+                     "gold")
+        elif r < art + 0.45:
+            gold = rng.randint(8, 20) * f
+            self.p["gold"] += gold
+            self.sound.play("gold")
+            self.say("You prise the chest open: old coins, %dg of them." %
+                     gold, "gold")
+        else:
+            item, lo, hi = rng.choice(CHEST_ITEMS)
+            k = rng.randint(lo, hi)
+            self.give(item, k)
+            self.sound.play("pick")
+            self.say("You prise the chest open. Inside: %s." % (
+                an(item) if k == 1 else "%d %s" % (k, plural(item, k))),
+                "good")
+        self.end_turn(WALK_COST)
+
+    def mine_turn(self):
+        """The monsters' turn: each that's seen you comes for you."""
+        mine = self.mine
+        mine["turn"] += 1
+        for mob in list(mine["mobs"]):
+            t = mob.m.traits
+            if "slow" in t and mine["turn"] % 2:
+                continue
+            for _ in range(2 if "fast" in t else 1):
+                if self.mine is not mine or self.mob_act(mob):
+                    return
+
+    def mob_act(self, mob):
+        """One monster's move. True if it knocked you out."""
+        px, py = self.pos()
+        d = abs(mob.x - px) + abs(mob.y - py)
+        if d == 1:
+            mob.aware = True
+            return self.mob_strike(mob)
+        if d <= 7:
+            mob.aware = True
+        dirs = list(DIRS)
+        random.shuffle(dirs)
+        if mob.aware and not ("erratic" in mob.m.traits and
+                              random.random() < 0.4):
+            dirs.sort(key=lambda dd: abs(mob.x + dd[0] - px) +
+                      abs(mob.y + dd[1] - py))
+        elif random.random() < 0.5:
+            return False
+        for dx, dy in dirs:
+            if self.mob_can(mob.x + dx, mob.y + dy):
+                mob.x += dx
+                mob.y += dy
+                break
+        return False
+
+    def mob_strike(self, mob):
+        the = cap(self.the_mob(mob))
+        if random.random() > (0.5 if "erratic" in mob.m.traits else 0.65):
+            self.say("%s lunges at you and misses." % the, "info")
+            return False
+        p = self.p
+        n = max(1, mob.m.dmg + random.randint(-1, 1))
+        p["energy"] -= n
+        self.sound.play("hurt")
+        self.flash(*self.pos(), tile="ouch")
+        self.say("%s %s you! (-%d energy)" % (the, mob.m.verb, n), "bad")
+        if p["energy"] <= 0:
+            self.mine_rescue()
+            return True
+        return False
+
+    def mine_rescue(self):
+        """Knocked out down the mine: carried to the Clinic, without your
+        gold and some of what was in your bag."""
+        p = self.p
+        self.mine = None
+        self.walking = None
+        self.sound.play("death")
+        purse, p["gold"] = p["gold"], 0
+        stacks = sorted(n for n, c in p["items"].items() if c)
+        lost = [n for n in stacks if random.random() < 0.4]
+        if stacks and not lost:
+            lost = [random.choice(stacks)]
+        for n in lost:
+            del p["items"][n]
+        for line in MINE_RESCUE:
+            self.say(line, "bad")
+        self.say("Your purse is empty (%dg gone)%s." % (
+            purse, ", and so are your %s" % and_list(lost) if lost else ""),
+            "bad")
+        clinic = self.areas["clinic"]
+        self.area = clinic
+        self.st["pos"] = list(clinic.entry)
+        self.face(0, -1)
+        p["energy"] = p["max_energy"] // 4
+        self.layout()
+        self.pass_time(120, quiet=True)
+        self.save()
+
     # ── Tools ──
 
     def held(self):
@@ -8150,6 +8893,9 @@ class Game:
 
     def use_tool(self):
         if not self.ready():
+            return
+        if self.area.key == "mine":
+            self.mine_swing()
             return
         self.use_tool_at(*self.ahead())
 
@@ -8738,6 +9484,8 @@ class Game:
     def outside_door(self):
         """The square outside the room you're in."""
         key = self.area.key
+        if key == "mine":
+            return MINE_DOOR
         if key == "loo":
             vid = self.st.get("loo_in")
             if vid in self.st["loos"]:
@@ -11594,6 +12342,10 @@ class Game:
             self.say("Nothing to %s there." % ("chop" if h == "axe" else
                                                "break"), "info")
             return
+        if h in ("short sword", "broadsword"):
+            self.say("You practise a few swings. Best save it for the old "
+                     "mine.", "info")
+            return
         if h == "scythe":
             if t == "tallgrass" or (t in ("grass", "meadow") and
                                     random.random() < 0.1):
@@ -11847,6 +12599,7 @@ class Game:
         self.new_day(0.8 if late else 1.0)
 
     def collapse(self):
+        self.mine = None
         self.end_talk()
         self.menu = None
         self.say("It's two in the morning. You collapse...", "bad")
@@ -13049,9 +13802,24 @@ class Game:
         for n, c in extra.items():
             self.take(n, c)
         self.sound.play("gold")
-        if name in ("fishing rod", "leash", "milk pail", "shears"):
+        if name in ("fishing rod", "leash", "milk pail", "shears",
+                    "short sword", "broadsword"):
+            if name in p["tools"]:
+                p["gold"] += price
+                for n, c in extra.items():
+                    self.give(n, c)
+                self.speak(vid, "You've already got one of those!")
+                return
             p["tools"].append(name)
             p["hand"] = name
+            if name in WEAPONS:
+                self.speak(vid, "(happy)Good steel, that. You'll be wanting "
+                                "it for the old mine up in the woods, I "
+                                "suppose. My grandad worked it, before the "
+                                "things moved in. Mind your energy down "
+                                "there: get knocked flat and you'll come up "
+                                "with empty pockets.")
+                return
             if name == "shears":
                 self.speak(vid, "(happy)Good sharp shears. A sheep's ready "
                                 "for a trim every third day; you'll see "
@@ -13862,6 +14630,10 @@ class Game:
                         people[(beast["ox"], beast["oy"])] = (
                             "hen_" + beast["colour"] if pen == "chickens"
                             else self.barn_tile(beast))
+        for mob in self.mine["mobs"] if a.key == "mine" and self.mine \
+                else ():
+            if (mob.x - px) ** 2 + (mob.y - py) ** 2 <= 30:
+                people[(mob.x, mob.y)] = mob.tile
         for pet in st.get("pets", ()):
             if pet["where"] == a.key:
                 people[(pet["x"], pet["y"])] = "%s_%s" % (pet["kind"],
@@ -13919,7 +14691,12 @@ class Game:
                     top = people.get((x, y))
                     if (x, y) == (px, py):
                         top = "you"
-                    if lvl:
+                    if a.key == "mine":         # your lantern, in the dark
+                        d2 = (x - px) ** 2 + (y - py) ** 2
+                        l2 = 0 if d2 <= 12 else 1 if d2 <= 30 else 2
+                        if l2:
+                            base = "%d:%s" % (l2, base)
+                    elif lvl:
                         l2 = min(lvl, lit.get((x, y), 2))
                         if l2:
                             base = "%d:%s" % (l2, base)
@@ -14242,6 +15019,8 @@ class Game:
         self.condition.config(text="\n".join(cond))
         if self.festival_on():
             self.sound.tune = "festival"
+        elif a.key == "mine":
+            self.sound.tune = "mine"
         elif not a.outdoor:
             self.sound.tune = "inside"
         elif self.light_level() == 2:
@@ -14701,6 +15480,9 @@ def describe_item(n):
         bits.append("Eat it for %d energy." % energy)
     if kind == "gift":
         bits.append("A gift for someone special.")
+    if kind == "artifact":
+        bits.append("Something old from the mine. Juniper at the library "
+                    "would love it.")
     if kind == "romance":
         bits.append({"blossom bouquet": "Give it to someone at 8 hearts to "
                                         "ask them to go steady.",
@@ -17126,7 +17908,10 @@ TERRAIN = ["grass", "tallgrass", "meadow", "flowers", "path", "cobble",
            "fireplace", "forge", "anvil", "barrel", "crates", "plant", "cot",
            "cabinet", "piano", "easel", "nets", "toolrack", "straw", "nest",
            "trough", "loohole", "loobench", "hay", "churn", "moonwin",
-           "loopaper", "loobend"]
+           "loopaper", "loobend", "cave"]
+TERRAIN += ["%s_%d" % (k, th) for th in range(len(MINE_THEMES))
+            for k in ("mwall", "mfloor", "ladder_up", "ladder_down", "chest",
+                      "chest_open")]
 TERRAIN += ["roof_" + r for r in ROOFS] + ["eave_" + r for r in ROOFS]
 TERRAIN += [k + "_" + m for m in WALLS for k in ("wall", "win", "door")]
 ANIMATED_TERRAIN = {"water", "river", "pond", "fountain", "lamp",
@@ -17472,6 +18257,37 @@ def selftest():
         dx, dy = door_of(key)
         if grid[dy + 1][dx] not in WALKABLE:
             problems.append("door of %s blocked" % key)
+    mx, my = MINE_DOOR
+    if grid[my][mx] != "cave" or grid[my + 1][mx] not in WALKABLE:
+        problems.append("the mine's mouth")
+    tile_names = set(all_tiles(0))
+    for seed in (1, 2, 3):
+        for f in range(1, MINE_FLOORS + 1):
+            g, up, down, mobs, chests = make_mine_floor(seed, 0, f)
+            start = (up[0], up[1] + 1)
+            seen, q = {start}, deque([start])
+            while q:
+                x, y = q.popleft()
+                for dx, dy in DIRS:
+                    n = (x + dx, y + dy)
+                    if n not in seen and g[n[1]][n[0]] in WALKABLE:
+                        seen.add(n)
+                        q.append(n)
+            for x, y in [p for p in (down,) if p] + [
+                    (x, y) for _, x, y in mobs] + chests:
+                if not any((x + dx, y + dy) in seen for dx, dy in DIRS):
+                    problems.append("mine %d floor %d: %d,%d unreachable"
+                                    % (seed, f, x, y))
+            if (down is None) != (f == MINE_FLOORS) or g[start[1]][
+                    start[0]] not in WALKABLE:
+                problems.append("mine floor %d ladders" % f)
+            for row in g:
+                for t in row:
+                    if t not in tile_names:
+                        problems.append("mine tile %s undrawn" % t)
+            for kind, x, y in mobs:
+                if "mon_" + kind not in tile_names:
+                    problems.append("monster %s undrawn" % kind)
     for name, (x, y) in OUT_SPOTS.items():
         if grid[y][x] not in WALKABLE:
             problems.append("spot %s on %s" % (name, grid[y][x]))
@@ -17507,7 +18323,8 @@ def selftest():
                     in ("checkup", "copper can", "cabin extension",
                         "chicken", "chicken coop", "leash", "barn",
                         "cow", "milk pail", "sheep", "shears", "cat", "dog",
-                        "fishing rod", "sprinkler"):
+                        "fishing rod", "sprinkler", "short sword",
+                        "broadsword"):
                 problems.append("shop %s sells unknown %s" % (kind, entry))
     for t in (MAID_ACCEPT, MAID_PROPOSAL, MAID_VOWS, MAID_COURTING,
               MAID_WIFE, MAID_WIFE_GREET):
