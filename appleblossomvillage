@@ -7839,6 +7839,52 @@ class Sound:
             buf[k] += v * env * gain * 0.6
 
     @staticmethod
+    def bark(buf, gain=0.22):
+        """A dog's "woof woof": each a short, rough, voiced burst whose
+        pitch jumps then falls, through two mouth resonances sweeping from
+        "wuh" to "uff", with a breathy edge and a puff of air at the end."""
+        rng = random.Random(5)
+
+        def woof(t0, f0, dur):
+            start, n = int(t0 * RATE), int(dur * RATE)
+            buf.extend([0.0] * max(0, start + n - len(buf)))
+            ph = 0.0
+            r1 = [0.0, 0.0]
+            r2 = [0.0, 0.0]
+            for k in range(n):
+                u = k / n
+                pitch = f0 * (1 + 0.25 * math.sin(math.pi * min(1, u * 3)) -
+                              0.45 * u) * (1 + rng.uniform(-0.04, 0.04))
+                ph += pitch / RATE
+                if ph >= 1.0:
+                    ph -= 1.0
+                src = (1 - 2 * ph) * 0.8 + rng.uniform(-0.5, 0.5) * (
+                    0.3 + 0.7 * u)             # a pulse, rougher as it goes
+                out = 0.0
+                for res, f, bw, w in ((r1, 900 - 450 * u, 180, 1.0),
+                                      (r2, 1700 - 700 * u, 260, 0.5)):
+                    rr = math.exp(-math.pi * bw / RATE)
+                    a1 = 2 * rr * math.cos(2 * math.pi * f / RATE)
+                    y = (1 - rr) * src + a1 * res[0] - rr * rr * res[1]
+                    res[1], res[0] = res[0], y
+                    out += y * w
+                env = min(1.0, k / (0.006 * RATE)) * (1 - u) ** 1.6
+                buf[start + k] += out * env * gain * 3
+
+        woof(0.0, 430, 0.17)
+        woof(0.24, 380, 0.19)
+        rng2 = random.Random(9)
+        for t0 in (0.15, 0.40):            # a little puff of breath after
+            start = int(t0 * RATE)
+            n = int(0.05 * RATE)
+            buf.extend([0.0] * max(0, start + n - len(buf)))
+            lo = 0.0
+            for k in range(n):
+                x = rng2.uniform(-1, 1)
+                lo += (x - lo) * 0.35
+                buf[start + k] += (x - lo) * (1 - k / n) * gain * 0.15
+
+    @staticmethod
     def baa(buf, dur=0.7, gain=0.3):
         """A sheep's bleat: a nasal, buzzy note with a fast goat-ish
         tremble, sliding down at the end."""
@@ -7996,9 +8042,7 @@ class Sound:
         self.meow(b)
         self.write("meow", b)
         b = []
-        for i, f in enumerate((340, 300)):
-            noise(b, i * 0.16, 0.09, 1600, 0.3)
-            tone(b, i * 0.16, f, 0.1, "square", 0.16)
+        self.bark(b)
         self.write("bark", b)
         b = []
         for i in range(3):
