@@ -386,6 +386,31 @@ maids), or squeeze past. Nothing turns her back, so instead you can
 **dismiss** her (you're asked to make sure): she folds her apron and is
 gone for good.
 
+**Companions.** Ask a monster maid to **come with you** and she follows a
+step behind you all day, into the mine and up the Sky Tower, fighting
+whatever's beside her (monsters can't hurt her), each with a talent:
+
+| Maid | Talent |
+| --- | --- |
+| Gloopy | sometimes throws herself in the way of a blow meant for you |
+| Frostine, Wisp, Silke | freeze, chill or web the monsters they hit, so they miss a turn or two |
+| Umbra | makes monsters lose track of you |
+| Flitter | hears them coming: your lantern reaches further |
+| Whiskers | scrounges half as much gold again from the fallen |
+| Gobbelina | gets half as much gold again out of chests |
+| Bonnie | hits hard |
+| Pebble | hits hardest of all, but every other turn |
+| Ember | throws fire, two squares |
+| Poopy | makes monsters beside her gag and miss a turn |
+| Seraphine | heals you as you go |
+
+Walk into her to swap places; use a tool on her to talk to her, or to send
+her home (she goes home at the end of the day anyway). An adventure
+together gives her hearts, once a day. If you're knocked out with her
+beside you, she carries you to the Clinic herself: you lose only half your
+gold, and nothing from your bag. One companion at a time, and not with an
+animal on the leash.
+
 She has a heart, too, and **heart scenes** at 4 and 8 hearts: a moment
 of her own the next time you talk to her (Ember's burnt supper, Bonnie at
 the mirror getting used to having a face, Pebble standing still all day

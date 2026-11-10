@@ -7211,6 +7211,22 @@ KID_TRAITS = {   # a monster maid's child: eye colour; what's odd about the
             ["(laugh)Look! Sparks! Mum showed me!",
              "(happy)I only burned the toast a little. It's nicer black."]),
 }
+COMPANION = {   # a monster maid at your side: how hard she hits, and her
+    # talent (what it's called, and what it does in the code below)
+    "slime": (3, "takes a blow for you, sometimes"),
+    "frost_slime": (3, "freezes the monsters she hits"),
+    "shadow_slime": (3, "makes monsters lose track of you"),
+    "bat": (3, "hears them coming: your lantern reaches further"),
+    "rat": (3, "scrounges half as much gold again from the fallen"),
+    "spider": (3, "webs the monsters she hits"),
+    "skeleton": (5, "hits hard"),
+    "goblin": (4, "gets half as much gold again out of chests"),
+    "ghost": (3, "chills the monsters she hits"),
+    "golem": (7, "hits hardest of all, but slowly"),
+    "imp": (5, "throws fire, two squares"),
+    "poop": (2, "makes monsters beside her gag and miss a turn"),
+    "angel": (4, "heals you as you go"),
+}
 STATUE_HEFT = 20                # energy it takes to pick a statue up
 
 
@@ -8673,7 +8689,8 @@ good: walk into one once a day for gold, eggs, milk, wood,
 wool, magic or energy, and a looified one is an outhouse.
 Invite a maidified monster to your cabin to do a chore;
 chat, kiss and give her gifts and she can become your
-sweetheart and wife, like any maid.  You can dismiss her,
+sweetheart and wife, like any maid.  Ask her to come with you and
+she follows you into the mine and the tower, and fights.  You can dismiss her,
 for good.  Lead a monster's hen, cow, sheep,
 cat or dog home on the leash, into your coop, barn or cabin.
 
@@ -9710,6 +9727,8 @@ class Game:
         if self.decor_at(x, y, a) or self.mmaid_at(x, y, a) or \
                 self.kid_at(x, y, a) or self.auriel_at(x, y, a):
             return False
+        if a is self.area and self.comp_at(x, y):
+            return False
         t = self.tile_at(x, y, a)
         if t not in WALKABLE:
             return False
@@ -9739,6 +9758,8 @@ class Game:
             self.lead(before)
         if mbefore and self.st.get("mlead"):
             self.mlead_follow(mbefore)
+        if mbefore and self.st.get("companion"):
+            self.comp_follow(mbefore)
 
     def step(self, dx, dy):
         if not self.ready():
@@ -9779,6 +9800,10 @@ class Game:
         f = self.mlead_at(x, y)
         if f:
             self.mlead_swap(f)
+            return True
+        cm = self.comp_at(x, y)
+        if cm:
+            self.comp_swap(cm)
             return True
         if a.key == "mine":
             return self.mine_bump(x, y, t)
@@ -10157,6 +10182,7 @@ class Game:
         if any(mob.kind == "king" for mob in self.mine["mobs"]):
             self.say("A voice like grinding stone echoes out of the dark: "
                      "\"WHO COMES DOWN TO MY HALL?\"", "bad")
+        self.comp_arrive()
         if any(mob.kind == "archangel" for mob in self.mine["mobs"]):
             self.say("A voice like a choir of trumpets fills the hall: "
                      "\"ANOTHER HUMAN, CLIMBING WHERE HUMANS DO NOT "
@@ -10205,6 +10231,7 @@ class Game:
         self.say("You step out of the Sky Tower, down into the woods."
                  if tower else "You climb out of the old mine, blinking.",
                  "info")
+        self.comp_arrive()
         self.layout()
         self.end_turn(WALK_COST)
         self.save()
@@ -10323,7 +10350,8 @@ class Game:
         a = self.area
         return a.inside(x, y) and a.grid[y][x].startswith("mfloor_") and \
             (x, y) != self.pos() and self.mob_at(x, y) is None and \
-            not self.changed_at(x, y) and not self.mlead_at(x, y)
+            not self.changed_at(x, y) and not self.mlead_at(x, y) and \
+            not self.comp_at(x, y)
 
     @staticmethod
     def the_mob(mob):
@@ -10408,6 +10436,8 @@ class Game:
         m = self.mine_state()
         floor = self.mine["floor"]
         gold = random.randint(*mob.m.gold)
+        if self.comp_talent("rat"):
+            gold += gold // 2                   # Whiskers scrounges
         self.p["gold"] += gold
         self.sound.play("kill")
         self.say("%s is beaten! %dg lies where %s stood." % (
@@ -10647,6 +10677,8 @@ class Game:
                      "gold")
         elif r < art + 0.45:
             gold = rng.randint(8, 20) * f
+            if self.comp_talent("goblin"):
+                gold += gold // 2               # Gobbelina knows where to look
             self.p["gold"] += gold
             self.sound.play("gold")
             self.say("You prise the chest open: old coins, %dg of them." %
@@ -10672,6 +10704,7 @@ class Game:
             for _ in range(2 if "fast" in t else 1):
                 if self.mine is not mine or self.mob_act(mob):
                     return
+        self.comp_turn()
 
     def mob_act(self, mob):
         """One monster's move. True if it knocked you out."""
@@ -10702,6 +10735,12 @@ class Game:
 
     def mob_strike(self, mob):
         the = cap(self.the_mob(mob))
+        c, cm = self.companion()
+        if cm and cm["kind"] == "slime" and c["area"] == self.where_key() \
+                and random.random() < 0.3:
+            self.say("%s throws herself in the way! The blow sinks harmlessly "
+                     "into her." % cm["name"], "good")
+            return False
         if random.random() > (0.5 if "erratic" in mob.m.traits else 0.65):
             self.say("%s lunges at you and misses." % the, "info")
             return False
@@ -10721,25 +10760,35 @@ class Game:
         gold and some of what was in your bag."""
         p = self.p
         self.rescued_from = self.mine["floor"] if self.mine else 0
+        c, cm = self.companion()
+        saved = cm and c["area"] == self.where_key()    # she carries you
         self.stash_floor()
         self.mlead_return()
         self.mine = None
         self.walking = None
         self.sound.play("death")
-        purse, p["gold"] = p["gold"], 0
+        self.st["companion"] = None
+        purse = p["gold"] // 2 if saved else p["gold"]
+        p["gold"] -= purse
         stacks = sorted(n for n, c in p["items"].items()
                         if c and n not in STATUE_OF and
                         ITEMS.get(n, (0, 0, ""))[2] != "key")
         lost = [n for n in stacks if random.random() < 0.4]
         if stacks and not lost:
             lost = [random.choice(stacks)]
+        if saved:
+            lost = []
+            self.say("%s scoops you up before anything can get at you, and "
+                     "carries you all the way to the Clinic." % cm["name"],
+                     "heart")
         for n in lost:
             del p["items"][n]
         for line in (TOWER_RESCUE if self.st["pos"] and self.area.key ==
                      "mine" and getattr(self, "rescued_from", 0) > TOWER
                      else MINE_RESCUE):
             self.say(line, "bad")
-        self.say("Your purse is empty (%dg gone)%s." % (
+        self.say("%s (%dg gone)%s." % (
+            "Your purse is lighter" if saved else "Your purse is empty",
             purse, ", and so are your %s" % and_list(lost) if lost else ""),
             "bad")
         clinic = self.areas["clinic"]
@@ -10937,6 +10986,8 @@ class Game:
         maid with a chore out on the farm stands in the farmyard from six
         till nine, like the villager maids; otherwise she's in the cabin."""
         st = self.st
+        if (st.get("companion") or {}).get("id") == m["id"]:
+            return "away", -1, -1               # out with you
         if m["chore"] in ("water", "harvest", "weed") and \
                 st["weather"] not in ("rain", "storm", "snow") and \
                 600 <= self.hhmm() < 900:
@@ -11064,15 +11115,20 @@ class Game:
             self.say("(%s shares something with you, at %d hearts.)" % (
                 m["name"], level), "heart")
         now = m["chore"]
+        rows = [("Chat", lambda: self.mmaid_chat(m)),
+                ("Kiss her", lambda: self.mm_kiss(m)),
+                ("Give her a gift", lambda: self.mm_gift_menu(m)),
+                ("Give her a chore", lambda: self.mmaid_chores(m))]
+        if (self.st.get("companion") or {}).get("id") == m["id"]:
+            rows.append(("Go home", lambda: self.comp_home(m)))
+        else:
+            rows += [("Come with me (to the mine, the tower...)",
+                      lambda: self.comp_start(m)),
+                     ("Squeeze past", lambda: self.squeeze_mmaid(m))]
+        rows += [("Dismiss her", lambda: self.mmaid_dismiss(m)),
+                 ("Goodbye", self.end_talk)]
         self.open_menu("Each morning she'll %s." % MAID_CHORES[now][1]
-                       if now else "She has no chore yet.", [
-                           ("Chat", lambda: self.mmaid_chat(m)),
-                           ("Kiss her", lambda: self.mm_kiss(m)),
-                           ("Give her a gift", lambda: self.mm_gift_menu(m)),
-                           ("Give her a chore", lambda: self.mmaid_chores(m)),
-                           ("Squeeze past", lambda: self.squeeze_mmaid(m)),
-                           ("Dismiss her", lambda: self.mmaid_dismiss(m)),
-                           ("Goodbye", self.end_talk)],
+                       if now else "She has no chore yet.", rows,
                        cancel=self.end_talk)
 
     def mm_line(self, m, line):
@@ -11324,8 +11380,9 @@ class Game:
 
     def mlead_start(self, x, y):
         st = self.st
-        if st.get("leashed") or st.get("mlead"):
-            self.say("You've only the one leash, and it's in use.", "info")
+        if st.get("leashed") or st.get("mlead") or st.get("companion"):
+            self.say("You've your hands full: one leash, or one companion, "
+                     "at a time.", "info")
             self.render()
             return
         floor = self.mine["floor"]
@@ -12056,9 +12113,169 @@ class Game:
                  "valley, the roofs and the river small below, and set you "
                  "down at your own front door.", "good")
         self.walking = None
+        if self.st.get("companion"):
+            self.comp_place()            # she flies with you
         self.layout()
         self.end_turn(5)
         self.save()
+
+    # ── A monster maid at your side ──
+    #
+    # Ask a monster maid to come with you and she follows a step behind,
+    # into the mine and up the tower, fighting whatever's next to her, each
+    # with a talent of her own.  Monsters can't hurt her.  She goes home at
+    # the end of the day, or when you send her.  "companion": {id, area,
+    # x, y}.
+
+    def companion(self):
+        c = self.st.get("companion")
+        if not c:
+            return None, None
+        m = next((m for m in self.mmaids() if m["id"] == c["id"]), None)
+        if m is None:
+            self.st["companion"] = None
+            return None, None
+        return c, m
+
+    def comp_at(self, x, y):
+        c, m = self.companion()
+        if c and c["area"] == self.where_key() and (c["x"], c["y"]) == (x, y):
+            return m
+        return None
+
+    def comp_talent(self, kind):
+        c, m = self.companion()
+        return bool(m) and m["kind"] == kind
+
+    def comp_start(self, m):
+        st = self.st
+        if st.get("leashed") or st.get("mlead"):
+            self.mm_line(m, "(sad)Not while you've an animal on the leash. "
+                            "There'd be no room on the path.")
+            self.mmaid_menu(m)
+            return
+        old, om = self.companion()
+        if om:
+            self.say("%s goes home, and %s comes instead." % (
+                om["name"], m["name"]), "info")
+        where = self.mmaid_where(m)
+        st["companion"] = {"id": m["id"], "area": self.where_key(),
+                           "x": where[1], "y": where[2]}
+        if (where[0], ) != (self.area.key, ):
+            self.comp_place()
+        self.mm_line(m, random.choice((
+            "(happy)An adventure! I'll fetch my things. I haven't got any "
+            "things. Let's go!",
+            "(laugh)With you? Anywhere. Lead on!",
+            "(happy)Right behind you. Mind the monsters. They'd better mind "
+            "me.")))
+        self.say("%s will come with you: she %s. (Walk into her to swap "
+                 "places; use a tool on her to talk, or send her home.)" % (
+                     m["name"], COMPANION[m["kind"]][1]), "good")
+        self.mmaid_menu(m)
+
+    def comp_home(self, m):
+        self.st["companion"] = None
+        self.mm_line(m, "(happy)Home it is. I'll put the kettle on.")
+        self.mmaid_menu(m)
+
+    def comp_place(self):
+        """Put her down beside you, after you've gone somewhere new."""
+        c, m = self.companion()
+        x, y = self.pos()
+        for dx, dy in DIRS:
+            px, py = x + dx, y + dy
+            if self.can_stand(px, py) and not self.npc_at(px, py) and \
+                    not self.mob_at(px, py) and not self.changed_at(px, py) \
+                    and (self.area.key != "mine" or self.area.grid[py][
+                        px].startswith("mfloor_")):
+                c["area"], c["x"], c["y"] = self.where_key(), px, py
+                return
+        c["area"], c["x"], c["y"] = self.where_key(), x, y
+
+    def comp_follow(self, before):
+        c, m = self.companion()
+        if not c:
+            return
+        area, pos = before
+        here = self.where_key()
+        if here != "valley" and here not in BUILDINGS and \
+                not here.startswith("mine:"):
+            return                      # she waits outside the outhouse
+        if c["area"] != here or area != here:
+            self.comp_arrive()
+        elif self.pos() != tuple(pos):
+            c["x"], c["y"] = pos
+
+    def comp_arrive(self):
+        """She comes too, wherever you've just got to: by a door, down a
+        ladder, out of the cave's mouth."""
+        c, m = self.companion()
+        if not c or c["area"] == self.where_key():
+            return
+        self.comp_place()
+        if self.area.key == "mine" and m.get("adventure") != self.st["day"]:
+            m["adventure"] = self.st["day"]
+            self.mm_befriend(m, 30)     # an adventure together
+
+    def comp_swap(self, m):
+        c, _ = self.companion()
+        x, y = self.pos()
+        c["x"], c["y"], self.st["pos"] = x, y, [c["x"], c["y"]]
+        self.end_turn(1)
+
+    def comp_turn(self):
+        """Her turn in the mine: a blow, or fire, at whatever's near, and
+        her talent."""
+        c, m = self.companion()
+        if not c or c["area"] != self.where_key() or not self.mine:
+            return
+        kind = m["kind"]
+        hit, _ = COMPANION[kind]
+        self.mine["cturn"] = self.mine.get("cturn", 0) + 1
+        if kind == "angel" and self.mine["cturn"] % 3 == 0 and \
+                self.p["energy"] < self.p["max_energy"]:
+            self.p["energy"] = min(self.p["max_energy"],
+                                   self.p["energy"] + 6)
+            self.say("%s lays a hand on your shoulder. Warmth runs through "
+                     "you. (+6 energy)" % m["name"], "good")
+        if kind == "shadow_slime":
+            for mob in self.mine["mobs"]:
+                if mob.aware and random.random() < 0.15:
+                    mob.aware = False
+        reach = 2 if kind == "imp" else 1
+        near = [mob for mob in self.mine["mobs"]
+                if abs(mob.x - c["x"]) + abs(mob.y - c["y"]) <= reach]
+        if kind == "poop":
+            for mob in near:
+                if abs(mob.x - c["x"]) + abs(mob.y - c["y"]) == 1 and \
+                        random.random() < 0.3 and not mob.stun:
+                    mob.stun = 1
+                    self.say("%s gags and staggers back from %s. (Rude.)" % (
+                        cap(self.the_mob(mob)), m["name"]), "good")
+        if not near or (kind == "golem" and self.mine["cturn"] % 2):
+            return
+        mob = min(near, key=lambda b: b.hp)
+        the = self.the_mob(mob)
+        mob.aware = True
+        if "armour" in mob.m.traits and random.random() < 0.5:
+            self.say("%s's blow glances off %s." % (m["name"], the), "info")
+            return
+        mob.hp -= hit + random.randint(0, 1)
+        self.flash(mob.x, mob.y, "hit")
+        self.say("%s %s %s." % (m["name"], {
+            "imp": "throws a ball of fire at", "frost_slime": "freezes",
+            "spider": "webs and bites", "ghost": "chills", "golem":
+            "pounds", "poop": "splats", "angel": "smites",
+            "slime": "smothers", "bat": "nips", "rat": "bites",
+            "goblin": "whacks", "skeleton": "clonks", "shadow_slime":
+            "engulfs"}.get(kind, "hits"), the), "good")
+        if mob.hp <= 0:
+            self.slay(mob)
+        elif kind in ("frost_slime", "spider", "ghost") and \
+                "boss" not in mob.m.traits and \
+                random.random() < (0.3 if kind == "spider" else 0.4):
+            mob.stun = 2 if kind == "spider" else 1
 
     # ── Juniper's museum ──
 
@@ -12273,6 +12490,10 @@ class Game:
         f = self.mlead_at(*self.ahead())
         if f:
             self.mlead_bump(f)
+            return
+        cm = self.comp_at(*self.ahead())
+        if cm:
+            self.mmaid_menu(cm)
             return
         if self.area.key == "mine" and self.held() != "magic wand":
             self.mine_swing()
@@ -16146,6 +16367,7 @@ class Game:
     def collapse(self):
         self.stash_floor()
         self.mlead_return()
+        self.st["companion"] = None
         self.mine = None
         self.st["mine_loo"] = None
         self.end_talk()
@@ -17844,6 +18066,7 @@ class Game:
                      "ten and three.", "heart")
         self.teach_recipes()
         self.kid_mornings()
+        st["companion"] = None          # she slept at home
         for m in self.mmaids():
             if self.mm_hearts(m) >= 4:
                 self.mm_teach(m)
@@ -18336,6 +18559,7 @@ class Game:
         self.cam = cx, cy = self.camera()
         px, py = self.pos()
         lvl = self.light_level()
+        reach = (24, 50) if self.comp_talent("bat") else (12, 30)  # lantern
         people = {(n.x, n.y): self.npc_tile(n.vid)
                   for n in self.npcs.values()
                   if n.where == a.key and not n.hidden}
@@ -18356,7 +18580,8 @@ class Game:
                             else self.barn_tile(beast))
         if a.key == "mine" and self.mine:
             bright = self.mine["floor"] > TOWER
-            near = lambda x, y: bright or (x - px) ** 2 + (y - py) ** 2 <= 30
+            near = lambda x, y: bright or (x - px) ** 2 + (y - py) ** 2 <= \
+                reach[1]
             for k, e in self.floor_state(self.mine["floor"])[
                     "changed"].items():
                 x, y = map(int, k.split(","))
@@ -18370,6 +18595,9 @@ class Game:
         f = st.get("mlead")
         if f and f["area"] == self.where_key():
             people[(f["x"], f["y"])] = self.mlead_tile(f)
+        comp, cmaid = self.companion()
+        if comp and comp["area"] == self.where_key():
+            people[(comp["x"], comp["y"])] = "mmaid_" + cmaid["kind"]
         if a.key in ("cabin", "valley"):
             for m in self.mmaids():
                 where, x, y = self.mmaid_where(m)
@@ -18449,7 +18677,8 @@ class Game:
                     if a.key == "mine" and self.mine and \
                             self.mine["floor"] < TOWER:   # your lantern
                         d2 = (x - px) ** 2 + (y - py) ** 2
-                        l2 = 0 if d2 <= 12 else 1 if d2 <= 30 else 2
+                        l2 = 0 if d2 <= reach[0] else 1 if d2 <= \
+                            reach[1] else 2
                         if l2:
                             base = "%d:%s" % (l2, base)
                     elif lvl:
