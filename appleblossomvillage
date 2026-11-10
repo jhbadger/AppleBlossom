@@ -16691,6 +16691,8 @@ class Game:
                 n.x, n.y = tgt
                 if hop:
                     n.where, n.x, n.y = hop
+                if (n.where, n.x, n.y) in taken:    # somebody's there:
+                    n.x, n.y = self.free_spot(n.where, n.x, n.y, taken)
                 taken.add((n.where, n.x, n.y))
                 n.path = []
                 if (n.where, n.x, n.y) == goal or not hop:
@@ -16709,7 +16711,10 @@ class Game:
                 if not n.path:
                     n.stuck += 1
                     if n.stuck > 20:
-                        n.x, n.y = tgt
+                        taken.discard((n.where, n.x, n.y))
+                        n.x, n.y = self.free_spot(n.where, tgt[0], tgt[1],
+                                                  taken)
+                        taken.add((n.where, n.x, n.y))
                     continue
             nx, ny = n.path[0]
             if (n.where, nx, ny) in taken or (nx, ny) == self.pos():
@@ -18568,8 +18573,9 @@ class Game:
         px, py = self.pos()
         lvl = self.light_level()
         reach = (24, 50) if self.comp_talent("bat") else (12, 30)  # lantern
-        people = {(n.x, n.y): self.npc_tile(n.vid)
-                  for n in self.npcs.values()
+        people = {(n.x, n.y): self.npc_tile(n.vid)   # (anyone rooted to
+                  for n in sorted(self.npcs.values(),  # the spot drawn on
+                                  key=lambda n: self.rooted(n.vid))  # top)
                   if n.where == a.key and not n.hidden}
         if a.key == "coop":
             for hen in st["chickens"]:
