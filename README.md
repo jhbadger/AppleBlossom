@@ -405,7 +405,8 @@ whatever's beside her (monsters can't hurt her), each with a talent:
 | Seraphine | heals you as you go |
 
 Walk into her to swap places; use a tool on her to talk to her, or to send
-her home (she goes home at the end of the day anyway). An adventure
+her home (she goes home anyway when you come back into the cabin with
+her, or at the end of the day). An adventure
 together gives her hearts, once a day. If you're knocked out with her
 beside you, she carries you to the Clinic herself: you lose only half your
 gold, and nothing from your bag. One companion at a time, and not with an

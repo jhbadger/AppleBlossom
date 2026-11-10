@@ -12202,6 +12202,11 @@ class Game:
         if here != "valley" and here not in BUILDINGS and \
                 not here.startswith("mine:"):
             return                      # she waits outside the outhouse
+        if here == "cabin" and area != "cabin":     # home again
+            self.st["companion"] = None
+            self.say("%s is home again. She shakes the dust out of her apron "
+                     "and goes back to her place." % m["name"], "info")
+            return
         if c["area"] != here or area != here:
             self.comp_arrive()
         elif self.pos() != tuple(pos):
