@@ -316,13 +316,26 @@ who must be beaten. No spell changes the Archangel (each one stings
 instead). Beaten, the Archangel kneels, wonders aloud whether the angels
 were wrong about humans, and gives you a golden **halo** (8,000g).
 
+The next morning there's a letter in your mailbox, sealed with gold: the
+Archangel is sending one of the angels down to live in the valley and
+learn what humans are. **Auriel** stands at the west edge of the village
+square from nine till six, wondering aloud about pie, patience and
+Tuesdays, and she sells what she's brought down from the tower, for gold
+and angel feathers:
+
+| Ware | Cost | What it does |
+| --- | --- | --- |
+| Feather bed | 1,500g, 15 feathers | you wake fully rested however late you went to bed, and have one more point of magic |
+| Angel wings | 4,000g, 25 feathers | hold them and use them to fly home to your cabin door from anywhere outdoors, or from the mine or the tower, for a point of magic |
+
 The other angels are changed by spells like any monster, and a maidified
 angel, cherub or seraph can be invited home as an **angel maid**,
 Seraphine. She comes to live among you to watch and to judge. Her heart
 has a story: at 2, 4, 6, 8 and 10 hearts she tells you something more of
 what she's coming to understand, that the angels in the tower believed
 all humans cruel and heartless, and that, knowing you, she has found
-humans can be good. She can be courted and married like any monster maid
+humans can be good. At 4 and 8 hearts, the 4 and 8 of her story are heart scenes. She can be
+courted and married like any monster maid
 (her vows are about it), teaches you angel food cake, and her children have
 soft little feathers on their shoulders, and float.
 
@@ -371,7 +384,11 @@ till nine, like the villager maids), or squeeze past. Nothing
 turns her back, so instead you can **dismiss** her (you're asked to make
 sure): she folds her apron and is gone for good.
 
-She has a heart, too. Chat with her once a day, **kiss** her (twice a
+She has a heart, too, and **heart scenes** at 4 and 8 hearts: a moment
+of her own the next time you talk to her (Ember's burnt supper, Bonnie at
+the mirror getting used to having a face, Pebble standing still all day
+with a bird nesting on her head), with a choice of what you do. Chat with
+her once a day, **kiss** her (twice a
 day, as good as a gift she likes) and give her gifts (one a day, two a
 week): each kind of monster maid has her own favourites, from Bonnie's
 milk ("Strong bones!") to Gobbelina's silver rings and Ember's coffee.

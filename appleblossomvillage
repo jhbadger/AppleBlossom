@@ -1649,16 +1649,16 @@ FISH = {   # where -> season -> fish, the first the likeliest
 
 TOOLS = ("hoe", "watering can", "axe", "pickaxe", "scythe", "fishing rod",
          "magic wand", "leash", "milk pail", "shears", "short sword",
-         "broadsword")
+         "broadsword", "angel wings")
 TOOL_KEYS = {"hoe": "Hoe", "watering can": "Can", "axe": "Axe",
              "pickaxe": "Pick", "scythe": "Scythe", "fishing rod": "Rod",
              "magic wand": "Wand", "leash": "Leash", "milk pail": "Pail",
              "shears": "Shears", "short sword": "Sword",
-             "broadsword": "Sword"}
+             "broadsword": "Sword", "angel wings": "Wings"}
 TOOL_ENERGY = {"hoe": 2, "watering can": 1, "axe": 3, "pickaxe": 3,
                "scythe": 1, "fishing rod": 4, "magic wand": 0, "leash": 0,
                "milk pail": 1, "shears": 2, "short sword": 0,
-               "broadsword": 0}
+               "broadsword": 0, "angel wings": 0}
 WAND_RANGE = 8                  # how far a spell flies
 SPELLS = {   # the wand's spells: what each one does, for the menu
     "petrify": "turns someone to gold, and back",
@@ -6719,18 +6719,380 @@ MONSTER_ROMANCE["angel"] = {
         2: "(neutral)In the tower we were told that humans are cruel. That "
            "they break whatever they touch. I was sent down to keep you "
            "out. I thought you'd know that.",
-        4: "(surprised)You thanked me today. For sweeping. Angels don't "
-           "thank each other. We don't need to. I didn't know what to do "
-           "with it. I still don't.",
         6: "(neutral)I watched you with the children in the village. And "
            "the animals, and the old woman with the pie. Is everyone here "
            "like this? The Archangel said...",
-        8: "(sad)I think we were wrong. Not about every human, perhaps. But "
-           "about you. And if we were wrong about one of you, we might have "
-           "been wrong about all of you.",
         10: "(happy)I came down from the tower to judge you. Instead you "
             "taught me. Humans can be good. You are good. I don't want to "
             "go back. I want to stay here, with you."},
+}
+MM_SCENES = {   # each monster maid's heart scenes: hearts -> steps; a step
+    # is "*what happens", "(expr)what she says", or a choice:
+    # ("?", what she does, [(what you do, points, what she says)])
+    "slime": {
+        4: ["*You find {maid} at the window, watching the rain run down the "
+            "glass.",
+            "(sad)Slimes love rain, you know. I used to just... soak it up. "
+            "Now I've got an umbrella and everything.",
+            ("?", "She sighs.", [
+                ("Go and splash in the puddles with her", 40,
+                 "(laugh)Really?! Oh, come on then! Last one in's a turnip!"),
+                ("Tell her she's still a slime at heart", 20,
+                 "(happy)A little bit. Don't tell anyone.")]),
+            "*You end up soaked to the skin, and {maid} hasn't stopped "
+            "giggling."],
+        8: ["*{maid} is sitting on the step at sunset, very quiet.",
+            "(sad)Down in the mine, nobody ever looked at me. Not once. I "
+            "was just something you stepped round.",
+            ("?", "\"Do you think I'm... more than that now?\"", [
+                ("Tell her she's the best thing that's happened to this "
+                 "cabin", 60, "(blush)Oh! Oh, don't. I'll go all wobbly "
+                 "again."),
+                ("Tell her she was always more than that", 60,
+                 "(happy)...Even then? Even as a puddle? ...Thank you.")]),
+            "*She leans her head on your shoulder until the stars come out."],
+    },
+    "frost_slime": {
+        4: ["*It's a warm day, and {maid} is fanning herself with a dish "
+            "cloth.",
+            "(sad)I'm melting. Not really. A bit. Is it always this hot up "
+            "here?",
+            ("?", "She looks at you hopefully.", [
+                ("Take her to the lake for a swim", 40,
+                 "(laugh)Oh, it's lovely and cold! Come in, come in!"),
+                ("Fetch her a cold drink from the well", 30,
+                 "(happy)Ahh. You're so thoughtful. I could kiss you. ...I "
+                 "might.")]),
+            "*By evening she's cool and smiling, and there's frost on the "
+            "windowsill again."],
+        8: ["*{maid} has drawn frost ferns all over the windows. In the "
+            "middle of one: a little frosty heart.",
+            "(blush)I used to be cold all the way through. I thought I always "
+            "would be. Then you came along and... well. I've started to "
+            "thaw.",
+            ("?", "\"Is that silly?\"", [
+                ("Hold her cold hands until they're warm", 60,
+                 "(blush)...There. You did it. Warm. I didn't think anyone "
+                 "could."),
+                ("Tell her you like her just as she is", 50,
+                 "(happy)Frosty and all? ...You mean it, don't you.")]),
+            "*The frost heart on the window doesn't melt all day."],
+    },
+    "shadow_slime": {
+        4: ["*You can't find {maid} anywhere. Then you notice a pair of eyes "
+            "in the darkest corner of the pantry.",
+            "(surprised)Oh! You found me. Nobody ever finds me.",
+            ("?", "She shrinks back into the shadows.", [
+                ("Sit down in the corner with her", 40,
+                 "(blush)...You want to stay? In here? With me? ...All "
+                 "right."),
+                ("Ask her to come and sit in the sun", 20,
+                 "(sad)The sun's so bright... Well. For you. Just for a "
+                 "minute.")]),
+            "*It's quiet in the corner, and after a while, she smiles."],
+        8: ["*At dusk, {maid} takes your hand and leads you outside.",
+            "(happy)I like this time best. When the shadows get long and "
+            "everything's soft. I used to hide in the dark because I was "
+            "scared. Now I just like it.",
+            ("?", "\"Because you're here.\"", [
+                ("Watch the sun go down together", 60,
+                 "(blush)This is the best part of every day. Every day with "
+                 "you."),
+                ("Tell her you'll never let her disappear", 60,
+                 "(happy)I believe you. I've never believed anyone "
+                 "before.")]),
+            "*Your shadows stretch out side by side across the farm."],
+    },
+    "bat": {
+        4: ["*There's a thump from the rafters. {maid} is hanging upside "
+            "down from a beam, looking sheepish.",
+            "(laugh)Old habits! I can't sleep the right way up. I've tried!",
+            ("?", "She swings gently.", [
+                ("Hang upside down next to her", 40,
+                 "(laugh)You're doing it! You're a natural! ...Your face is "
+                 "going very red."),
+                ("Help her down and make her a hammock", 30,
+                 "(happy)A hammock! It swings! It's nearly as good!")]),
+            "*She sleeps soundly that night, swinging gently, humming in her "
+            "sleep."],
+        8: ["*{maid} wakes you in the dark. \"Listen!\" she whispers.",
+            "(happy)Hear that? Owls. And a fox, by the river. And the hens, "
+            "dreaming. I can hear the whole valley. I want to share it with "
+            "you.",
+            ("?", "She holds out her hand.", [
+                ("Go out into the night with her", 60,
+                 "(blush)Most people are scared of the dark. You never were. "
+                 "Not with me."),
+                ("Lie still and listen together", 50,
+                 "(happy)...And that's your heart. It's going quite fast. So's "
+                 "mine.")]),
+            "*You listen to the night until dawn, her head on your "
+            "shoulder."],
+    },
+    "rat": {
+        4: ["*{maid} is standing guard over the pantry with a broom.",
+            "(cross)Mice! I heard them. They're after the cheese. MY cheese. "
+            "Well. Our cheese.",
+            ("?", "She brandishes the broom.", [
+                ("Join the mouse hunt", 40,
+                 "(laugh)There! Behind the flour! ...Oh, it's sweet. Let's "
+                 "just... show it out."),
+                ("Tell her she can have all the cheese", 30,
+                 "(blush)ALL of it? ...You spoil me. You really do.")]),
+            "*In the end the mouse leaves with a crumb, and {maid} pretends "
+            "she didn't give it one."],
+        8: ["*{maid} has made a nest of blankets by the stove, and pats the "
+            "space beside her.",
+            "(happy)This is the warmest, snuggest nest I ever made. I made it "
+            "for two. I hope that's all right.",
+            ("?", "Her nose twitches nervously.", [
+                ("Climb in beside her", 60,
+                 "(blush)There. Now it's perfect. Now it's home."),
+                ("Bring a cup of cocoa for each of you", 50,
+                 "(happy)Cocoa and a nest. I never had either, in the "
+                 "mine.")]),
+            "*It is, as promised, very snug."],
+    },
+    "spider": {
+        4: ["*{maid} is sitting by the window with lace on her lap, working "
+            "faster than you can follow.",
+            "(blush)Oh! It's nothing. Just a little something. For you. When "
+            "it's done.",
+            ("?", "She hides it behind her back.", [
+                ("Promise not to peek", 40,
+                 "(happy)Thank you. It's better as a surprise."),
+                ("Tell her it's beautiful already", 30,
+                 "(blush)You peeked! ...You really think so?")]),
+            "*A week later there's a lace handkerchief on your pillow, with "
+            "your initials in the corner."],
+        8: ["*There's a web strung across the cabin door, sparkling with "
+            "dew. Woven into the middle of it: a heart.",
+            "(blush)I used to spin webs to catch things. That's the first one "
+            "I ever made to give something away.",
+            ("?", "\"Do you like it?\"", [
+                ("Tell her it's the loveliest thing you've ever seen", 60,
+                 "(happy)...Then I'll make you one every morning."),
+                ("Kiss her, under the web", 60,
+                 "(blush)Oh! Well. I've caught something after all.")]),
+            "*You duck under the web all day rather than break it."],
+    },
+    "skeleton": {
+        4: ["*{maid} is at the mirror, touching her cheeks.",
+            "(surprised)It's still strange, having a face. I keep checking "
+            "it's there.",
+            ("?", "She pulls a funny face, then a sad one.", [
+                ("Pull a funny face back", 40,
+                 "(laugh)Ha! You look like a turnip! Do it again!"),
+                ("Tell her it's a lovely face", 30,
+                 "(blush)...It's the only one I've got. I'm glad you like "
+                 "it.")]),
+            "*She's still giggling at bedtime."],
+        8: ["*{maid} is sitting by the fire, very still.",
+            "(sad)For a hundred years I was just bones in the dark. I don't "
+            "remember who I was before. I used to think that was the saddest "
+            "thing.",
+            ("?", "\"But now...\"", [
+                ("Tell her she can start again, here, with you", 60,
+                 "(happy)That's what I was going to say. A new life. This one "
+                 "I'll remember."),
+                ("Hold her hand until the fire burns low", 60,
+                 "(blush)Warm hands. I'd forgotten. ...I won't forget "
+                 "again.")]),
+            "*You sit together until the embers die."],
+    },
+    "goblin": {
+        4: ["*{maid} is sitting on the floor surrounded by buttons, spoons "
+            "and one of your boots.",
+            "(blush)I... might have collected some things. Shiny things. Your "
+            "things. Sorry.",
+            ("?", "She looks at you guiltily.", [
+                ("Help her sort them into piles", 40,
+                 "(laugh)Shiny ones here! Very shiny ones here! The boot's not "
+                 "shiny. I don't know why I took the boot."),
+                ("Give her a shiny button to keep", 40,
+                 "(happy)For me? To KEEP? ...I'll never let it go.")]),
+            "*She gives back everything but the button, which she wears on a "
+            "string round her neck."],
+        8: ["*{maid} presses a little bag into your hand, heavy with all her "
+            "treasures.",
+            "(blush)These are all my shiny things. All of them. I want you to "
+            "have them.",
+            ("?", "\"You're shinier than all of it.\"", [
+                ("Give them back, and tell her she's your treasure", 60,
+                 "(happy)...Me? I'm the treasure? I never thought of it that "
+                 "way round."),
+                ("Keep one, and give her the rest", 50,
+                 "(laugh)Half each! That's fair! That's what sweethearts "
+                 "do!")]),
+            "*She hums all day, and doesn't take a single spoon."],
+    },
+    "ghost": {
+        4: ["*The candles flicker. {maid} is standing very still by the "
+            "door, rubbing her nose.",
+            "(sad)Sometimes I forget I'm solid now. I try to walk through the "
+            "door and bump my nose.",
+            ("?", "She looks rueful.", [
+                ("Laugh, and kiss it better", 40,
+                 "(laugh)Oooh. ...I mean. Thank you. That's much better."),
+                ("Hold the door open for her, with a bow", 30,
+                 "(happy)Such manners! Nobody ever held a door for a "
+                 "ghost.")]),
+            "*She doesn't bump into a thing for the rest of the day."],
+        8: ["*{maid} takes your hand and squeezes it, hard.",
+            "(blush)When I was a ghost I couldn't hold anything. Hands went "
+            "straight through mine. I'd forgotten what holding on felt "
+            "like.",
+            ("?", "\"Don't let go?\"", [
+                ("Promise you won't", 60,
+                 "(happy)Then I won't drift away. Not ever again."),
+                ("Squeeze back, twice as hard", 50,
+                 "(laugh)Ow! ...No, I like it. Do it again.")]),
+            "*She doesn't let go all evening."],
+    },
+    "golem": {
+        4: ["*{maid} is standing in the garden, quite still, with a bird "
+            "sitting on her head.",
+            "(happy)Don't move. It's nesting. I've been here since "
+            "breakfast.",
+            ("?", "She doesn't move a muscle.", [
+                ("Stand still beside her and watch the bird", 40,
+                 "(happy)See? Still is nice. You're good at it. For a "
+                 "person."),
+                ("Bring her a chair, and lunch", 30,
+                 "(laugh)I don't need a chair. ...But I'll take lunch.")]),
+            "*By evening there are three eggs in the nest on her head, and "
+            "she is very proud."],
+        8: ["*{maid} finds you in the fields and, very gently, lifts you "
+            "off the ground.",
+            "(blush)Sorry. I wanted to see if I could. I can lift anything. I "
+            "lifted the well once. But you're the first thing I ever wanted "
+            "to hold carefully.",
+            ("?", "She doesn't put you down.", [
+                ("Tell her you feel very safe", 60,
+                 "(happy)Good. You always will be. Steady. Like a "
+                 "mountain."),
+                ("Ask her to carry you home", 50,
+                 "(laugh)All the way? ...Gladly.")]),
+            "*She carries you home across the fields, slowly, the long way "
+            "round."],
+    },
+    "imp": {
+        4: ["*There's a smell of smoke. {maid} is in the kitchen, holding a "
+            "blackened pan.",
+            "(sad)I wanted to make you something nice. It's a bit... "
+            "crispy.",
+            ("?", "She looks close to tears.", [
+                ("Eat it anyway, and say it's delicious", 40,
+                 "(laugh)It isn't! You're making a face! ...But you ate it. "
+                 "You ate all of it."),
+                ("Cook it again together", 40,
+                 "(happy)You stir, I'll do the fire. We're a good team, "
+                 "aren't we?")]),
+            "*The second try is only slightly burnt, and the best supper "
+            "either of you has had."],
+        8: ["*On a cold night, {maid} sits close beside you at the empty "
+            "hearth and snaps her fingers. The fire roars up.",
+            "(blush)I used to burn everything I touched. I'm still scared of "
+            "that, sometimes. That I'll hurt you.",
+            ("?", "Her hands are glowing faintly.", [
+                ("Take her warm hands in yours", 60,
+                 "(happy)...You're not burning. You're just... warm. Oh. Oh, "
+                 "good."),
+                ("Tell her she's the only fire you need", 60,
+                 "(blush)That's the nicest, silliest thing anyone's ever said "
+                 "to me.")]),
+            "*The fire burns low and steady all night, and nothing catches "
+            "but the kindling."],
+    },
+    "poop": {
+        4: ["*{maid} is sniffing herself anxiously in front of the mirror.",
+            "(sad)Be honest. Do I smell? I had three baths. People still look "
+            "at me funny in the village.",
+            ("?", "She waits, dreading the answer.", [
+                ("Tell her she smells of roses", 40,
+                 "(blush)Roses? Really? ...I did put rose water on. Lots. "
+                 "Thank you."),
+                ("Tell her the village doesn't know what it's missing", 50,
+                 "(laugh)Ha! No, they don't! ...You're sweet. You're so "
+                 "sweet.")]),
+            "*She walks into the village that afternoon with her head held "
+            "high."],
+        8: ["*{maid} has picked every flower on the farm and filled the "
+            "cabin with them.",
+            "(blush)I wanted it to smell lovely in here. For you. Because you "
+            "never once held your nose at me. Not once. Not even at the "
+            "start.",
+            ("?", "She twists her apron in her hands.", [
+                ("Tell her she never needed the flowers", 60,
+                 "(happy)...I know. But I wanted to. That's different, isn't "
+                 "it? That's love."),
+                ("Bury your face in the flowers and laugh", 50,
+                 "(laugh)It IS lovely, isn't it? Our home smells lovely!")]),
+            "*The cabin smells of flowers for a week. Nobody mentions it, but "
+            "everybody smiles."],
+    },
+    "angel": {
+        4: ["*{maid} is sweeping the step. You thank her, and she stops "
+            "dead.",
+            "(surprised)You thanked me. For sweeping. Angels don't thank each "
+            "other. We don't need to. ...What am I supposed to do with it?",
+            ("?", "She holds the broom as if it might bite.", [
+                ("Tell her she just says \"you're welcome\"", 40,
+                 "(neutral)...You're welcome. ...Oh. That's nice. That's "
+                 "quite nice."),
+                ("Thank her again, for everything", 50,
+                 "(blush)Stop it. ...No. Don't stop.")]),
+            "*For the rest of the day she thanks everything: the hens, the "
+            "well, the broom."],
+        8: ["*{maid} is standing on the hill, looking up at the white tower "
+            "in the north-east.",
+            "(sad)I think we were wrong. Not about every human, perhaps. But "
+            "about you. And if we were wrong about one of you, we might have "
+            "been wrong about all of you.",
+            ("?", "\"What do I do with that?\"", [
+                ("Tell her she could show the others", 60,
+                 "(happy)Show them. Yes. Bring them down one by one, and show "
+                 "them. You'd help me?"),
+                ("Hold her while she thinks", 60,
+                 "(blush)A thousand years of certainty, gone. And I don't "
+                 "mind. Isn't that strange?")]),
+            "*She stays on the hill until the tower is lost in the dark."],
+    },
+}
+AURIEL_SPOT = (66, 30)          # where the angel Auriel stands, by day
+AURIEL_LOOK = {"face": "F", "body": "F", "skin": 0, "hair": "#f4d870",
+               "style": "long", "eyes": "#3a6ac0", "shirt": "#f8f8ff",
+               "pants": "#e4e8f4", "bg": "#e8eef8"}
+AURIEL_LINES = [
+    "(surprised)You put seeds in the ground and simply wait? For weeks? "
+    "Humans are very patient.",
+    "(happy)A child gave me a flower today. For nothing at all. The "
+    "Archangel will want to hear about that.",
+    "(laugh)I tried a slice of pie. Granny Rose's. I understand now why "
+    "you all live here.",
+    "(neutral)Mabel asked me if I was 'one of those tower folk'. I said "
+    "yes. She gave me a discount. I don't know why.",
+    "(surprised)What is a 'Tuesday'? Everyone here keeps mentioning it.",
+    "(happy)I sleep in a bed now, at the inn. It's very soft. We had "
+    "clouds, in the tower, but they're damp.",
+    "(neutral)The Archangel asks after you. Not in so many words. But "
+    "asks."]
+AURIEL_SEES_ANGEL = ("(happy){maid} writes to the tower, you know. Long "
+                     "letters, all about you. Half the tower is reading "
+                     "them.")
+ARCHANGEL_LETTER = (
+    "Human.\n\nI have thought on what you showed me, at the top of my "
+    "tower. We watched your kind for a thousand years and saw only what we "
+    "expected to see.\n\nI am sending one of my own down to your valley, "
+    "to live among you a while and to learn what you are. Her name is "
+    "Auriel. She will be by your village square. Be kind to her. You seem "
+    "to know how.\n\n- the Archangel")
+AURIEL_WARES = {   # what Auriel brings down from the tower: gold, feathers
+    "feather bed": (1500, 15, "You'll sleep like an angel: wake rested "
+                    "however late you went to bed, and with a little more "
+                    "magic in you (+1 to your most)."),
+    "angel wings": (4000, 25, "Hold them and use them to fly home to your "
+                    "cabin door, from anywhere, for a point of magic."),
 }
 MM_GIFT = {   # a monster maid given something, by how she likes it
     "love": ["(blush)For me? Oh, it's my very favourite thing in the whole "
@@ -9342,7 +9704,7 @@ class Game:
         if not a.inside(x, y):
             return False
         if self.decor_at(x, y, a) or self.mmaid_at(x, y, a) or \
-                self.kid_at(x, y, a):
+                self.kid_at(x, y, a) or self.auriel_at(x, y, a):
             return False
         t = self.tile_at(x, y, a)
         if t not in WALKABLE:
@@ -9429,6 +9791,10 @@ class Game:
         if k:
             self.walking = None
             self.kid_menu(k)
+            return True
+        if self.auriel_at(x, y):
+            self.walking = None
+            self.auriel_menu()
             return True
         i = self.pet_at(a.key, x, y)
         if i is not None:
@@ -10059,6 +10425,7 @@ class Game:
                 "fertilizer"), "good")
         elif mob.kind == "archangel":
             m["archangel"] = True
+            self.st["auriel"] = self.st["day"] + 1
             self.give("archangel's halo")
             self.sound.play("quest")
             self.say("The Archangel sinks to one knee, wings folding. \"We "
@@ -10657,6 +11024,17 @@ class Game:
                     "(surprised)Oh! You startled me. What can I do for you?",
                     "(happy)Everything's spick and span. What is it?"))
             self.mm_line(m, hello)
+        due = [lv for lv in sorted(MM_SCENES.get(m["kind"], {}))
+               if self.mm_hearts(m) >= lv and lv not in m.setdefault(
+                   "scenes", [])]
+        if due:                         # a heart scene
+            m["scenes"].append(due[0])
+            self.sound.play("heart")
+            self.mm_scene(m, MM_SCENES[m["kind"]][due[0]],
+                          lambda: (self.say("(A moment with %s, at %d "
+                                            "hearts.)" % (m["name"], due[0]),
+                                            "heart"), self.mmaid_menu(m)))
+            return
         level = m.pop("tell", None)
         if level:                       # something she's come to understand
             m["told"] = level
@@ -10829,7 +11207,23 @@ class Game:
         if not steps:
             after()
             return
-        self.mm_line(m, steps[0])
+        step = steps[0]
+        if isinstance(step, tuple):     # a choice: what do you do?
+            _, prompt, answers = step
+
+            def answer(text, pts, reply):
+                self.say("> " + text, "you")
+                if pts:
+                    self.mm_befriend(m, pts, quiet=True)
+                self.mm_line(m, reply.replace("{maid}", m["name"]))
+                self.open_menu("", [("▶", lambda: self.mm_scene(
+                    m, steps[1:], after))],
+                    lambda: self.mm_scene(m, steps[1:], after))
+            self.mm_line(m, "*" + prompt.replace("{maid}", m["name"]))
+            self.open_menu("", [(a[0], lambda a=a: answer(*a))
+                                for a in answers])
+            return
+        self.mm_line(m, step.replace("{maid}", m["name"]))
         self.open_menu("", [("▶", lambda: self.mm_scene(m, steps[1:],
                                                         after))],
                        lambda: self.mm_scene(m, steps[1:], after))
@@ -11326,6 +11720,11 @@ class Game:
         """A baby on the way, a baby born, and what the children get up
         to."""
         st = self.st
+        if st.get("auriel") == st["day"] and not st.get("auriel_came"):
+            st["auriel_came"] = True    # the epilogue: an angel comes down
+            self.mail("the Archangel", ARCHANGEL_LETTER)
+            self.say("There's a letter in your mailbox, sealed with gold, "
+                     "with a white feather for a stamp.", "quest")
         if st.pop("baby_try", None):
             st["baby_due"] = st["day"] + KID_DUE
             self.say("Good news: a baby is on the way! %s is over the "
@@ -11515,6 +11914,129 @@ class Game:
             base.put(" ".join("{" + " ".join(r) + "}" for r in px))
             img = self.portraits[key] = base.zoom(z)
         return img
+
+    # ── Auriel, after the Archangel ──
+    #
+    # With the Archangel beaten, an angel comes down to live in the valley
+    # and learn about humans.  She stands by the square by day, talks, and
+    # sells what she brought down from the tower.
+
+    def auriel_here(self):
+        return bool(self.st.get("auriel_came")) and \
+            900 <= self.hhmm() < 1800
+
+    def auriel_at(self, x, y, area=None):
+        return (area or self.area).key == "valley" and \
+            (x, y) == AURIEL_SPOT and self.auriel_here()
+
+    def auriel_says(self, line):
+        expr, text = parse_line(fill_in(line, self))
+        self.talk = {"who": {"name": "Auriel", "look": AURIEL_LOOK,
+                             "sub": "(an angel, come to learn about "
+                                    "humans)"},
+                     "v": None, "mode": "kw", "expr": expr, "text": text}
+        self.say("Auriel: %s" % text, "talk")
+
+    def auriel_menu(self, hello=True):
+        if hello:
+            self.auriel_says(random.choice((
+                "(happy)Hello, {name}. I'm still learning. Teach me "
+                "something?",
+                "(neutral)Ah. The human who climbed the tower.",
+                "(happy)Good day! That's what you say, isn't it? Good day!")))
+        self.open_menu("", [("Chat", self.auriel_chat),
+                            ("See what she's brought down from the tower",
+                             self.auriel_shop),
+                            ("Goodbye", self.end_talk)],
+                       cancel=self.end_talk)
+
+    def auriel_chat(self):
+        lines = list(AURIEL_LINES)
+        for m in self.mmaids():
+            if m["kind"] == "angel":
+                lines += [AURIEL_SEES_ANGEL.replace("{maid}", m["name"])] * 2
+        self.auriel_says(random.choice(lines))
+        self.pass_time(1)
+        self.auriel_menu(hello=False)
+
+    def auriel_shop(self):
+        p = self.p
+        rows = []
+        for item, (gold, feathers, what) in AURIEL_WARES.items():
+            if (item == "feather bed" and p.get("feather_bed")) or \
+                    item in p["tools"]:
+                continue
+            rows.append(("%s  %dg + %d angel feathers" % (
+                cap(item), gold, feathers),
+                lambda i=item: self.auriel_buy(i)))
+        if not rows:
+            self.auriel_says("(happy)That's all I brought down. You have "
+                             "everything!")
+            self.auriel_menu(hello=False)
+            return
+        self.auriel_says("(neutral)We make these in the tower. Gold for the "
+                         "journey, and feathers, because we always need "
+                         "feathers.")
+        self.open_menu("Buy what? (%dg, %d feathers)" % (
+            p["gold"], p["items"].get("angel feather", 0)), rows +
+            [("Nothing, thanks", lambda: self.auriel_menu(hello=False))],
+            cancel=lambda: self.auriel_menu(hello=False))
+
+    def auriel_buy(self, item):
+        p = self.p
+        gold, feathers, what = AURIEL_WARES[item]
+        if p["gold"] < gold or p["items"].get("angel feather", 0) < feathers:
+            self.auriel_says("(sad)Not enough, I'm afraid. %dg, and %d "
+                             "feathers. Angels fall out of the tower's "
+                             "chests, you know. Feathers, I mean." % (
+                                 gold, feathers))
+            self.auriel_menu(hello=False)
+            return
+        p["gold"] -= gold
+        self.take("angel feather", feathers)
+        self.sound.play("quest")
+        if item == "feather bed":
+            p["feather_bed"] = True
+            p["max_magic"] += 1
+            self.auriel_says("(happy)I'll have it carried up to your cabin. "
+                             "Sleep well. Truly well. %s" % what)
+        else:
+            p["tools"].append(item)
+            p["hand"] = item
+            self.auriel_says("(happy)Mind the trees when you land. %s" % what)
+        self.auriel_menu(hello=False)
+
+    def fly_home(self):
+        """The angel wings: up, over the valley, down at your cabin door."""
+        if self.st.get("leashed") or self.st.get("mlead"):
+            self.say("You can't fly with an animal on the leash.", "info")
+            self.render()
+            return
+        if self.area.key not in ("valley", "mine"):
+            self.say("Not indoors. You'd hit the ceiling.", "info")
+            self.render()
+            return
+        if self.p["magic"] < 1:
+            self.say("The wings twitch, but there's no magic left in you "
+                     "today to lift them.", "bad")
+            self.render()
+            return
+        self.p["magic"] -= 1
+        if self.area.key == "mine":
+            self.stash_floor()
+            self.mine = None
+        self.area = self.areas["valley"]
+        x, y = door_of("cabin")
+        self.st["pos"] = [x, y + 1]
+        self.face(0, 1)
+        self.sound.play("spell")
+        self.say("You spread the angel wings. They lift you up, out over the "
+                 "valley, the roofs and the river small below, and set you "
+                 "down at your own front door.", "good")
+        self.walking = None
+        self.layout()
+        self.end_turn(5)
+        self.save()
 
     # ── Juniper's museum ──
 
@@ -11722,6 +12244,9 @@ class Game:
 
     def use_tool(self):
         if not self.ready():
+            return
+        if self.held() == "angel wings":
+            self.fly_home()
             return
         f = self.mlead_at(*self.ahead())
         if f:
@@ -15731,6 +16256,8 @@ class Game:
         for m in self.mmaids():
             if self.weekday() == 0:
                 m["week"] = 0
+        if p.get("feather_bed") and 0.5 < rest < 1:
+            rest = 1.0                  # sleeping like an angel
         p["energy"] = round(p["max_energy"] * rest)
         p["magic"] = max(p["magic"], int(p["max_magic"] * rest + 0.5))
         if self.season_drawn != season:
@@ -16210,6 +16737,9 @@ class Game:
         if t.get("kid"):
             self.kid_menu(t["kid"])
             return
+        if t.get("who"):
+            self.auriel_menu(hello=False)
+            return
         vid = t["v"]
         if t["mode"] == "buy":
             self.shop_menu(vid)
@@ -16258,7 +16788,7 @@ class Game:
 
     def converse(self, w):
         t = self.talk
-        if not t or t.get("mm") or t.get("kid"):
+        if not t or t.get("mm") or t.get("kid") or t.get("who"):
             return
         vid = t["v"]
         v = VILLAGERS[vid]
@@ -16533,6 +17063,9 @@ class Game:
         if st.get("baby_due") is not None:
             out.append("A baby on the way! The whole valley's knitting.")
         mine = st.get("mine", {})
+        if st.get("auriel_came"):
+            out.append("There's an angel by the square! Auriel. She asked me "
+                       "what a 'Tuesday' was. Lovely girl. Very tall wings.")
         if mine.get("archangel"):
             out.append("They say you climbed the Sky Tower and faced down an "
                        "Archangel! Dmitri watched the whole thing through "
@@ -17388,7 +17921,7 @@ class Game:
                     self.menu_pick(i)
             elif self.talk and len(ev.char) == 1 and ev.char.isalpha() \
                     and not self.scene and not self.talk.get("mm") and \
-                    not self.talk.get("kid"):
+                    not self.talk.get("kid") and not self.talk.get("who"):
                 self.menu = None
                 self.entry.focus_set()
                 self.entry.insert("end", ev.char)
@@ -17811,6 +18344,8 @@ class Game:
             for mob in self.mine["mobs"]:
                 if near(mob.x, mob.y):
                     people[(mob.x, mob.y)] = mob.tile
+        if a.outdoor and self.auriel_here():
+            people[AURIEL_SPOT] = "mon_angel"
         f = st.get("mlead")
         if f and f["area"] == self.where_key():
             people[(f["x"], f["y"])] = self.mlead_tile(f)
@@ -17998,8 +18533,10 @@ class Game:
         vid = t["v"]
         mm = t.get("mm")
         kid = t.get("kid")
+        who = t.get("who")
         v = {"look": monster_maid_look(mm["kind"])} if mm else \
-            {"look": kid["look"]} if kid else VILLAGERS[vid]
+            {"look": kid["look"]} if kid else \
+            {"look": who["look"]} if who else VILLAGERS[vid]
         pz = max(2, min(7, int(min(H * 0.3, W * 0.28) / PW)))
         psz = PW * pz
         pad = S(10)
@@ -18025,10 +18562,22 @@ class Game:
                        image=self.mmaid_portrait(mm["kind"], expr, pz) if mm
                        else self.look_portrait(
                            (kid["name"], kid["born"]), kid["look"], expr, pz)
-                       if kid else self.portrait_image(vid, expr, pz))
+                       if kid else self.look_portrait(who["name"], who["look"],
+                                                      expr, pz)
+                       if who else self.portrait_image(vid, expr, pz))
         c.create_rectangle(pad * 2, y0 + pad, pad * 2 + psz, y0 + pad + psz,
                            outline=shade(v["look"]["bg"], 0.6), width=2,
                            tags="overlay")
+        if who:
+            c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
+                          text=who["name"], font=bold, fill=ACCENT)
+            c.create_text(tx, y0 + pad + lh, anchor="nw", tags="overlay",
+                          font=F("Helvetica", 13), fill=INK_DIM,
+                          text=who["sub"])
+            c.create_text(tx, y0 + pad + lh * 2 + S(6), anchor="nw",
+                          width=tw, text=text, font=f, fill=INK,
+                          tags="overlay")
+            return
         if kid:
             h = min(10, kid["love"] // 100)
             age = self.kid_age(kid)
@@ -21683,7 +22232,15 @@ def selftest():
     tx, ty = TOWER_DOOR
     if grid[ty][tx] != "towerdoor" or grid[ty + 1][tx] not in WALKABLE:
         problems.append("the tower's door")
+    ax, ay = AURIEL_SPOT
+    if grid[ay][ax] not in WALKABLE or (ax, ay) in OUT_SPOTS.values():
+        problems.append("Auriel's spot")
     for kind in MONSTER_MAIDS:
+        sc = MM_SCENES.get(kind, {})
+        if sorted(sc) != [4, 8] or any(
+                not any(isinstance(st_, tuple) and len(st_[2]) >= 2
+                        for st_ in steps) for steps in sc.values()):
+            problems.append("monster maid %s heart scenes" % kind)
         if kind not in KID_TRAITS or kind not in MM_RECIPES or (
                 kind not in MM_GOSSIP and kind not in ("angel", "poop")):
             problems.append("monster maid %s lacks kids, recipe or "
