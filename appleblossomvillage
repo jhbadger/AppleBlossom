@@ -17084,7 +17084,7 @@ class Game:
             self.speak(vid, "I'm %s." % v["job"])
         elif w == "news":
             self.speak(vid, self.news(vid))
-        elif w == "about...":
+        elif w in ("about...", "about"):    # (the dots are stripped)
             self.about_menu(vid)
             return
         elif w == "dance":
