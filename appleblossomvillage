@@ -5708,6 +5708,10 @@ OUT_SPOTS = {
     "stargaze": (70, 56), "farm_gate": (42, 27), "farmyard": (14, 26),
     "eastgreen": (110, 30), "eastbench": (102, 30), "pasture": (118, 13),
     "pasture2": (110, 12), "bluff": (110, 54), "eastlane": (118, 42),
+    # maids with no room in the cabin wait outside it, in a row
+    "maidwait1": (11, 28), "maidwait2": (12, 28), "maidwait3": (13, 28),
+    "maidwait4": (14, 28), "maidwait5": (15, 28), "maidwait6": (16, 28),
+    "maidwait7": (17, 28), "maidwait8": (18, 28),
 }
 FEST_SPOTS = {
     "square": [(71, 23), (74, 23), (77, 23), (80, 23), (71, 27), (79, 27),
@@ -10917,6 +10921,17 @@ class Game:
         m = self.mm_partner()
         return m["name"] if m else None
 
+    def maid_home(self, key):
+        """Where a maid lives: one of the cabin's four maid spots, while
+        they last, or else a place in the row outside the door. key is a
+        villager, or "mm:<id>" for a monster maid; villagers first."""
+        order = sorted(self.st.get("maids", {})) + [
+            "mm:%d" % m["id"] for m in self.mmaids()]
+        i = order.index(key) if key in order else len(order)
+        if i < len(MAID_SPOTS):
+            return "cabin." + MAID_SPOTS[i]
+        return "out.maidwait%d" % ((i - len(MAID_SPOTS)) % 8 + 1)
+
     def mmaid_where(self, m):
         """Where a monster maid is now: (area, x, y). On a dry morning a
         maid with a chore out on the farm stands in the farmyard from six
@@ -10941,7 +10956,15 @@ class Game:
                 finally:
                     self.placing_maids = False
             return "valley", m["ox"], m["oy"]
-        return "cabin", m["x"], m["y"]
+        moved = m.get("moved")              # squeezed past, today
+        if moved and moved[3] == st["day"]:
+            return tuple(moved[:3])
+        area, mark = self.maid_home("mm:%d" % m["id"]).split(".")
+        if area == "cabin":
+            x, y = self.areas["cabin"].spots[mark]
+            return "cabin", x, y
+        x, y = OUT_SPOTS[mark]
+        return "valley", x, y
 
     def mmaid_at(self, x, y, area=None):
         key = (area or self.area).key
@@ -10973,12 +10996,7 @@ class Game:
 
     def invite_maid(self, x, y):
         e = self.changed_at(x, y)
-        spot = self.mmaid_spot()
-        if spot is None:
-            self.say("There's no room left in your cabin for another maid. "
-                     "Not even a broom cupboard.", "info")
-            self.render()
-            return
+        spot = self.mmaid_spot() or (0, 0)
         kind = MAID_OF.get(e["kind"], e["kind"])
         name, lines = MONSTER_MAIDS[kind]
         same = sum(1 for m in self.mmaids() if m["kind"] == kind)
@@ -11000,6 +11018,10 @@ class Game:
                      "I'll be there before you are!\" She bobs a curtsy and "
                      "scurries off up the ladder." % (
                          an(MONSTERS[e["kind"]].name), name), "heart")
+        if self.maid_home("mm:%d" % self.mmaids()[-1]["id"]).startswith(
+                "out."):
+            self.say("(The cabin has room for four maids, and it's full: "
+                     "%s will wait outside by the door.)" % name, "info")
         self.end_turn(1)
 
     def mmaid_says(self, m, line, expr="happy"):
@@ -11105,7 +11127,7 @@ class Game:
     def mm_gift_menu(self, m):
         items = sorted(n for n, c in self.p["items"].items()
                        if c and not n.endswith(" seeds") and n not in
-                       ("sprinkler", "fertilizer") and n not in STATUE_OF
+                       ("sprinkler",) and n not in STATUE_OF
                        and n not in MACHINES and not n.endswith(" sapling"))
         if not items:
             self.mm_line(m, "(happy)You've nothing to give? That's all "
@@ -11243,9 +11265,9 @@ class Game:
     def squeeze_mmaid(self, m):
         self.end_talk()
         x, y = self.pos()
-        out = self.mmaid_where(m)[0] == "valley"
-        kx, ky = ("ox", "oy") if out else ("x", "y")
-        m[kx], m[ky], self.st["pos"] = x, y, [m[kx], m[ky]]
+        area, mx, my = self.mmaid_where(m)
+        m["moved"] = [area, x, y, self.st["day"]]
+        self.st["pos"] = [mx, my]
         self.say("You squeeze past %s, who flattens herself against the "
                  "wall." % m["name"], "info")
         self.end_turn(1)
@@ -16322,8 +16344,7 @@ class Game:
         s = v["sched"]
         maids = self.st.get("maids", {})
         if vid in maids:
-            home = "cabin." + MAID_SPOTS[sorted(maids).index(vid) %
-                                         len(MAID_SPOTS)]
+            home = self.maid_home(vid)
             if maids[vid] in ("water", "harvest", "weed") and \
                     self.st["weather"] not in ("rain", "storm", "snow"):
                 return [(600, "out.farmyard"), (900, home)]
