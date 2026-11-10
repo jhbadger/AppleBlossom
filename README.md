@@ -544,7 +544,11 @@ gift.
   out, to bring her back. Other spells slide off her fur.
 - **Maidify** turns whoever it hits into a maid: a young woman in a black
   dress, a white apron and a frilled cap, whoever they were before. She
-  moves into your cabin and stops keeping shop. Ask her about her **CHORE**
+  moves into your cabin and stops keeping shop. Her heart scenes change
+  with her: while she's your maid, each is the same moment lived in your
+  cabin, in her apron (Rowan carves her fox by your stove, Felix falls
+  asleep over your accounts, Granny Rose takes over your kitchen); turn
+  her back, and the rest are as they were. Ask her about her **CHORE**
   and she'll do it every morning before you wake:
 
   | Chore | What she does |

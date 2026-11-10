@@ -17520,7 +17520,10 @@ class Game:
         for level in sorted(v["scenes"]):
             if level not in f["scenes"] and self.hearts(vid) >= level:
                 f["scenes"].append(level)
-                self.play_scene(vid, v["scenes"][level], level)
+                steps = v["scenes"][level]
+                if self.maid(vid):      # the same moment, in her apron
+                    steps = MAID_SCENES.get(vid, {}).get(level, steps)
+                self.play_scene(vid, steps, level)
                 return True
         return False
 
@@ -20009,6 +20012,802 @@ def maid_look(look):
     return new
 
 
+MAID_SCENES = {   # a villager's heart scenes while she's your maid: the
+    # same moments, lived in your cabin and in her apron
+    "rowan": {
+        2: ["*You find Rowan by the cabin stove, turning something small "
+            "over in her hands when she should be polishing the grate.",
+            "(surprised)Oh. It's you. I was... the grate's done. Nearly.",
+            "*It's a little wooden fox, carved so finely you can see each "
+            "whisker.",
+            ("?", "Rowan hides it under her apron.",
+             [("That's beautiful. Did you make it?", 40,
+               "(blush)...Yeah. With the bread knife, when the chores are "
+               "done. Don't tell anyone. A maid's meant to have idle hands "
+               "never."),
+              ("You should be working.", 0,
+               "(cross)I AM working. ...It's a fox. I carve. Happy?")]),
+            "(happy)Don't tell Otto. He'd want it for the shop window."],
+        4: ["*Rowan is out on the step at sunset, apron off, skipping "
+            "pebbles across the yard.",
+            "Seven bounces. On grass. That's a record, that is.",
+            "(sad)My folks used to take me skipping stones at the river. "
+            "Before the MOUNTAINS. Funny what you think about, sweeping.",
+            ("?", "She goes quiet.",
+             [("Do you miss them?", 40,
+               "(sad)Every day. Then I get busy with the chores and I don't. "
+               "Then I feel bad about that. ...Thanks for asking."),
+              ("Come to the river with me after supper.", 50,
+               "(happy)...Yeah. I'd like that. I'll leave the dishes. Just "
+               "this once.")]),
+            "(happy)You're easy to talk to. Most people aren't."],
+        6: ["*Rowan has commandeered the kitchen table. There's a tiny "
+            "hinge on it, and a jeweller's file she's borrowed from Otto.",
+            "It's for a jewellery box. Not that I'm making anyone a jewellery "
+            "box. In my free time. Which I don't have. Because I'm a maid.",
+            "(blush)...I'm making someone a jewellery box.",
+            ("?", "She looks at you, then at the hinge.",
+             [("You already make this place better every day.", 60,
+               "(blush)...Polishing your boots isn't making something. But "
+               "you make it sound like it is."),
+              ("It'll be wonderful.", 40,
+               "(happy)It'd better be. I've been at it a month.")]),
+            "(happy)Back to the dusting. Don't look at the table."],
+        8: ["*Rowan meets you at the cabin door with a small wooden box with "
+            "iron hinges, her cap askew.",
+            "(blush)It's for you. I made it. Nights, after the chores. "
+            "There's a fox on the lid. Because you're the only one who "
+            "knows.",
+            ("?", "She holds it out with both hands.",
+             [("Thank you. I'll keep it always.", 60,
+               "(happy)Good. I'm not much for talking. But I'd like to keep "
+               "making things for you. For a long time."),
+              ("You made this, as well as everything else you do?", 50,
+               "(laugh)Turns out I don't need much sleep when I'm happy.")]),
+            "*The box goes on the shelf by your bed. She dusts it every day, "
+            "and smiles every time."],
+    },
+    "felix": {
+        2: ["*Felix is on her knees in the herb bed by your cabin, glaring "
+            "at a lavender bush, still in her apron.",
+            "It's dying. I can scrub a floor till it shines and keep a fever "
+            "down, but a lavender bush defeats me.",
+            ("?", "She sighs.",
+             [("You're watering it too much.", 40,
+               "(surprised)...Am I? I water everything too much. Floors. "
+               "Patients. Plants. Habit."),
+              ("Plants are hard.", 20,
+               "(happy)They are. At least the floors don't wilt.")]),
+            "(happy)You're good for me, {name}. You remind me things can "
+            "grow."],
+        4: ["*It's late. The lamp's still lit in the cabin. Felix has fallen "
+            "asleep at the table over your accounts, glasses askew.",
+            "(surprised)Hm? Oh! I was resting my eyes. For... two hours. "
+            "Your ledger's in a terrible state, you know.",
+            ("?", "She rubs her face.",
+             [("You need to go to bed.", 40,
+               "(happy)Doctor's orders? From you? ...All right. You're "
+               "right."),
+              ("Let me help you finish.", 50,
+               "(happy)Together, then. You add, I'll check. Old habits.")]),
+            "(happy)Thank you. Really."],
+        6: ["*Felix brings two cups of chamomile out to the step at dusk. "
+            "The lavender in the herb bed is thriving.",
+            "It lived, you know. I stopped hovering over it. Funny. Same "
+            "with me, since I came to keep house for you. Less hovering.",
+            "(sad)I want to tell you why I left the CITY. I lost a patient. "
+            "A little girl. It wasn't my fault. Everyone said so.",
+            ("?", "She turns her cup in her hands.",
+             [("Do you believe it now?", 60,
+               "(sad)...Some days. More days, here. Sweeping's very good "
+               "for thinking."),
+              ("You've saved so many others.", 50,
+               "(happy)I know. I'm trying to let that be enough.")]),
+            "*You sit together till the tea goes cold."],
+        8: ["*Felix waits at the cabin door, cap off, holding a sprig of "
+            "lavender from the herb bed.",
+            "(blush)I've diagnosed myself. It's serious. Terminal, in the "
+            "sense that it won't stop. I'm in love with you, {name}.",
+            ("?", "She holds out the lavender.",
+             [("Take it, and her hand.", 60,
+               "(happy)...Good. That's the treatment, then. Daily. For the "
+               "rest of my life."),
+              ("Is that your professional opinion?", 50,
+               "(laugh)Second opinion's the same. I asked the lavender.")]),
+            "*The lavender goes in a jar on the windowsill. It lives."],
+    },
+    "theo": {
+        2: ["*Theo is sitting on the cabin step, apron in her lap, not "
+            "polishing the boots beside her.",
+            "Oh, hey. I'm not moping. I'm contemplating. Like moping, but "
+            "the boots get done eventually.",
+            "Today's the day Dad and I used to fix the nets together.",
+            ("?", "She swings her feet.",
+             [("We could fix some nets together.", 40,
+               "(happy)...Yeah? I've got my old ones in the shed. Dad's "
+               "knots. I'll show you."),
+              ("Tell me about him.", 50,
+               "(happy)He laughed louder than anyone. Even at his own jokes. "
+               "Especially at his own jokes.")]),
+            "(happy)Thanks for sitting with me."],
+        4: ["*Theo has dragged an old sailboat into your farmyard, between "
+            "chores, and is sanding the hull in her uniform.",
+            "Meet the Merry Wren. Dad's boat. She's got more holes than my "
+            "jokes. I'm fixing her on my afternoons off.",
+            "I want to sail her to the sea. Just once. Dad always said we "
+            "would.",
+            ("?", "She pats the hull.",
+             [("We could fix her together.", 50,
+               "(happy)You'd do that? On your farm? ...You'd do that."),
+              ("Why haven't you gone yet?", 30,
+               "(sad)Never quite had the nerve. Or the time. Now I've "
+               "neither, I'm a maid! ...But I've got the boat.")])],
+        6: ["*Theo is out in the yard at night, looking at the rain barrel. "
+            "Every star is in it.",
+            "Look. Two skies. Dad called it a 'double night'.",
+            "(sad){name}... I paid off the last of the DEBTS today. With my "
+            "maid's wages. Mabel hugged me! Mabel!",
+            ("?", "She looks at you instead of the barrel.",
+             [("Maybe look a little closer to home.", 60,
+               "(blush)...Yeah. Yeah, I've been doing that a lot lately."),
+              ("You could sail her now.", 40,
+               "(happy)Maybe. Though I've got a lot of reasons to stay "
+               "these days.")]),
+            "*The stars in the barrel wobble when she laughs."],
+        8: ["*The Merry Wren sits in your farmyard, freshly painted. The new "
+            "name on her side reads: {name}.",
+            "(blush)I, uh. I renamed her. Dad would've understood. He named "
+            "his boat after the person he loved, too.",
+            ("?", "She tugs at her apron.",
+             [("She's beautiful. So are you.", 60,
+               "(happy)I don't need to sail to the sea anymore. Everything "
+               "I was looking for was right here, all along. In this "
+               "cabin."),
+              ("Did you practise that?", 50,
+               "(laugh)For a week! On the hens! Did it work?")]),
+            "*The boat stays in the farmyard. The hens nest in it."],
+    },
+    "juniper": {
+        2: ["*Juniper is meant to be dusting your bookshelf. She's sitting "
+            "on the floor reading instead, and drops the book when she sees "
+            "you.",
+            "(blush)I wasn't reading poetry. I was dusting. The inside of "
+            "the book. It's a manual. About tractors.",
+            "*The cover says 'Collected Poems of Iris Marsh'.",
+            ("?", "Juniper picks it up, flustered.",
+             [("Iris Marsh? Your mother?", 50,
+               "(sad)...Yes. I brought it with my things. It's the one book "
+               "I couldn't leave at the library."),
+              ("I love tractor manuals.", 20,
+               "(laugh)...You do not. Thank you anyway.")]),
+            "(happy)Thank you for finding me, {name}. I'll finish the "
+            "dusting. Mostly."],
+        4: ["*It's late. Juniper is standing in the yard in her nightgown, "
+            "looking up.",
+            "Do you see that one? Just above your barn? I call it 'the "
+            "Patient Star'. It waits all winter to rise.",
+            "(blush)I come out here when I can't sleep. I've never shown "
+            "anyone before.",
+            ("?", "She points at a faint star.",
+             [("What would you name that one?", 50,
+               "(blush)...I'd name it after the farm. After you. ...Don't "
+               "write that down."),
+              ("You should write about this.", 40,
+               "(happy)Maybe I will. In the evenings, when the chores are "
+               "done.")])],
+        6: ["*Juniper leaves a folded paper on your pillow when she turns "
+            "down the bed.",
+            "*It's a poem. About a farmer who plants a garden in winter, and "
+            "the garden grows anyway. And a maid who watches from the "
+            "window.",
+            "(blush)You found it. I... it's the first one in years that "
+            "isn't in a drawer.",
+            ("?", "She waits in the doorway, barely breathing.",
+             [("It's beautiful. You should publish it.", 50,
+               "(happy)Maybe. Or maybe it's just for you."),
+              ("Is the farmer me? And the maid?", 60,
+               "(blush)...Yes. And yes. Obviously.")])],
+        8: ["*Juniper meets you under the Patient Star, her mother's book in "
+            "her apron pocket.",
+            "(sad)Mother wrote one love poem in her whole life. 'I loved you "
+            "before I knew your name, the way a field knows the rain.' I "
+            "never understood it.",
+            ("?", "She takes a breath.",
+             [("Do you understand it now?", 60,
+               "(blush)I understand it now. I love you, {name}. I wrote it "
+               "on my hand so I'd be brave enough. See?"),
+              ("Take her hand, and read what's written there.", 60,
+               "(blush)...You read it. I love you, {name}. There. Now it's "
+               "said.")]),
+            "*The ink on her hand is a little smudged. She doesn't wash it "
+            "off for days."],
+    },
+    "wren": {
+        2: ["*Wren is on the cabin step with her fiddle, between chores. She "
+            "keeps stopping on the same note.",
+            "(cross)Ugh! The high bit! Every time! I sound like a goose with "
+            "a cold! The hens are complaining!",
+            ("?", "She glares at the fiddle.",
+             [("Play it again. Slower.", 40,
+               "(happy)...Oh. OH. That's it! Slower! Why didn't I think of "
+               "that?"),
+              ("It sounded fine to me.", 20,
+               "(laugh)You're sweet, and you're tone deaf.")]),
+            "(happy)I'll play for you tonight, after supper. A real song. "
+            "Promise."],
+        4: ["*Wren is sitting by the cabin stove after supper, holding a "
+            "letter.",
+            "(sad)It's from my MOM. She's playing a big hall in the city next "
+            "month. She wants me to come. But I keep house here now. And Dad "
+            "would miss me.",
+            ("?", "She folds and unfolds the letter.",
+             [("You could go, and come back.", 40,
+               "(happy)...I could, couldn't I? The cabin would still be "
+               "here. You'd still be here."),
+              ("What do you want?", 50,
+               "(sad)I want to hear her play. And I want to come home after. "
+               "Here. That's the trouble.")])],
+        6: ["*Wren pulls you into the middle of the cabin floor and sits you "
+            "on a chair. 'You're my audience.'",
+            "(laugh)A whole crowd. Very attractive crowd. Shh!",
+            "*She plays. It's slow and sweet, nothing like her usual songs.",
+            ("?", "She lowers the fiddle, nervous.",
+             [("What's it called?", 50,
+               "(blush)'The Farmer'. No reason. ...Every reason."),
+              ("Is it about me?", 60,
+               "(blush)...It's about the person I scrub floors for and would "
+               "scrub them for forever. So, yes.")])],
+        8: ["*Wren is waiting by the cabin door, fiddle case in hand, apron "
+            "pressed.",
+            "(happy)I wrote back to Mom. I told her I'd come hear her play. "
+            "And then I told her I'm staying. Here.",
+            ("?", "She takes a big breath.",
+             [("Because...?", 60,
+               "(blush)Because the best song I ever wrote is about someone "
+               "who lives here. I love you, {name}!"),
+              ("I hoped you'd stay.", 60,
+               "(laugh)Of course I'm staying! I love you! That was a "
+               "confession! In case it wasn't clear!")])],
+    },
+    "ivy": {
+        2: ["*Ivy is up a ladder against your cabin roof, in her uniform, "
+            "fixing a shingle. The ladder wobbles.",
+            "(cross)Don't— I'm fine! Maids can mend roofs. Carpenters can "
+            "mend roofs. I'm both! I'm fine.",
+            ("?", "The ladder wobbles again.",
+             [("Let me hold the ladder.", 40,
+               "(happy)...Fine. Hold it, then. Steady. Good."),
+              ("Come down before you fall.", 20,
+               "(cross)I don't fall. ...I nearly fell. Hold the ladder.")]),
+            "(happy)You're alright, {name}."],
+        4: ["*Ivy has spread her father's bridge drawings across your kitchen "
+            "table, in between peeling the potatoes.",
+            "Plans for the BRIDGE. Six years I've been fixing them. Now I "
+            "only get evenings.",
+            "(sad)Every time I finish, I find something wrong. Maybe I don't "
+            "want to finish. Then it's really over.",
+            ("?", "She traces a line with her finger.",
+             [("Finishing it would honour them.", 50,
+               "(sad)...I know. I know it would. I'm scared, that's all."),
+              ("Want a second pair of eyes?", 40,
+               "(happy)You can't read plans. ...Look anyway. Fresh eyes.")])],
+        6: ["*Pip has a fever. Ivy has brought him to your cabin so she can "
+            "keep house and nurse him at once. She hasn't sat down all "
+            "night.",
+            "(sad)Felix says it's just a fever. That's what they said about "
+            "Mom and Dad.",
+            "*Pip snores loudly from your bed and mumbles something about "
+            "beetles.",
+            ("?", "Ivy's hands are shaking.",
+             [("I'll sit up with you.", 60,
+               "(sad)...Thank you. Thank you. I can't do this one alone."),
+              ("He'll be fine. Felix is good.", 40,
+               "(sad)I know. I know he is. ...Stay anyway?")]),
+            "*By morning Pip's fever has broken. He demands pancakes. Ivy "
+            "makes them, crying a little."],
+        8: ["*Ivy takes you down to the river on her afternoon off. A new "
+            "stone pier rises from the water.",
+            "(happy)First pier's done. I finished the plans. In your kitchen. "
+            "You were right.",
+            "*Carved into the keystone: 'IVY + {name}'.",
+            ("?", "She tucks her hands in her apron.",
+             [("It's permanent?", 60,
+               "(blush)It's load-bearing. So it's permanent. Like how I "
+               "feel about you."),
+              ("You carved that?", 50,
+               "(blush)I'm bad at saying things. So I carve them.")])],
+    },
+}
+MAID_SCENES.update({
+    "edmund": {
+        2: ["*Edmund is watering the flowers by your cabin door, humming, in "
+            "her apron.",
+            "Oh! {name}. Margaret planted flowers everywhere she lived. I "
+            "thought your door ought to have some. A maid's prerogative.",
+            ("?", "She looks at the flowers.",
+             [("They're beautiful.", 40,
+               "(happy)They are, aren't they? She had the knack. I'm "
+               "learning it."),
+              ("Want help weeding?", 50,
+               "(happy)Always. Thirty-one years a mayor and I never once had "
+               "time to weed. Now I do.")])],
+        5: ["*Edmund sits at your kitchen table with an old ledger she "
+            "brought from the Mayor's House.",
+            "(sad){name}. I've found half the money for Ivy's bridge. The "
+            "rest I'd get by selling Margaret's piano. I still have the say "
+            "of it, maid or no.",
+            ("?", "She closes the ledger.",
+             [("Margaret would want the bridge.", 50,
+               "(sad)...She would. She'd say a piano's for playing, and a "
+               "bridge is for everyone."),
+              ("Don't sell the piano.", 40,
+               "(happy)...No. You're right. We'll find another way. You and "
+               "me.")]),
+            "(happy)You're a good friend, {name}. And a fine employer."],
+    },
+    "rose": {
+        2: ["*Granny Rose has taken over your kitchen, flour up to her "
+            "elbows, maid's cap pushed back.",
+            "(happy)Oh, good, an extra pair of hands! Roll this out. Thinner. "
+            "Thinner, dear! Your stove runs hot, I'll say that for it.",
+            "Your grandmother and I baked in this very kitchen every "
+            "Saturday. She burnt everything. Every single thing.",
+            ("?", "She hands you a rolling pin.",
+             [("Teach me her favourite recipe.", 50,
+               "(happy)Apple pie. She burnt it every time and ate it anyway. "
+               "Here. Like this."),
+              ("Did you miss her?", 40,
+               "(sad)Every Saturday, dear. Less, now I'm baking in her "
+               "kitchen again.")]),
+            "*Rose leaves a fresh apple pie on the table."],
+        5: ["*Granny Rose is sitting on your cabin step in the evening, "
+            "duster in her lap.",
+            "(sad)I'm going to tell you something, dear, and you mustn't make "
+            "a fuss. Felix says my heart is tired.",
+            "(happy)Oh, don't look like that. I'm seventy-nine, and I've "
+            "never been so useful. I'm not going anywhere this year.",
+            ("?", "She pats your hand.",
+             [("Then let me do the heavy chores.", 50,
+               "(laugh)Cheeky! Your own maid! ...All right. The mangle's "
+               "yours."),
+              ("What can I do?", 40,
+               "(happy)Just this. Sit with me. That's all.")]),
+            "*Rose gives you the wool scarf she's been knitting by your "
+            "fire."],
+    },
+    "mabel": {
+        2: ["*Mabel is counting the coins in your housekeeping jar, "
+            "muttering.",
+            "Short again. Six coins. Every week. In YOUR jar, now. It "
+            "followed me here!",
+            "*A small orange cat jumps onto the table with a coin in its "
+            "mouth.",
+            ("?", "Mabel stares at the cat.",
+             [("Your cat's the thief!", 40,
+               "(laugh)Marmalade! Fourteen years I've blamed the till! ...It "
+               "followed me out to your cabin, the rascal."),
+              ("Is that your cat?", 20,
+               "(cross)It is NOT. ...It is. Don't tell anyone.")])],
+        5: ["*Mabel sits on your cabin step after the chores, a letter in "
+            "her lap.",
+            "(sad)Harold wrote again. He's heard I'm keeping house for "
+            "someone now. He wants to come back. Says he was a coward.",
+            ("?", "She looks tired.",
+             [("What do you want?", 50,
+               "(sad)...I want my store, and my cat, and the way things are "
+               "now. Not him."),
+              ("You don't owe him anything.", 40,
+               "(happy)No. I don't. Thank you for saying it out loud.")]),
+            "Hmph. Don't tell anyone I was crying. I was not crying."],
+    },
+    "otto": {
+        2: ["*Otto is out in your farmyard in her apron, hammering a giant "
+            "horseshoe on a borrowed anvil.",
+            "(laugh)For the Harvest Fair! Tradition! Maid or no maid, the "
+            "valley gets its horseshoe! Hand me those tongs!",
+            ("?", "She winks at you.",
+             [("Want me to work the bellows?", 50,
+               "(laugh)Ha! Put your back into it! There we go!"),
+              ("That's a very big horseshoe.", 30,
+               "(laugh)For a very big horse! There's no horse. That's the "
+               "joke!")])],
+        5: ["*Otto sits by your stove after supper, unusually quiet.",
+            "(sad){name}. Rowan's parents wrote. They want her to go north, "
+            "to the mines. With me keeping house here, they think there's "
+            "nothing left for her at the smithy.",
+            ("?", "Otto rubs her chin.",
+             [("Tell her you'd miss her.", 50,
+               "(sad)...I will. Tonight. Before I lose my nerve."),
+              ("She won't leave. This is home.", 40,
+               "(happy)...You think so? I hope so. I do hope so.")])],
+    },
+    "bernard": {
+        2: ["*Bernard has every pot in your kitchen on the go, and looks "
+            "panicked.",
+            "(surprised){name}! Thank goodness! Taste this. Too much salt? "
+            "Not enough? Cooking for one house after a whole inn, I can't "
+            "tell anymore!",
+            ("?", "She holds out a spoon of soup.",
+             [("It needs a pinch more pepper.", 40,
+               "(happy)Pepper! Of course! You've a palate, you know."),
+              ("It's perfect.", 30,
+               "(laugh)You're just being kind. But I'll take it!")])],
+        5: ["*Bernard sits at your table after the dishes, holding a faded "
+            "photograph.",
+            "(sad)Elena and me, on our wedding day. Wren has her smile. And "
+            "her restlessness.",
+            "If Wren leaves... I'll be proud. And I'll still set her place at "
+            "the inn table every night, even keeping house out here.",
+            ("?", "She wipes her eyes.",
+             [("She'll always come home.", 50,
+               "(happy)...She will, won't she? Home's where you're loved. I "
+               "know that, now."),
+              ("Have you told her that?", 40,
+               "(sad)...No. I'll walk over tomorrow and tell her.")])],
+    },
+    "amy": {
+        2: ["*Amy is standing very still by the hives near your cabin, bees "
+            "crawling over her gloves and her apron.",
+            "Don't move. They're just curious. Here. Hold out your hand.",
+            ("?", "A bee lands on your finger.",
+             [("It tickles!", 40,
+               "(happy)It likes you. They don't like everyone. Neither do "
+               "I."),
+              ("Can we go now, please?", 10,
+               "(laugh)Coward. ...All right. Slowly.")])],
+        4: ["*Amy is at your kitchen table after the chores, a crossword grid "
+            "covered in crossings-out.",
+            "(sad)The Gazette wants me to stop. Says the puzzles are too "
+            "hard. Nobody finishes them. Not even me, these days.",
+            ("?", "She looks down at the grid.",
+             [("Make one people can finish.", 40,
+               "(sad)...Maybe. Easier. Kinder. Like this house."),
+              ("I'll finish one. I promise.", 50,
+               "(happy)You will? Then I'll make one just for you.")]),
+            "(happy)Don't tell Rusty I was upset. She'd make it a "
+            "production."],
+        6: ["*Amy leaves this week's crossword on your pillow when she turns "
+            "down the bed.",
+            "*Every answer in the grid is something about you. Your farm. "
+            "Your name. The colour of your coat. The way you take your tea.",
+            "(blush)I couldn't think of anything else. That's a problem, for "
+            "a crossword setter.",
+            ("?", "She won't quite look at you.",
+             [("Then don't stop.", 50,
+               "(blush)...I won't. I don't think I can."),
+              ("What's one across?", 60,
+               "(blush)'Who I keep house for, and would anyway.' Four "
+               "letters. ...It's you.")])],
+        8: ["*Amy waits at the cabin door with a jar of honey tied with a "
+            "teal ribbon.",
+            "(blush)I've been trying to say this for weeks. I wrote it as a "
+            "clue. It didn't fit.",
+            ("?", "She takes a breath.",
+             [("Then say it.", 60,
+               "(blush)I like you, {name}. More than the bees. Don't tell "
+               "the bees."),
+              ("Take the honey, and her hand.", 60,
+               "(happy)...There. I'm going to stand very still now until "
+               "you say something.")])],
+    },
+    "rusty": {
+        2: ["*Rusty is in your cabin with a mouthful of pins, taking in the "
+            "seams of her own maid's uniform.",
+            "(happy)Oh, perfect timing! Stand there. Arms out. If I'm wearing "
+            "a uniform, it's going to be a GOOD uniform.",
+            ("?", "She circles you with the pins.",
+             [("Is that for me, too?", 40,
+               "(laugh)Darling, you need it more than I did."),
+              ("Do I have to?", 10,
+               "(cross)Yes. Hold still.")])],
+        4: ["*Rusty is on your cabin step, liner smudged, a letter in her "
+            "hand.",
+            "(sad)The city theatre wrote. Head of costume. It's everything I "
+            "used to want. And here I am, starching aprons.",
+            ("?", "She stares at the letter.",
+             [("Do you want to go?", 40,
+               "(sad)...I don't know anymore. I like it here. I like you."),
+              ("We'd miss you terribly.", 50,
+               "(happy)...You'd miss me? Really?")]),
+            "(laugh)Don't tell Amy I cried. She'll make me tea and look at "
+            "me."],
+        6: ["*Rusty is sewing something small and green by the fire, and "
+            "whips it behind her back when you come in.",
+            "(blush)It's NOT for you. ...It's a little bit for you.",
+            "*It's a waistcoat, embroidered all over with tiny apple "
+            "blossoms.",
+            ("?", "She fusses with a loose thread.",
+             [("I love it.", 60,
+               "(happy)Of course you do. I made it."),
+              ("You made this for me?", 50,
+               "(blush)A thousand costumes for people pretending to be "
+               "someone else. This is the first for someone just being "
+               "themselves.")])],
+        8: ["*Rusty finds you in the yard. No liner, no lipstick, cap off, "
+            "hair tied back plain.",
+            "(sad)I took it all off. The paint, the drama, even the frills. I "
+            "wanted you to see me with nothing in the way.",
+            ("?", "She waits.",
+             [("You're beautiful.", 60,
+               "(blush)I'm mad about you, {name}. Ridiculously. And for once "
+               "I don't know my lines."),
+              ("Say it, then.", 60,
+               "(laugh)I love you! There! ...Say something before I put the "
+               "liner back on.")])],
+    },
+    "marisol": {
+        2: ["*Marisol is at your stove before dawn, staring at a collapsed "
+            "loaf.",
+            "(cross)Look at it. Flat as a pancake. Your oven sulks worse than "
+            "mine did.",
+            ("?", "She pokes the loaf sadly.",
+             [("Let me help you knead the next one.", 50,
+               "(happy)Sleeves up, then. Push with the heel of your hand. "
+               "There!"),
+              ("It still smells amazing.", 30,
+               "(laugh)It does, doesn't it? Flat bread's still bread.")])],
+        4: ["*Marisol sits by your stove after the chores, holding an old "
+            "rolling pin.",
+            "(sad)My abuela's. Twelve years since she passed. Today.",
+            ("?", "She turns it over in her hands.",
+             [("Tell me about her.", 50,
+               "(happy)She sang while she baked. Terribly. I do too, now. "
+               "Have you noticed?"),
+              ("She'd be proud of you.", 40,
+               "(happy)...Even in an apron and a frilly cap? Yes. She'd "
+               "laugh, and then she'd be proud.")])],
+        6: ["*Marisol leaves a small round loaf by your plate at breakfast, "
+            "oddly shy.",
+            "I made it just for you. Honey, oats, a pinch of something "
+            "secret. It's not on any menu. It never will be.",
+            ("?", "She watches you taste it.",
+             [("It's the best thing I've ever eaten.", 60,
+               "(blush)Good. That's the point."),
+              ("What's the secret ingredient?", 50,
+               "(laugh)If I told you it wouldn't be a secret. ...It's "
+               "you. I think about you while I knead.")])],
+        8: ["*Marisol meets you at the cabin door at dawn, hair loose, cap "
+            "in her hand.",
+            "(blush)I've been up since three. Not baking. Thinking.",
+            "Every morning, the first thing I do is look for you through the "
+            "kitchen door. I didn't know that until today.",
+            ("?", "She twists the cap.",
+             [("And?", 60,
+               "(happy)And I'm in love with you, {name}. There. I said it "
+               "before the bread burns."),
+              ("I look for you too.", 60,
+               "(blush)...You do? Oh. Oh, good.")])],
+    },
+})
+MAID_SCENES.update({
+    "silas": {
+        2: ["*Silas has set up an easel in your yard instead of beating the "
+            "rugs, and is glaring at a canvas.",
+            "It's wrong. The barn's wrong. It looks like a loaf of bread.",
+            ("?", "She offers you the brush.",
+             [("Let me try.", 50,
+               "(laugh)...That's worse. That's much worse. I love it."),
+              ("It looks fine to me.", 20,
+               "(cross)Fine is the enemy of good. ...Thank you, though.")]),
+            "(happy)I'll beat the rugs after. Probably."],
+        4: ["*Silas sits on the cabin step, a letter unopened in her apron "
+            "pocket.",
+            "(sad)It's from my father. First one in three years. I suppose "
+            "he heard I'm keeping house now.",
+            ("?", "She hasn't opened it.",
+             [("Open it together?", 50,
+               "(sad)...All right. With you here. Read it to me?"),
+              ("You don't have to read it.", 40,
+               "(happy)No. I don't, do I? Not today.")])],
+        6: ["*There's a canvas turned to the wall in the corner of the "
+            "cabin. Silas stands in front of it.",
+            "(blush)It's the portrait. The one I said I wasn't doing.",
+            "*She turns it round. It's you, at your cabin door at sunset, "
+            "the way she sees you every evening.",
+            ("?", "She watches your face.",
+             [("It's beautiful.", 50,
+               "(blush)It's accurate. That's different."),
+              ("Is that really how you see me?", 60,
+               "(blush)Every evening. From the kitchen window.")])],
+        8: ["*Silas finds you on the bridge at dusk, paint on her hands, "
+            "apron untied.",
+            "(blush)I've ruined eleven canvases trying to paint this. So "
+            "I'll say it plainly, like a person instead of a painter.",
+            ("?", "She takes a breath.",
+             [("Go on.", 60,
+               "(happy)I love you, {name}. ...There. That was easier than "
+               "the sky."),
+              ("Take her paint-stained hand.", 60,
+               "(blush)...You don't mind the paint? Then I love you. That's "
+               "all.")])],
+    },
+    "dmitri": {
+        2: ["*Dmitri has set her old telescope on your cabin step at "
+            "midnight, apron still on.",
+            "Ah! Perfect timing. Look. There. That smudge.",
+            ("?", "You look through the eyepiece.",
+             [("Is that a comet?", 50,
+               "(happy)It is! A new one! You found it as much as I did."),
+              ("I just see a blur.", 20,
+               "(laugh)Most of astronomy is blurs. Patience.")])],
+        4: ["*Dmitri sits by your stove at dusk, a letter in her hand.",
+            "(sad)The university wants me back. More money. More telescopes. "
+            "No more aprons.",
+            ("?", "She folds the letter carefully.",
+             [("Will you go?", 40,
+               "(sad)...I don't think so. The sky's better here. And so is "
+               "the company."),
+              ("We'd miss you.", 50,
+               "(happy)Would you? ...Then that settles it.")])],
+        6: ["*Dmitri shows you a star chart covered in tiny handwriting, "
+            "between folding the laundry.",
+            "(blush)I found a new star. Very faint. It's mine to name.",
+            "I've been calling it by your name. In my notes. Just in my "
+            "notes.",
+            ("?", "She won't look up from the chart.",
+             [("Make it official.", 60,
+               "(blush)...I'll write to the observatory tomorrow."),
+              ("Why my name?", 50,
+               "(blush)Because it's faint and it's steady and I look for it "
+               "every night. Like you.")])],
+        8: ["*Dmitri meets you in the yard under the full sky, no telescope "
+            "for once, cap in her hand.",
+            "(blush)I've spent my whole life looking up. I've just realised "
+            "I'd rather look at you.",
+            ("?", "She waits.",
+             [("Look, then.", 60,
+               "(happy)I love you, {name}. I've checked my calculations. "
+               "They're correct."),
+              ("And?", 60,
+               "(blush)And I love you. My heart is doing things that aren't "
+               "in any textbook.")])],
+    },
+    "jonah": {
+        2: ["*Jonah is in your barn, apron and all, holding a tiny "
+            "shivering lamb she's brought down from the hill.",
+            "Born early. Her mother won't take her. I'm feeding her by hand, "
+            "between chores.",
+            ("?", "She holds out the bottle.",
+             [("Can I feed her?", 50,
+               "(happy)Gently. There. She likes you."),
+              ("She's so small.", 30,
+               "(happy)She'll grow. They always do, with care.")])],
+        4: ["*Jonah sits on your fence at dusk, looking toward the empty "
+            "east hill.",
+            "(sad)My mother walked that wall every morning. Thirty years. "
+            "She'd have liked you. She'd have liked me in an apron, too, I "
+            "think. She'd have laughed.",
+            ("?", "She's quiet a long while.",
+             [("Tell me about her.", 50,
+               "(happy)She sang to the sheep. Every one of them had a "
+               "name."),
+              ("You're not alone here.", 50,
+               "(happy)...No. I'm not. Not in this house.")])],
+        6: ["*Jonah leaves a folded bundle on your bed when she turns it "
+            "down.",
+            "*It's the softest fleece of the year, knitted into a scarf.",
+            "(blush)Rusty helped me. It's for you. The best one. I kept it "
+            "back.",
+            ("?", "She lingers in the doorway.",
+             [("I'll wear it every day.", 60,
+               "(happy)Even in summer? ...Yes, all right, not in summer."),
+              ("You kept the best one for me?", 50,
+               "(blush)Of course I did.")])],
+        8: ["*Jonah meets you on the hill at sunset, the flock grazing "
+            "round you, apron folded in her pocket.",
+            "(blush)I've been practising this for a week. Out loud. To the "
+            "sheep.",
+            ("?", "She takes a breath.",
+             [("And what did you practise?", 60,
+               "(happy)I love you, {name}. That's all I practised. That's "
+               "all there is."),
+              ("Did the sheep approve?", 50,
+               "(laugh)Duchess bit me. I think it means yes.")])],
+    },
+    "clara": {
+        2: ["*Clara is on your cabin floor surrounded by spilled letters she "
+            "was sorting for the post office. Benji is under the table, "
+            "giggling.",
+            "(cross)Benji! You can't hide in the mail sack! ...Oh, hello. "
+            "Don't mind us. Your cabin's very good for sorting.",
+            ("?", "Letters everywhere.",
+             [("Let me help you sort.", 50,
+               "(happy)Bless you. North pile, south pile, Edmund pile."),
+              ("Is he all right under there?", 30,
+               "(laugh)He's a postal hazard, is what he is.")])],
+        5: ["*Clara sits on your cabin step at dusk, a stack of unsent "
+            "letters in her lap.",
+            "(sad)They're to Thomas. Benji's father. I write to him every "
+            "month. Four years now. I tell him about the cabin, now.",
+            ("?", "She holds them close.",
+             [("Do they help?", 40,
+               "(sad)...Yes. A little. Writing about here helps most."),
+              ("He'd be proud of you both.", 50,
+               "(happy)...He would, wouldn't he? Thank you.")])],
+    },
+    "gus": {
+        2: ["*Gus is at the end of your farm pond in the grey dawn, two rods "
+            "propped up, her maid's cap pulled low.",
+            "Sit down. Quiet. They can hear you think.",
+            ("?", "One of the rods twitches.",
+             [("Is that a bite?", 40,
+               "(happy)It is. Steady, now. Bring it in. There!"),
+              ("Whose is the second rod?", 50,
+               "(happy)Yours. Always has been, since I came here.")])],
+        5: ["*Gus is mending a net by your fire, slower than usual.",
+            "(sad)Doctor says my hands are going. Arthritis. A year or two "
+            "more of fishing, maybe. Scrubbing floors won't help.",
+            ("?", "She looks at her hands.",
+             [("Teach me everything you know.", 50,
+               "(happy)Every knot. Every spot. Starting tomorrow."),
+              ("I'll do the heavy chores.", 40,
+               "(laugh)Who's the maid here? ...Thank you.")])],
+    },
+    "agnes": {
+        2: ["*Agnes is in your yard in her apron, scowling at a rose bush "
+            "covered in greenfly.",
+            "(cross)Look at this. An invasion. I brought this cutting from my "
+            "Crimson Majesty!",
+            ("?", "She hands you a spray bottle.",
+             [("I'll help you fight them.", 50,
+               "(happy)Good! Soapy water. No mercy."),
+              ("Could you just let the ladybirds eat them?", 40,
+               "(surprised)...Hm. I taught that, once. Forty years ago. Well "
+               "remembered.")])],
+        5: ["*Agnes sits at your table after the chores with an enormous "
+            "scrapbook.",
+            "(happy)Two hundred and twelve pupils. Look. Edmund at nine. "
+            "Thomas Ashford at eight. That frog.",
+            ("?", "She turns a page and goes quiet.",
+             [("Who's this?", 40,
+               "(sad)...My last class. I stopped after them. I thought I'd "
+               "never be useful again. And here I am, keeping house."),
+              ("You loved them all.", 50,
+               "(happy)Every one. Even the frog.")])],
+    },
+    "bea": {
+        2: ["*Bea is kneeling in the mud in your barn, apron ruined, a sheep "
+            "in her arms.",
+            "(happy)Hold her head for me? Gently. She's got a thorn in her "
+            "hoof. Brave girl.",
+            ("?", "The sheep bleats.",
+             [("Like this?", 50,
+               "(happy)Perfect. There. Thorn's out. You're a natural."),
+              ("Is she going to kick me?", 30,
+               "(laugh)Probably. Hold on anyway.")])],
+        5: ["*Bea sits on your cabin step at night, unusually quiet.",
+            "(sad)Lost one today. Old Gerald, Benji's favourite sheep. "
+            "Nothing I could do. Nineteen years old.",
+            ("?", "She wipes her eyes on her apron.",
+             [("You gave him a good life.", 50,
+               "(sad)...We did. All of us. Thank you."),
+              ("Do you want company?", 50,
+               "(happy)Yes. Just sit. That's all.")])],
+    },
+    "nell": {
+        2: ["*Nell has taken over your kitchen table with a small brass bird, "
+            "wings spread, a duster forgotten beside it.",
+            "Watch. ...Watch. Come on. Come ON.",
+            ("?", "The bird twitches, flaps, and falls over.",
+             [("It flapped! That's progress!", 50,
+               "(happy)It did, didn't it? Progress!"),
+              ("Maybe it needs a name.", 40,
+               "(laugh)Duster. I'll call it Duster. Since that's what I'm "
+               "neglecting.")])],
+        5: ["*Nell is in your yard at dawn, staring at the big clock on the "
+            "square, far off.",
+            "(sad)It stopped. Gran's clock. Fifty years, and it stopped last "
+            "night. And I'm here in an apron.",
+            ("?", "She stares at the still hands.",
+             [("You can fix it.", 50,
+               "(happy)...I can, can't I? On my afternoon off. Will you "
+               "come?"),
+              ("Maybe it just needed a rest.", 40,
+               "(happy)...Like me. Maybe it did.")])],
+    },
+})
+
+
 MAID_UNIFORMS = {"black": "#2a2838", "navy": "#2e4486", "wine": "#6a2238",
                  "forest green": "#2a4a34", "lavender": "#8a78c0",
                  "pink": "#e08aa8"}
@@ -22430,7 +23229,11 @@ def selftest():
                         problems.append("%s: no out.%s" % (vid, mark))
                 elif area not in rooms or mark not in rooms[area][1]:
                     problems.append("%s: no %s" % (vid, spot))
-        for level, steps in v["scenes"].items():
+        if v["look"].get("age") != "child" and (
+                sorted(MAID_SCENES.get(vid, {})) != sorted(v["scenes"])):
+            problems.append("%s lacks maid heart scenes" % vid)
+        for level, steps in list(v["scenes"].items()) + list(
+                MAID_SCENES.get(vid, {}).items()):
             for s in steps:
                 if isinstance(s, tuple) and (s[0] != "?" or
                                              len(s[2]) < 2):
