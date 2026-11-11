@@ -7290,6 +7290,13 @@ TOWER_RESCUE = [
     "tower's window through his telescope, and ran all the way.",
     "\"Angels, now,\" says Dr. Thorne, shaking his head. \"And your "
     "pockets full, as usual. Something helped itself.\""]
+COMPANION_RESCUE = [
+    "Everything goes black...",
+    "You wake on a cot in the Clinic. {who} is asleep in the chair beside "
+    "you, still holding your bag on her lap.",
+    "\"She wouldn't let anyone else near you,\" says Dr. Thorne. \"Carried "
+    "you all the way out of {where}, and not a coin missing. You're lucky "
+    "to have her.\""]
 MINE_RESCUE = [
     "Everything goes black...",
     "You wake on a cot in the Clinic, aching all over. Otto found you "
@@ -10792,7 +10799,8 @@ class Game:
 
     def mine_rescue(self):
         """Knocked out down the mine: carried to the Clinic, without your
-        gold and some of what was in your bag."""
+        gold and some of what was in your bag; unless your maid is with
+        you, who carries you out with every coin still in your purse."""
         p = self.p
         self.rescued_from = self.mine["floor"] if self.mine else 0
         c, cm = self.companion()
@@ -10803,7 +10811,7 @@ class Game:
         self.walking = None
         self.sound.play("death")
         self.st["companion"] = None
-        purse = p["gold"] // 2 if saved else p["gold"]
+        purse = 0 if saved else p["gold"]
         p["gold"] -= purse
         stacks = sorted(n for n, c in p["items"].items()
                         if c and n not in STATUE_OF and
@@ -10818,14 +10826,19 @@ class Game:
                      "heart")
         for n in lost:
             del p["items"][n]
-        for line in (TOWER_RESCUE if self.st["pos"] and self.area.key ==
-                     "mine" and getattr(self, "rescued_from", 0) > TOWER
-                     else MINE_RESCUE):
-            self.say(line, "bad")
-        self.say("%s (%dg gone)%s." % (
-            "Your purse is lighter" if saved else "Your purse is empty",
-            purse, ", and so are your %s" % and_list(lost) if lost else ""),
-            "bad")
+        tower = self.st["pos"] and self.area.key == "mine" and \
+            getattr(self, "rescued_from", 0) > TOWER
+        if saved:
+            for line in COMPANION_RESCUE:
+                self.say(line.replace("{who}", cm["name"]).replace(
+                    "{where}", "the tower" if tower else "the mine"),
+                    "heart")
+        else:
+            for line in (TOWER_RESCUE if tower else MINE_RESCUE):
+                self.say(line, "bad")
+            self.say("Your purse is empty (%dg gone)%s." % (
+                purse, ", and so are your %s" % and_list(lost) if lost
+                else ""), "bad")
         clinic = self.areas["clinic"]
         self.area = clinic
         self.st["pos"] = list(clinic.entry)
