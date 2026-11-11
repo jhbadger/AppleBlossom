@@ -723,11 +723,22 @@ festival notices and news.
 
 Walk into someone to talk. Their **portrait** appears beside what they say,
 and it smiles, blushes, frowns or looks surprised as they talk. Choose a word
-from the menu or type one: everyone knows CHAT, GIFT, NAME, JOB and NEWS, and
+from the menu or type one: everyone knows CHAT, GIFT, NAME, JOB, NEWS and FAVOURITE, and
 ABOUT... asks what they think of the others, and SQUEEZE PAST asks them to
 step aside so you can get by, if they're standing in a doorway. Words in CAPITALS are worth
 asking about. Each villager has their own topics, opinions, secrets and
 sense of humour.
+
+**Learning what people like.** Every gift gets a reaction (loved, liked,
+neutral, disliked or hated), and the game remembers it. Ask a friend
+about their **FAVOURITE** once you're on two hearts and they'll tell you
+something they love, one new thing a day; at three hearts they'll also
+own up to what they can't stand, and at four to what they like.
+Villagers sometimes let slip someone else's favourite when you CHAT,
+especially family ("Between you and me, Dad adores tomatoes"). Whatever
+you've learned shows in the Friends list (F), under *What they like*, and
+in the gift menu, where each item is marked with what that person thinks
+of it: ♥ loves, ✓ likes, ✗ dislikes, ✗✗ hates.
 
 The village notices what your wand gets up to. When you CHAT, people
 sometimes bring up somebody you've changed: the golden statue of Otto, the

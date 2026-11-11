@@ -8699,8 +8699,10 @@ it (and your bag); friends send recipes at 3 hearts.
 Go to bed before 2 am.
 
 Someone in your way?  Talk to them: SQUEEZE PAST.
-Talk every day, and give gifts (two a week each).  At
-some heart levels a friend shares a moment with you.  A
+Talk every day, and give gifts (two a week each); ask a
+friend their FAVOURITE, and the Friends list and gift menu
+remember what you've learned.  At some heart levels a
+friend shares a moment with you.  A
 Blossom Bouquet at 8 hearts asks someone to go steady; a
 Blossom Pendant at 10 asks them to marry you.
 
@@ -9436,6 +9438,7 @@ class Game:
             "tomorrow": "sun", "soil": {}, "sprinklers": [], "machines": {}, "bikinis": {}, "wear": {}, "uniform": {},
             "orchard": {}, "fruitful": {}, "loo_state": {}, "bowls": {},
             "hay": 0, "trough": {}, "grazing": {}, "large_eggs": [],
+            "tastes": {},
             "droppings": {},
             "fertilized": {},
             "debris": {"%d,%d" % k: v for k, v in farm_debris(
@@ -17050,7 +17053,8 @@ class Game:
             words.insert(2, "WEAR")
         if self.swapped(vid) or self.maid(vid):
             words.append("CHANGE")
-        words += ["NAME", "JOB", "NEWS", "ABOUT...", "SQUEEZE PAST"]
+        words += ["NAME", "JOB", "NEWS", "ABOUT...", "FAVOURITE",
+                  "SQUEEZE PAST"]
         return words
 
     def talk_menu(self):
@@ -17122,6 +17126,11 @@ class Game:
         if w in ("", "bye", "goodbye"):
             self.speak(vid, random.choice(BYES[self.tier(vid)]))
             self.end_talk()
+            self.end_turn(1)
+            return
+        if w[:4] in ("favo", "favr", "tast") or w in ("likes", "like",
+                                                      "what do you like"):
+            self.favourite(vid)
             self.end_turn(1)
             return
         if w[:4] in ("sque", "past", "move", "excu", "scoo", "swap"):
@@ -17266,6 +17275,12 @@ class Game:
                 self.dom() < 24:
             pool.append("(happy)I wonder who my secret friend is this year!")
         last = self.talk.get("last")
+        if random.random() < 0.15:
+            tip = self.taste_gossip(vid)
+            if tip and tip != last:
+                self.talk["last"] = tip
+                self.speak(vid, tip)
+                return
         gossip = self.gossip(vid)
         if gossip and gossip != last and random.random() < 0.35:
             self.talk["last"] = gossip
@@ -17476,9 +17491,13 @@ class Game:
         def back():
             self.talk["mode"] = "kw"
             self.talk_menu()
-        self.open_menu("Give %s what?" % VILLAGERS[vid]["short"], [
-            ("%s%s" % (n, " x%d" % self.p["items"][n]
-                       if self.p["items"][n] > 1 else ""),
+        known = self.st.get("tastes", {}).get(vid, {})
+        self.open_menu("Give %s what?  (%s)" % (
+            VILLAGERS[vid]["short"], "\u2665 loves  \u2713 likes  "
+            "\u2717 doesn't" if known else "ask about a FAVOURITE"), [
+            ("%s%s%s" % (n, " x%d" % self.p["items"][n]
+                         if self.p["items"][n] > 1 else "",
+                         TASTE_MARK.get(known.get(base_item(n)), "")),
              lambda n=n: self.give_gift(vid, n)) for n in items] +
             [("Nothing", back)], back)
 
@@ -17512,6 +17531,7 @@ class Game:
             return
         self.take(item)
         taste = gift_taste(vid, item)
+        self.learn_taste(vid, base_item(item), taste)
         pts = GIFT_POINTS[taste]
         if birthday:
             pts *= 5 if pts > 0 else 2
@@ -17530,6 +17550,64 @@ class Game:
         self.check_scene(vid)
         if not self.scene:
             self.talk_menu()
+
+    def learn_taste(self, vid, item, taste):
+        """Remember what somebody thinks of something."""
+        self.st.setdefault("tastes", {}).setdefault(vid, {})[item] = taste
+
+    def favourite(self, vid):
+        """FAVOURITE: a friend tells you something they love (or, the
+        closer you are, like, or can't stand), one new thing a day."""
+        v = VILLAGERS[vid]
+        f = self.friend(vid)
+        known = self.st.setdefault("tastes", {}).setdefault(vid, {})
+        if self.hearts(vid) < 2:
+            self.speak(vid, random.choice(FAV_NOT_YET))
+            return
+        if f.get("hinted") == self.st["day"]:
+            self.speak(vid, random.choice(FAV_AGAIN))
+            return
+        h = self.hearts(vid)
+        pools = [("love", v["loves"])]
+        if h >= 3:
+            pools.append(("hate", v["hates"]))
+        if h >= 4:
+            pools.append(("like", v["likes"]))
+        for taste, pool in pools:
+            new = [i for i in pool if not i.startswith("kind:") and
+                   known.get(i) != taste and i in ITEMS]
+            if new:
+                item = random.choice(new)
+                f["hinted"] = self.st["day"]
+                self.learn_taste(vid, item, taste)
+                said = gift_words(item)
+                self.speak(vid, random.choice(FAV_LINES[taste]).replace(
+                    "{It}", cap(said)).replace("{it}", said))
+                self.say("(You'll remember that: %s %s %s.)" % (
+                    v["short"], {"love": "loves", "like": "likes",
+                                 "hate": "can't stand"}[taste], item),
+                    "heart")
+                return
+        self.speak(vid, random.choice(FAV_ALL) if h >= 4 else
+                   random.choice(FAV_MORE))
+
+    def taste_gossip(self, vid):
+        """Somebody lets slip what someone else loves: family first."""
+        known = self.st.setdefault("tastes", {})
+        kin = [o for (a, o) in GOSSIP_KIN if a == vid]
+        others = kin + [o for o in VILLAGERS if o != vid and o not in kin]
+        for o in others[:len(kin)] + random.sample(others[len(kin):], 4):
+            pool = [i for i in VILLAGERS[o]["loves"]
+                    if not i.startswith("kind:") and i in ITEMS and
+                    known.get(o, {}).get(i) != "love"]
+            if pool:
+                item = random.choice(pool)
+                self.learn_taste(o, item, "love")
+                who = GOSSIP_KIN.get((vid, o), VILLAGERS[o]["short"])
+                return random.choice(TASTE_GOSSIP).replace(
+                    "{Who}", cap(who)).replace("{who}", who).replace(
+                    "{it}", gift_words(item))
+        return None
 
     def bouquet(self, vid):
         v = VILLAGERS[vid]
@@ -18258,7 +18336,12 @@ class Game:
                 self.render()
             return "break"
         if self.overlay:
-            self.close_overlay()
+            if k in ("Left", "Up", "a", "w") and \
+                    getattr(self, "box_page", 0) > 0:
+                self.box_page -= 1
+                self.render()
+            else:
+                self.close_overlay(force=k == "Escape")
             return
         if self.talk:
             return
@@ -18309,14 +18392,24 @@ class Game:
         elif k == "Escape":
             self.action_menu()
 
-    def close_overlay(self):
+    def close_overlay(self, force=False):
+        """Close the map, help or text box, or, if it runs to more pages,
+        turn to the next one."""
+        if not force and self.overlay in ("help", "text") and \
+                getattr(self, "box_page", 0) + 1 < getattr(self, "box_pages",
+                                                           1):
+            self.box_page += 1
+            self.render()
+            return
         self.overlay = None
         self.overlay_text = None
+        self.box_page = 0
         self.render()
 
     def show_text(self, text):
         self.overlay = "text"
         self.overlay_text = text
+        self.box_page = 0
         self.render()
 
     # ── Menus ──
@@ -19002,7 +19095,15 @@ class Game:
         if key not in cache:
             cache[key] = self.fit_text_box(text, W, H)
             self.box_fit = cache
-        cols, font = cache[key]
+        pages = cache[key]
+        self.box_pages = len(pages)
+        page = min(getattr(self, "box_page", 0), len(pages) - 1)
+        cols, font = pages[page]
+        if len(pages) > 1:
+            cols = list(cols)
+            cols[-1] += "\n\n— Page %d of %d. %s —" % (
+                page + 1, len(pages), "Any key or tap: next. Esc closes."
+                if page + 1 < len(pages) else "Any key closes. \u2190 back.")
         ts, x = [], 0
         for col in cols:
             t = c.create_text(x, 0, text=col, fill=color, font=font,
@@ -19021,17 +19122,24 @@ class Game:
             c.tag_raise(t, r)
 
     def fit_text_box(self, text, W, H):
-        """(columns, font) for a text box: the largest font at which it
-        fits in one column, or else in two."""
+        """Pages of (columns, font) for a text box: all on one page, in one
+        column or two, at the largest font that fits; or, if even small
+        print won't fit (a phone held upright), pages of readable print."""
         c = self.canvas
-        paras = text.split("\n\n")
-        two = [text]
-        if len(paras) > 1:
-            def tallest(i):
-                return max("\n\n".join(paras[:i]).count("\n"),
-                           "\n\n".join(paras[i:]).count("\n"))
-            i = min(range(1, len(paras)), key=tallest)
-            two = ["\n\n".join(paras[:i]), "\n\n".join(paras[i:])]
+
+        def halves(t):
+            paras = t.split("\n\n")
+            if len(paras) > 1:
+                def tallest(i):
+                    return max("\n\n".join(paras[:i]).count("\n"),
+                               "\n\n".join(paras[i:]).count("\n"))
+                i = min(range(1, len(paras)), key=tallest)
+                return ["\n\n".join(paras[:i]), "\n\n".join(paras[i:])]
+            lines = t.split("\n")
+            if len(lines) > 1:
+                i = (len(lines) + 1) // 2
+                return ["\n".join(lines[:i]), "\n".join(lines[i:])]
+            return [t]
 
         def size_of(cols, font):
             ts, x = [], 0
@@ -19043,17 +19151,49 @@ class Game:
             for t in ts:
                 c.delete(t)
             return x1 - x0, y1 - y0
-        best, room = None, -1
-        for size in range(12, 4, -1):
+        two = halves(text)
+        for size in range(12, 7, -1):
             font = F(*MONO) if size == 12 else F("Menlo", size)
             for cols in ([text], two) if len(two) > 1 else ([text],):
                 w, h = size_of(cols, font)
                 if w <= W - 40 and h <= H - 30:
-                    return cols, font
-                fit = min((W - 40) / w, (H - 30) / h)
-                if size == 5 and fit > room:        # least bad, at worst
-                    best, room = (cols, font), fit
-        return best
+                    return [(cols, font)]
+        # Pages, then: whichever readable print needs the fewest of them
+        # (in two columns, where they fit), the larger on a tie.
+        lines_h = {}
+
+        def paginate(font):
+            w = size_of([text], font)[0]
+            if w > W - 40:
+                return None
+            name = str(font)
+            if name not in lines_h:
+                lines_h[name] = size_of(["X\nX"], font)[1] - \
+                    size_of(["X"], font)[1]
+            ncols = 2 if 2 * w + 32 <= W - 40 else 1
+            per = max(4, (H - 30) // max(1, lines_h[name]) - 3)
+            pages, page = [], []
+            for para in text.split("\n\n"):
+                lines = para.split("\n")
+                while lines:
+                    room = per * ncols - len(page) - (1 if page else 0)
+                    if len(lines) <= room or not page:
+                        take = lines[:max(1, room)]
+                        page += ([""] if page else []) + take
+                        lines = lines[len(take):]
+                    else:
+                        pages.append(page)
+                        page = []
+            if page:
+                pages.append(page)
+            return [(halves("\n".join(pg)) if ncols == 2 else
+                     ["\n".join(pg)], font) for pg in pages]
+        best = None
+        for size in (11, 10, 9, 8, 7):
+            out = paginate(F("Menlo", size))
+            if out and (best is None or len(out) < len(best)):
+                best = out
+        return best or [([text], F("Menlo", 7))]
 
     def draw_map(self):
         c, a = self.canvas, self.areas["valley"]
@@ -19208,6 +19348,22 @@ class Game:
                 "  talked" if f["talked"] == self.st["day"] else "",
                 "gifts %d/2" % f["week"], mark))
         lines += ["", "❀ could become a sweetheart"]
+        tastes = self.st.get("tastes", {})
+        known = []
+        for vid in sorted(tastes, key=lambda v: VILLAGERS[v]["short"]):
+            t = tastes[vid]
+            parts = []
+            for taste in ("love", "like", "neutral", "dislike", "hate"):
+                items = sorted(i for i, x in t.items() if x == taste)
+                if items and taste != "neutral":
+                    parts.append(TASTE_MARK[taste].strip() + " " +
+                                 ", ".join(items))
+            if parts:
+                known += wrap("%s: %s" % (VILLAGERS[vid]["short"],
+                                          "  ".join(parts)), 64)
+        if known:
+            lines += ["", "WHAT THEY LIKE  (\u2665 loves  \u2713 likes  "
+                      "\u2717 dislikes or hates)"] + known
         if self.kids():
             lines += [""] + wrap("Your children: " + ", ".join(
                 ("%s (%s, %d days) %s" % (
@@ -19319,6 +19475,7 @@ class Game:
         if self.busy or self.talk:
             return
         self.overlay = None if self.overlay == "help" else "help"
+        self.box_page = 0
         self.render()
 
     def zoom(self, d):
@@ -19557,6 +19714,15 @@ def kawaiify(text, you):
         else:
             text += end
     return text
+
+
+def gift_words(item):
+    """A thing someone might love, as you'd say it: 'stew', 'a book of
+    poems', 'fine tools'."""
+    if ITEMS.get(item, (0, 0, ""))[2] in ("gift", "romance") and \
+            not item.endswith("s"):
+        return an(item)
+    return item
 
 
 def measure(item):
@@ -21368,6 +21534,35 @@ GOSSIP_HINTS = {   # kind -> (they like it, they don't)
             ["I heard the door rattling all by itself last night.",
              "Somebody heard it muttering 'unbelievable.'"]),
 }
+TASTE_MARK = {"love": "  \u2665", "like": "  \u2713", "neutral": "",
+              "dislike": "  \u2717", "hate": "  \u2717\u2717"}
+FAV_LINES = {
+    "love": ["(happy)My favourite? {It}. I'd do anything for {it}.",
+             "(blush)If you really want to know... {it}. Don't tell "
+             "anyone.",
+             "(laugh){It}! Every time. You can't go wrong with {it}."],
+    "like": ["I'm partial to {it}, now you ask.",
+             "(happy){It} always cheers me up. Not my favourite, but "
+             "close."],
+    "hate": ["(cross)Whatever you do, don't bring me {it}. Can't stand "
+             "it.",
+             "(sad)Just between us: {it}. Ugh. I've never liked {it}."],
+}
+FAV_NOT_YET = ["(laugh)Ha! Ask me again when we know each other better.",
+               "(blush)That's a bit personal, isn't it? Maybe one day."]
+FAV_AGAIN = ["(laugh)One secret a day, {name}! Ask me tomorrow.",
+             "I've told you one thing today. A person needs some mystery."]
+FAV_MORE = ["(happy)You know my favourites already! Get to know me better "
+            "and I'll tell you more.",
+            "Hmm. You know the important things. Ask me again when we're "
+            "closer."]
+FAV_ALL = ["(laugh)You know me better than I know myself, {name}!",
+           "(happy)There's nothing left to tell! You know it all."]
+TASTE_GOSSIP = ["(happy){Who} would do anything for {it}, you know.",
+                "Between you and me, {who} adores {it}. Just saying.",
+                "(laugh)If you ever want to win {who} over: {it}. Trust "
+                "me.",
+                "Did you know {who} goes weak at the knees for {it}?"]
 GOSSIP_KIN = {   # (speaker, about) -> what they call them
     ("wren", "bernard"): "Dad", ("bernard", "wren"): "my Wren",
     ("ivy", "pip"): "my little brother", ("pip", "ivy"): "my sister",
