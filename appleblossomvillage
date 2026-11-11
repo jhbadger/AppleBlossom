@@ -96,6 +96,7 @@ SPRITES = set()                 # filled in when the art is drawn
 
 WALKABLE = {
     "grass", "meadow", "flowers", "path", "cobble", "sand", "bridge", "dock",
+    "gravel",
     "soil", "soil_w", "tallgrass", "snowpath", "plaza",
     # indoors
     "floor", "boards", "rug", "tile", "exit", "logfloor", "stone_floor",
@@ -612,6 +613,13 @@ def draw_terrain(name, frame=0, season=0):
             rect(g, 6, 3, 9, 4, "#b08050")
             rect(g, 6, 11, 9, 12, "#b08050")
         return g
+    if name == "gravel":                        # the quarry floor
+        g = grid_of("#a49c8c")
+        speckle(g, rng, ["#8c8474", "#b8b0a0", "#948c7c", "#c4bcac"], 0.5)
+        for _ in range(4):
+            x, y = rng.randrange(1, 14), rng.randrange(1, 14)
+            rect(g, x, y, x + 1, y, "#7a7264")
+        return g
     if name == "rock":
         g = ground(rng, s, 0)
         disc(g, 7.5, 8.5, 6.5, "#8a8478", rng, 0.8)
@@ -1028,6 +1036,21 @@ def draw_terrain(name, frame=0, season=0):
 # ── Things on the ground: debris, forage, crops ──────────────────────────────
 
 ART = {
+    "boulder": ({"s": "#8a8478", "S": "#5e5a50", "w": "#b4ae9e",
+                 "o": "#c88a50"}, (
+        "................", "................",
+        ".....ssssss.....",
+        "...sswwssssss...",
+        "..sswwssssssss..",
+        "..swssssssssSs..",
+        ".sssssssosssSSs.",
+        ".ssssssssssssSs.",
+        ".sssossssssssSS.",
+        ".SsssssssssSSSS.",
+        "..SSssssssSSSS..",
+        "...SSSSSSSSSS...",
+        "....SSSSSSSS....",
+        "................", "................", "................")),
     "weed": ({"g": "#3a8a2a", "G": "#2a6a1e", "y": "#a0c040"}, (
         "................", "................", "................",
         "................", "................",
@@ -1680,6 +1703,7 @@ DEBRIS = {   # debris -> the tool that clears it, what it drops
     "stone": ("pickaxe", ("stone", 2)),
     "branch": ("axe", ("wood", 2)),
     "stump": ("axe", ("wood", 6)),
+    "boulder": ("pickaxe", ("stone", 5)),   # in the quarry
 }
 
 
@@ -5898,6 +5922,11 @@ def make_valley(seed, built=()):
     put(tx, ty + 1, "path")
     put(tx, ty + 2, "path")
     labels[TOWER_DOOR] = "the Sky Tower"
+    qx0, qy0, qx1, qy1 = QUARRY         # the quarry, and its path down
+    fill(qx0, qy0, qx1, qy1, "gravel")
+    for y in range(qy1 + 1, 26):
+        if not g[y][QUARRY_PATH].startswith(("wall_", "win_", "door_")):
+            put(QUARRY_PATH, y, "path")
     labels[(80, BEACH_Y + 2)] = "the dock"
     labels[(RIVER[0] + 1, 26)] = "the bridge"
     return g, labels
@@ -6234,6 +6263,9 @@ KING_FLOOR = 10                 # the Mine King's hall; below it, the abyss
 TOWER = 100                     # the Sky Tower's floors are 101, 102...
 TOWER_TOP = 105                 # ...up to the Archangel's
 TOWER_DOOR = (105, 6)
+QUARRY = (109, 2, 120, 7)       # the quarry's gravel: x0, y0, x1, y1
+QUARRY_ROCKS = 16               # rocks it's topped up to each morning
+QUARRY_PATH = 114               # the path down to the east quarter's road
 WINGED_KEY = "winged key"
 MINE_ROPE = 5                   # a rope hangs down to every fifth floor
 RESPAWN_DAYS = 3                # a beaten monster's place is taken again
@@ -8695,7 +8727,8 @@ for good.  Lead a monster's hen, cow, sheep,
 cat or dog home on the leash, into your coop, barn or cabin.
 
 The axe fells trees (three swings) for wood; they grow
-back in a season.
+back in a season.  For stone, take your pickaxe to
+the quarry in the north-east: it fills with rocks overnight.
 
 Mabel's leash leads a villager you've chickenfied,
 cowified, sheepified, catified or dogified; lead her into
@@ -9420,6 +9453,7 @@ class Game:
         st["pos"] = list(a.spots["1"])
         st["pos"][0] -= 2
         self.spawn_forage()
+        self.stock_quarry()
         self.mail("Mayor Edmund Pell",
                   "Welcome to Apple Blossom Village, %s! Your grandmother "
                   "Lily was beloved here, and we are delighted to see her "
@@ -9502,6 +9536,7 @@ class Game:
         self.build_world(st["seed"], self.p["built"])
         self.apply_felled()
         self.museum_cases()
+        self.stock_quarry()             # (an older save has an empty one)
         self.clear_cabin_furniture()
         for vid, (area, x, y) in st["npcs"].items():
             n = self.npcs.get(vid)
@@ -16085,6 +16120,25 @@ class Game:
         return [(x + dx * i, y + dy * i)
                 for i in range(1, REACH[self.lv(tool)])]
 
+    def stock_quarry(self):
+        """Rocks turn up in the quarry overnight, stones and boulders, up
+        to a few dozen squares' worth."""
+        st = self.st
+        qx0, qy0, qx1, qy1 = QUARRY
+        inside = [(x, y) for y in range(qy0, qy1 + 1)
+                  for x in range(qx0, qx1 + 1)]
+        have = sum(1 for x, y in inside if "%d,%d" % (x, y) in st["debris"])
+        free = [(x, y) for x, y in inside
+                if "%d,%d" % (x, y) not in st["debris"] and
+                (self.area is None or self.area.key != "valley" or
+                 (x, y) != self.pos()) and
+                not any(n.where == "valley" and (n.x, n.y) == (x, y)
+                        for n in self.npcs.values())]
+        for x, y in random.sample(free, max(0, min(len(free),
+                                                   QUARRY_ROCKS - have))):
+            st["debris"]["%d,%d" % (x, y)] = "boulder" if \
+                random.random() < 0.3 else "stone"
+
     def clear_debris(self, x, y, kind, auto=False):
         need, (item, n) = DEBRIS[kind]
         if need not in self.p["tools"]:
@@ -16098,7 +16152,7 @@ class Game:
             return
         del self.st["debris"]["%d,%d" % (x, y)]
         self.give(item, n)
-        self.sound.play({"weed": "pick", "stone": "chop",
+        self.sound.play({"weed": "pick", "stone": "chop", "boulder": "chop",
                          "branch": "chop", "stump": "chop"}[kind])
         self.flash(x, y, "puff")
         hay = ""
@@ -16109,10 +16163,15 @@ class Game:
             else:
                 self.give("hay")
                 hay = ", and 1 hay"
-        self.say("You clear the %s%s. (+%d %s%s)" % (
-            kind, " with the " + need if auto else "", n, item, hay),
-            "info")
-        self.end_turn(TOOL_COST + (3 if kind == "stump" else 0))
+        if kind == "boulder" and random.random() < 0.25:
+            metal = METALS[min(self.lv("pickaxe"), random.randint(0, 1))]
+            self.give(metal + " ore")
+            hay = ", and a lump of %s ore" % metal
+        self.say("You %s the %s%s. (+%d %s%s)" % (
+            "break up" if kind == "boulder" else "clear", kind,
+            " with the " + need if auto else "", n, item, hay), "info")
+        self.end_turn(TOOL_COST + (3 if kind in ("stump", "boulder")
+                                   else 0))
 
     # ── Crops ──
 
@@ -16497,6 +16556,7 @@ class Game:
         else:
             st["apples"] = {}
         self.spawn_forage()
+        self.stock_quarry()
         self.regrow_trees()
         # people
         for f in st["friends"].values():
@@ -19092,6 +19152,9 @@ class Game:
         x, y = self.pos()
         if on_farm(x, y):
             return "%s Farm" % self.p["farm"]
+        qx0, qy0, qx1, qy1 = QUARRY
+        if qx0 <= x <= qx1 and qy0 <= y <= qy1:
+            return "the quarry"
         if y >= LAKE_Y - 6:
             return "the beach"
         if RIVER[0] - 1 <= x <= RIVER[1] + 1:
@@ -22822,7 +22885,7 @@ TERRAIN = ["grass", "tallgrass", "meadow", "flowers", "path", "cobble",
            "cabinet", "piano", "easel", "nets", "toolrack", "straw", "nest",
            "trough", "loohole", "loobench", "hay", "churn", "moonwin",
            "loopaper", "loobend", "cave", "gbed", "gbed_w", "glasswall",
-           "butt", "pantry"]
+           "butt", "pantry", "gravel"]
 TERRAIN += ["%s_%d" % (k, th) for th in range(len(MINE_THEMES))
             for k in ["mwall", "mfloor", "ladder_up", "ladder_down", "chest",
                       "chest_open"] + ["ore_" + m for m in METALS] +
@@ -23296,6 +23359,12 @@ def selftest():
     tx, ty = TOWER_DOOR
     if grid[ty][tx] != "towerdoor" or grid[ty + 1][tx] not in WALKABLE:
         problems.append("the tower's door")
+    qx0, qy0, qx1, qy1 = QUARRY
+    if any(grid[y][x] != "gravel" for y in range(qy0, qy1 + 1)
+           for x in range(qx0, qx1 + 1)) or any(
+               grid[y][QUARRY_PATH] not in WALKABLE
+               for y in range(qy1 + 1, 27)):
+        problems.append("the quarry, or its path")
     ax, ay = AURIEL_SPOT
     if grid[ay][ax] not in WALKABLE or (ax, ay) in OUT_SPOTS.values():
         problems.append("Auriel's spot")

@@ -118,6 +118,14 @@ pantry first, then your bag, plain crops before silver and gold ones, and a
 large egg does for an egg. A maid on the cooking chore cooks the heartiest
 dish she can from the pantry each morning.
 
+**The quarry.** Once your fields are clear there's no more stone on the
+farm, so for more go up to the quarry, a gravel pit in the north-east of
+the valley, by the Sky Tower (follow the path up between the Post Office
+and Garrow's Workshop). It fills up with rocks overnight: stones (2 stone
+each) and boulders (5 stone, and now and then a lump of copper or iron
+ore), up to sixteen at a time. Break them with your pickaxe, or just walk
+into them with it in your bag.
+
 Put anything sellable in the **shipping bin** and you're paid overnight.
 Grandmother's apple trees fruit in the fall. Wild things to forage turn up in
 the woods, the meadows and on the beach every morning. Otto's **sprinklers**
