@@ -14131,6 +14131,24 @@ class Game:
             return and_list(done) + (
                 ", and bagged %d fertilizer for you" % sacks if sacks
                 else "")
+        if chore == "fertilize":
+            have = self.p["items"].get("fertilizer", 0)
+            fed = 0
+            for k, s in st["soil"].items():
+                if not have:
+                    break
+                if s[1] and not s[3] and not self.ripe(s) and \
+                        st["fertilized"].get(k) != st["day"]:
+                    st["fertilized"][k] = st["day"]
+                    s[2] += 1
+                    have -= 1
+                    fed += 1
+            if not fed:
+                return None
+            self.take("fertilizer", fed)
+            return "spread fertilizer on %d crop%s%s" % (
+                fed, "" if fed == 1 else "s",
+                " (and ran out)" if not have else " (%d left)" % have)
         if chore == "ship":
             goods = {n: c for n, c in self.p["items"].items()
                      if c and ITEMS.get(n, (0, 0, ""))[2] in ("crop",
@@ -21928,6 +21946,8 @@ MAID_CHORES = {   # what you can tell a maid to do: menu, and in her words
                  "up again"),
     "loos": ("Collect fertilizer", "empty the outhouse pits and scoop up "
              "after the animals, and bag it all for fertilizer"),
+    "fertilize": ("Fertilize the fields", "spread fertilizer on the crops, "
+                  "as far as it goes"),
     "ship": ("Ship the harvest", "take the crops and fruit to the "
              "shipping bin"),
     "cook": ("Cook breakfast", "cook you breakfast"),
