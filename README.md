@@ -303,7 +303,10 @@ something new in it after a week, and a dug vein or crystal grows back in
 | 10 (the deep) | the **Mine King**, once, who guards the Crown of the Deep, and the stair below his throne |
 | 11-15 (the abyss) | magma slimes, wraiths, bone knights (armoured), obsidian golems (armoured, but slow) |
 
-Beat the Mine King and the stair beneath his throne opens on five more
+Beat the Mine King and two ways open. Behind his throne, a carved crown
+in the rock swings aside on **the King's Secret Tunnel**, his own way out:
+walk into it from floor 10 any time afterwards and you're back at the
+mine's mouth in a moment. And the stair beneath his throne opens on five more
 floors, darker than any above. At the very bottom, on a black stone
 pedestal, lies the **winged key**: a golden key with a pair of white wings.
 (A knockout never costs you the key.)

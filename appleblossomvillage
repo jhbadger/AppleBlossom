@@ -354,6 +354,28 @@ def door(g):
 def mine_tile(name, rng):
     """The mine's rock and floor, in the colours of its depth, and the
     ladders and chests on it."""
+    if name.startswith("ktunnel"):              # behind the King's throne
+        g = mine_tile("mwall_%d" % mine_theme(KING_FLOOR), rng)
+        gold, dim = "#f0c040", "#9a7a3a"
+        if name == "ktunnel_open":
+            disc(g, 7.5, 9, 6, "#0a0806")
+            rect(g, 2, 9, 13, 15, "#0a0806")
+            for i, y in enumerate((14, 12, 10)):          # steps, going up
+                rect(g, 4 + i, y, 11 - i, y, "#4a3a30")
+            for x, y in ((2, 7), (13, 7)):                # torchlight
+                g[y][x] = "#ffb040"
+                g[y - 1][x] = "#ffe080"
+            crown = gold
+        else:
+            for y in range(3, 16):                        # the seam
+                g[y][2] = g[y][13] = dim
+            rect(g, 2, 3, 13, 3, dim)
+            crown = dim
+        for x in (5, 7, 8, 10):                           # a carved crown
+            g[1 if x in (5, 10) else 0][x] = crown
+        rect(g, 5, 2, 10, 2, crown)
+        g[1][7] = g[1][8] = crown
+        return g
     if name.startswith("pedestal"):             # the winged key's
         g = mine_tile("mfloor_4", rng)
         rect(g, 4, 7, 11, 15, "#6a6478")
@@ -444,7 +466,7 @@ def draw_terrain(name, frame=0, season=0):
     rng = random.Random("%s%d%d" % (name, frame, season))
     s = season
     if name.startswith(("mwall_", "mfloor_", "ladder_", "chest", "ore_",
-                        "pedestal")):
+                        "pedestal", "ktunnel")):
         return mine_tile(name, rng)
     if name in ("towerwall", "towertop", "towerdoor", "towerwin"):
         g = stone_blocks(rng, "#e8e8f0", "#b8bcc8", 6, 4)
@@ -7392,9 +7414,26 @@ def make_mine_floor(seed, floor):
         far, min(len(far), 3 + floor // 2 + rng.randint(0, 2)))]
     if floor == KING_FLOOR:              # on the stair down, guarding it
         mobs.append(("king", end[0], end[1] + 1))
+        tunnel = king_tunnel(g, end, ground)
+        if tunnel:
+            g[tunnel[1]][tunnel[0]] = "ktunnel"
     if floor == TOWER_TOP:
         mobs.append(("archangel", end[0], end[1]))
     return g, up, down, mobs, chests
+
+
+def king_tunnel(g, end, ground):
+    """Where the King's secret tunnel is: the rock face nearest the stair
+    he guards, behind his throne (above it) if it can be."""
+    ex, ey = end
+    faces = [(x, y) for y in range(1, len(g) - 1)
+             for x in range(1, len(g[0]) - 1)
+             if g[y][x].startswith(("mwall", "ore_")) and
+             any(g[y + dy][x + dx] == ground for dx, dy in DIRS)]
+    if not faces:
+        return None
+    return min(faces, key=lambda p: (abs(p[0] - ex) + abs(p[1] - ey),
+                                     p[1] >= ey, abs(p[0] - ex)))
 
 
 SLIME_ROWS = (
@@ -10156,6 +10195,11 @@ class Game:
             else:
                 x, y = map(int, k.split(","))
                 g[y][x] = "mwall_%d" % th
+        if floor == KING_FLOOR and self.mine_state()["king"]:
+            for row in g:
+                for x, t in enumerate(row):
+                    if t == "ktunnel":
+                        row[x] = "ktunnel_open"
         if floor == MINE_FLOORS and self.mine_state()["key"]:
             x, y = [(x, y) for y, r in enumerate(g) for x, t in enumerate(r)
                     if t == "pedestal_key"][0]
@@ -10263,7 +10307,7 @@ class Game:
             return
         self.enter_mine(TOWER + 1)
 
-    def leave_mine(self):
+    def leave_mine(self, tunnel=False):
         tower = self.mine and self.mine["floor"] > TOWER
         self.stash_floor()
         self.mine = None
@@ -10274,8 +10318,13 @@ class Game:
         self.sound.play("stairs")
         self.walking = None
         self.say("You step out of the Sky Tower, down into the woods."
-                 if tower else "You climb out of the old mine, blinking.",
-                 "info")
+                 if tower else
+                 "You duck into the King's Secret Tunnel. It winds up and "
+                 "up, past old torches still burning and a hundred carved "
+                 "crowns, and lets you out by a hidden door at the mine's "
+                 "mouth, blinking in the daylight."
+                 if tunnel else "You climb out of the old mine, blinking.",
+                 "quest" if tunnel else "info")
         self.comp_arrive()
         self.layout()
         self.end_turn(WALK_COST)
@@ -10290,6 +10339,15 @@ class Game:
             self.visit_changed(x, y)
             return True
         floor = self.mine["floor"]
+        if t == "ktunnel":
+            self.say("Behind the throne, the rock is carved with a great "
+                     "crown, and a seam runs round it like a door. It won't "
+                     "budge while the Mine King holds this hall.", "info")
+            self.render()
+            return True
+        if t == "ktunnel_open":
+            self.leave_mine(tunnel=True)
+            return True
         if t.startswith("ladder_up"):
             if floor in (1, TOWER + 1):
                 self.leave_mine()
@@ -10496,6 +10554,15 @@ class Game:
                      "gravel. On top of the heap sits his crown, cold "
                      "and heavy and glittering: the Crown of the Deep!",
                      "quest")
+            for row in self.area.grid:
+                for x, t in enumerate(row):
+                    if t == "ktunnel":
+                        row[x] = "ktunnel_open"
+                        self.say("Behind the throne, the carved crown in "
+                                 "the rock flares gold, and with a long "
+                                 "grinding sigh the stone swings aside: "
+                                 "the King's Secret Tunnel, his own way "
+                                 "out, climbing up into the dark.", "quest")
         elif mob.kind == "poop":
             n = random.randint(1, 2)
             self.give("fertilizer", n)
@@ -23119,6 +23186,7 @@ TERRAIN += ["%s_%d" % (k, th) for th in range(len(MINE_THEMES))
                       "chest_open"] + ["ore_" + m for m in METALS] +
             ["ore_crystal"]]
 TERRAIN += ["case", "case_full"]
+TERRAIN += ["ktunnel", "ktunnel_open"]
 TERRAIN += ["pedestal", "pedestal_key", "towerwall", "towertop", "towerdoor",
             "towerwin"]
 TERRAIN += ["roof_" + r for r in ROOFS] + ["eave_" + r for r in ROOFS]
