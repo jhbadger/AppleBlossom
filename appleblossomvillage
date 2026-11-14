@@ -8691,15 +8691,12 @@ MONO = ("Menlo", 12)
 SHADES = (1.0, 0.68, 0.42)      # day, dusk and night
 # ── Fitting the screen ──
 #
-# Every font is a named font sized in pixels, so the whole window can be
-# scaled to the screen: Game.fit() works out how big everything should be
-# from the window's size (a phone held upright gets a taller layout) and
-# set_fonts() resizes every font at once.
+# The whole window scales to the screen: Game.fit() works out how big
+# everything should be from the window's size (a phone held upright gets a
+# taller layout), and the shell resizes every font at once.  F() only names
+# a font; the screen and the shell make it, in their own way.
 
-FONTS = {}          # (family, size, style) -> tkfont.Font
-STD_FONTS = {}      # Tk's own fonts (buttons, dialogs): name -> pixels
 UI = [1.0]          # how much bigger than the design everything is
-PT = [1.0]          # pixels to a point, at the design size
 TEXT_SIZES = (0.8, 0.9, 1.0, 1.15, 1.3, 1.5, 1.75)
 
 
@@ -8708,37 +8705,14 @@ def S(n):
     return max(1, round(n * UI[0]))
 
 
-def font_px(size):
-    return -max(6, round(size * UI[0] * PT[0]))
+Font = namedtuple("Font", "family size style")
+Font.__doc__ = """A font, by name: its family, its size at the design scale,
+and "bold", "italic", both or "" for plain."""
 
 
 def F(family, size, style=""):
     """A font that grows and shrinks with the window."""
-    key = (family, size, style or "")
-    f = FONTS.get(key)
-    if f is None:
-        f = FONTS[key] = tkfont.Font(
-            family=family, size=font_px(size),
-            weight="bold" if "bold" in (style or "") else "normal",
-            slant="italic" if "italic" in (style or "") else "roman")
-    return f
-
-
-def init_fonts(root):
-    PT[0] = 1.0 if ANDROID else float(root.tk.call("tk", "scaling"))
-    for name in tkfont.names(root):
-        if name.startswith("Tk"):
-            size = int(tkfont.nametofont(name).cget("size"))
-            STD_FONTS[name] = 13 if ANDROID else (
-                -size if size < 0 else size * PT[0])
-
-
-def set_fonts(u):
-    UI[0] = u
-    for (family, size, style), f in FONTS.items():
-        f.configure(size=font_px(size))
-    for name, px in STD_FONTS.items():
-        tkfont.nametofont(name).configure(size=-max(6, round(px * u)))
+    return Font(family, size, style or "")
 
 
 MOVE_KEYS = {"Up": (0, -1), "w": (0, -1), "KP_Up": (0, -1), "KP_8": (0, -1),
@@ -8869,10 +8843,263 @@ character it types, whether Control was held, and whether it was typed
 into the "Ask about:" entry."""
 
 
+class TkFonts:
+    """Tk's fonts for F()'s names: each a named font sized in pixels, so
+    that resizing it resizes everything printed in it."""
+    made = {}           # Font -> tkfont.Font
+    std = {}            # Tk's own fonts (buttons, dialogs): name -> pixels
+    pt = 1.0            # pixels to a point, at the design size
+
+    @classmethod
+    def px(cls, size):
+        return -max(6, round(size * UI[0] * cls.pt))
+
+    @classmethod
+    def get(cls, font):
+        f = cls.made.get(font)
+        if f is None:
+            family, size, style = font
+            f = cls.made[font] = tkfont.Font(
+                family=family, size=cls.px(size),
+                weight="bold" if "bold" in style else "normal",
+                slant="italic" if "italic" in style else "roman")
+        return f
+
+    @classmethod
+    def init(cls, root):
+        cls.pt = 1.0 if ANDROID else float(root.tk.call("tk", "scaling"))
+        for name in tkfont.names(root):
+            if name.startswith("Tk"):
+                size = int(tkfont.nametofont(name).cget("size"))
+                cls.std[name] = 13 if ANDROID else (
+                    -size if size < 0 else size * cls.pt)
+
+    @classmethod
+    def scale(cls, u):
+        """Every font at u times its design size."""
+        UI[0] = u
+        for (family, size, style), f in cls.made.items():
+            f.configure(size=cls.px(size))
+        for name, px in cls.std.items():
+            tkfont.nametofont(name).configure(size=-max(6, round(px * u)))
+
+
 class TkShell:
     def __init__(self, root):
         self.root = root
         self.entry = None           # the "Ask about:" entry, once made
+        TkFonts.init(root)
+
+    def screen_height(self):
+        return self.root.winfo_screenheight()
+
+    def window_size(self):
+        return self.root.winfo_width(), self.root.winfo_height()
+
+    def set_ui_scale(self, u):
+        """Everything printed at u times its design size."""
+        TkFonts.scale(u)
+
+    def build(self, game, buttons, big):
+        """The window: a bar with the place and the time; the play area,
+        with the log under it and, while talking, the "Ask about:" entry;
+        the panel at the side; and a row of buttons, (key, label, command)
+        each.  Returns the play area's canvas."""
+        root, T = self.root, TkFonts.get
+        root.title("Apple Blossom Village")
+        root.configure(bg=PANEL)
+        if not ANDROID:
+            root.minsize(640, 520)
+            root.geometry("1200x880" if big else "1000x740")
+
+        top = tk.Frame(root, bg=PANEL)
+        top.pack(fill="x")
+        tk.Label(top, text="APPLE BLOSSOM VILLAGE", bg=PANEL, fg=ACCENT,
+                 font=T(F("Helvetica", 16, "bold"))).pack(
+                     side="left", padx=10, pady=6)
+        self.status = tk.Label(top, bg=PANEL, fg=INK_DIM,
+                               font=T(F("Helvetica", 12)))
+        self.status.pack(side="left", padx=10)
+        self.clock_label = tk.Label(top, bg=PANEL, fg=GOLD,
+                                    font=T(F("Helvetica", 12, "bold")))
+        self.clock_label.pack(side="right", padx=10)
+
+        self.bar = tk.Frame(root, bg=PANEL)
+        self.bar.pack(side="bottom", fill="x")
+        self.btn = {}
+        for key, label, cmd in buttons:
+            self.btn[key] = tk.Button(self.bar, text=label, command=cmd,
+                                      width=6, highlightbackground=PANEL,
+                                      takefocus=0)
+
+        body = tk.Frame(root, bg=PANEL)
+        body.pack(fill="both", expand=True)
+        side = self.sidebar = tk.Frame(body, bg=PANEL, width=250)
+        side.pack(side="right", fill="y")
+        side.pack_propagate(False)
+        self.panelrow = tk.Frame(side, bg=PANEL)
+        self.panelrow.pack(fill="x")
+        self.panel = tk.Label(self.panelrow, bg=PANEL, fg=INK,
+                              font=T(F(*MONO)), justify="left", anchor="nw",
+                              wraplength=S(230))
+        self.panel.pack(side="left", fill="x", expand=True, anchor="n",
+                        padx=10, pady=(8, 0))
+        self.panel2 = tk.Label(self.panelrow, bg=PANEL, fg=INK,
+                               font=T(F(*MONO)), justify="left", anchor="nw",
+                               wraplength=S(230))
+        self.condition = tk.Label(side, bg=PANEL, fg=GOLD, justify="left",
+                                  anchor="nw",
+                                  font=T(F("Menlo", 12, "bold")),
+                                  wraplength=S(230))
+        self.condition.pack(fill="x", padx=10)
+
+        left = self.leftside = tk.Frame(body, bg=PANEL)
+        left.pack(side="left", fill="both", expand=True)
+        self.log = tk.Text(left, height=6, bg=LOG_BG, fg=INK,
+                           font=T(F(*MONO)), wrap="word", bd=0,
+                           highlightthickness=0, padx=8, pady=4,
+                           state="disabled", takefocus=0)
+        self.log.pack(side="bottom", fill="x")
+        for tag, color in (("info", INK_DIM), ("talk", TALK), ("you", ACCENT),
+                           ("bad", BAD), ("good", GOOD), ("gold", GOLD),
+                           ("heart", HEARTC), ("quest", ACCENT)):
+            self.log.tag_configure(tag, foreground=color)
+        self.log.tag_configure("quest", font=T(F("Menlo", 12, "bold")))
+        self.talkbar = tk.Frame(left, bg=PANEL)
+        self.prompt = tk.Label(self.talkbar, text="Ask about:", bg=PANEL,
+                               fg=ACCENT, font=T(F(*MONO)))
+        self.prompt.pack(side="left", padx=(8, 4), pady=4)
+        self.entry = tk.Entry(self.talkbar, bg=LOG_BG, fg=INK,
+                              font=T(F(*MONO)), insertbackground=INK,
+                              highlightthickness=0, bd=1)
+        self.entry.pack(side="left", fill="x", expand=True, padx=(0, 8),
+                        pady=4)
+        # "break": the key is spent here, and mustn't go on to on_key,
+        # where (the talk just over) Return would mean "use what's ahead"
+        # and start the conversation all over again
+        self.entry.bind("<Return>", lambda e: game.on_entry() or "break")
+        self.entry.bind("<KP_Enter>", lambda e: game.on_entry() or "break")
+        self.entry.bind("<Escape>",
+                        lambda e: game.on_entry_escape() or "break")
+        self.canvas = tk.Canvas(left, bg="black", highlightthickness=0)
+        self.canvas.pack(fill="both", expand=True)
+        return self.canvas
+
+    def arrange(self, tall, W):
+        """Lay the window out for its width W: wide, the panel at the side
+        and the buttons in a row; tall (a phone held upright), the panel
+        underneath and the buttons in two rows or more."""
+        root = self.root
+        n = len(self.btn)
+        root.update_idletasks()
+        each = max(b.winfo_reqwidth() for b in self.btn.values()) + S(4)
+        rows = 2 if tall else 1
+        while rows < n and -(-n // rows) * each > W:
+            rows += 1
+        per = -(-n // rows)
+        for i, b in enumerate(self.btn.values()):
+            b.grid(row=i // per, column=i % per, sticky="ew", padx=S(2),
+                   pady=S(4))
+        for col in range(n):
+            self.bar.columnconfigure(col, weight=int(col < per),
+                                     uniform="b" if col < per else "")
+        sb = self.sidebar
+        sb.pack_forget()
+        if tall:
+            sb.pack_propagate(True)
+            sb.pack(side="bottom", fill="x", before=self.leftside)
+            wrap_ = (W - S(50)) // 2
+        else:
+            sb.configure(width=S(250))
+            sb.pack_propagate(False)
+            sb.pack(side="right", fill="y", before=self.leftside)
+            wrap_ = S(230)
+        for w in (self.panel, self.panel2, self.condition):
+            w.configure(wraplength=wrap_ if w is not self.condition or
+                        not tall else W - S(24))
+        self.log.configure(height=4 if tall else 6)
+
+    # What the window shows round the play area.
+
+    def set_label(self, label, text):
+        """A label's text, changed only if it's different: Tk lays a label
+        out afresh on every change, and this is done every turn."""
+        if label.cget("text") != text:
+            label.config(text=text)
+
+    def set_status(self, text):
+        """Where you are, in the bar at the top."""
+        self.set_label(self.status, text)
+
+    def set_clock(self, text):
+        self.set_label(self.clock_label, text)
+
+    def set_condition(self, text):
+        """News under the panel: mail, birthdays, a raised wand."""
+        self.set_label(self.condition, text)
+
+    def set_panel(self, first, second=None):
+        """The panel's lines, in one column or, given second, two."""
+        self.set_label(self.panel, "\n".join(first))
+        if second is None:
+            if self.panel2.winfo_manager():
+                self.panel2.pack_forget()
+            return
+        self.set_label(self.panel2, "\n".join(second))
+        if not self.panel2.winfo_manager():
+            self.panel2.pack(side="left", fill="x", expand=True, anchor="n",
+                             padx=(S(10), S(10)), pady=(S(8), 0))
+
+    def log_add(self, text, tag=None):
+        """A line at the foot of the log, coloured by tag ("good", "bad",
+        "talk", "heart"...)."""
+        self.log.config(state="normal")
+        self.log.insert("end", text + "\n", tag or ())
+        self.log.see("end")
+        self.log.config(state="disabled")
+
+    def log_clear(self):
+        self.log.config(state="normal")
+        self.log.delete("1.0", "end")
+        self.log.config(state="disabled")
+
+    # The "Ask about:" entry: Return there calls game.on_entry(), Escape
+    # game.on_entry_escape().
+
+    def show_entry(self, prompt=None, text=None, select=False, focus=False):
+        """Show the entry, with a new prompt, or text in it (all selected),
+        or the keys going to it, as asked."""
+        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        if prompt is not None:
+            self.prompt.config(text=prompt)
+        if text is not None:
+            self.entry.delete(0, "end")
+            if text:
+                self.entry.insert(0, text)
+        if select:
+            self.entry.select_range(0, "end")
+        if focus:
+            self.entry.focus_set()
+
+    def hide_entry(self, prompt=None):
+        if prompt is not None:
+            self.prompt.config(text=prompt)
+        self.talkbar.pack_forget()
+
+    def take_entry(self):
+        """What's been typed in the entry, which is emptied."""
+        text = self.entry.get()
+        self.entry.delete(0, "end")
+        return text
+
+    def type_into_entry(self, char):
+        """Keys to the entry from now on, starting with char."""
+        self.entry.focus_set()
+        self.entry.insert("end", char)
+
+    def focus_play(self):
+        """Keys to the play area again."""
+        self.canvas.focus_set()
 
     def after(self, ms, fn, *args):
         return self.root.after(ms, fn, *args)
@@ -8883,9 +9110,9 @@ class TkShell:
     def cancel(self, job):
         self.root.after_cancel(job)
 
-    def listen(self, game, canvas):
+    def listen(self, game):
         """Keys, taps on the play area, the window resized or closed."""
-        root = self.root
+        root, canvas = self.root, self.canvas
 
         def key(e):
             return game.on_key(Key(e.keysym, e.char, bool(e.state & 0x4),
@@ -8949,23 +9176,24 @@ class TkScreen:
         """A copy of a picture, z times the size."""
         return img.zoom(z)
 
-    # Measuring print.  A font here is whatever F() made.
+    # Measuring print, in fonts named by F().
 
     def measure(self, font, s):
         """How wide one line of print is, in pixels."""
-        return font.measure(s)
+        return TkFonts.get(font).measure(s)
 
     def metrics(self, font):
         """(ascent, linespace): how far the letters reach above the line
         they sit on, and how far apart lines are."""
-        return font.metrics("ascent"), font.metrics("linespace")
+        f = TkFonts.get(font)
+        return f.metrics("ascent"), f.metrics("linespace")
 
     def text_box(self, s, font, x=0, y=0, width=None):
         """The box print would fill, its top left at x, y and wrapped at
         width: (x0, y0, x1, y1), or None if there's nothing to see."""
         c = self.canvas
-        t = c.create_text(x, y, text=s, font=font, anchor="nw",
-                          width=width or 0)
+        t = c.create_text(x, y, text=s, font=TkFonts.get(font),
+                          anchor="nw", width=width or 0)
         bb = c.bbox(t)
         c.delete(t)
         return bb
@@ -9050,7 +9278,8 @@ class TkScreen:
 
     def text(self, x, y, text="", font=None, fill=None,
              anchor="center", width=0, justify="left", layer="overlay"):
-        self.canvas.create_text(x, y, text=text, font=font, fill=fill,
+        self.canvas.create_text(x, y, text=text, fill=fill,
+                                font=font and TkFonts.get(font),
                                 anchor=anchor, width=width or 0,
                                 justify=justify, tags=layer)
 
@@ -9102,94 +9331,18 @@ class Game:
         self.zoom_d = zoom if zoom in range(-2, 3) else 0
         text = saved.get("text")
         self.text_k = text if text in TEXT_SIZES else 1.0
-        self.scale = 3 if root.winfo_screenheight() >= 1000 else 2
+        self.scale = 3 if self.shell.screen_height() >= 1000 else 2
         self.tall = None
-        init_fonts(root)
-
-        root.title("Apple Blossom Village")
-        root.configure(bg=PANEL)
-        if not ANDROID:
-            root.minsize(640, 520)
-            root.geometry("1200x880" if self.scale >= 3 else "1000x740")
-
-        top = tk.Frame(root, bg=PANEL)
-        top.pack(fill="x")
-        tk.Label(top, text="APPLE BLOSSOM VILLAGE", bg=PANEL, fg=ACCENT,
-                 font=F("Helvetica", 16, "bold")).pack(
-                     side="left", padx=10, pady=6)
-        self.status = tk.Label(top, bg=PANEL, fg=INK_DIM,
-                               font=F("Helvetica", 12))
-        self.status.pack(side="left", padx=10)
-        self.clock_label = tk.Label(top, bg=PANEL, fg=GOLD,
-                                    font=F("Helvetica", 12, "bold"))
-        self.clock_label.pack(side="right", padx=10)
-
-        bar = self.bar = tk.Frame(root, bg=PANEL)
-        bar.pack(side="bottom", fill="x")
-        self.btn = {}
-        for key, label, cmd in (("use", "Use", self.use_tool),
-                                ("tool", "Tool", self.tool_menu),
-                                ("bag", "Bag", self.bag_menu),
-                                ("wait", "Wait", self.wait_menu),
-                                ("folks", "Friends", self.show_friends),
-                                ("diary", "Diary", self.show_diary),
-                                ("map", "Map", self.toggle_map),
-                                ("menu", "Menu", self.action_menu)):
-            b = tk.Button(bar, text=label, command=cmd, width=6,
-                          highlightbackground=PANEL, takefocus=0)
-            self.btn[key] = b
-
-        body = tk.Frame(root, bg=PANEL)
-        body.pack(fill="both", expand=True)
-        side = self.sidebar = tk.Frame(body, bg=PANEL, width=250)
-        side.pack(side="right", fill="y")
-        side.pack_propagate(False)
-        self.panelrow = tk.Frame(side, bg=PANEL)
-        self.panelrow.pack(fill="x")
-        self.panel = tk.Label(self.panelrow, bg=PANEL, fg=INK, font=F(*MONO),
-                              justify="left", anchor="nw", wraplength=S(230))
-        self.panel.pack(side="left", fill="x", expand=True, anchor="n",
-                        padx=10, pady=(8, 0))
-        self.panel2 = tk.Label(self.panelrow, bg=PANEL, fg=INK,
-                               font=F(*MONO), justify="left", anchor="nw",
-                               wraplength=S(230))
-        self.condition = tk.Label(side, bg=PANEL, fg=GOLD, justify="left",
-                                  anchor="nw", font=F("Menlo", 12, "bold"),
-                                  wraplength=S(230))
-        self.condition.pack(fill="x", padx=10)
-
-        left = self.leftside = tk.Frame(body, bg=PANEL)
-        left.pack(side="left", fill="both", expand=True)
-        self.log = tk.Text(left, height=6, bg=LOG_BG, fg=INK, font=F(*MONO),
-                           wrap="word", bd=0, highlightthickness=0,
-                           padx=8, pady=4, state="disabled", takefocus=0)
-        self.log.pack(side="bottom", fill="x")
-        for tag, color in (("info", INK_DIM), ("talk", TALK), ("you", ACCENT),
-                           ("bad", BAD), ("good", GOOD), ("gold", GOLD),
-                           ("heart", HEARTC), ("quest", ACCENT)):
-            self.log.tag_configure(tag, foreground=color)
-        self.log.tag_configure("quest", font=F("Menlo", 12, "bold"))
-        self.talkbar = tk.Frame(left, bg=PANEL)
-        self.prompt = tk.Label(self.talkbar, text="Ask about:", bg=PANEL,
-                               fg=ACCENT, font=F(*MONO))
-        self.prompt.pack(side="left", padx=(8, 4), pady=4)
-        self.entry = tk.Entry(self.talkbar, bg=LOG_BG, fg=INK, font=F(*MONO),
-                              insertbackground=INK, highlightthickness=0,
-                              bd=1)
-        self.entry.pack(side="left", fill="x", expand=True, padx=(0, 8),
-                        pady=4)
-        # "break": the key is spent here, and mustn't go on to on_key,
-        # where (the talk just over) Return would mean "use what's ahead"
-        # and start the conversation all over again
-        self.entry.bind("<Return>", lambda e: self.on_entry(e) or "break")
-        self.entry.bind("<KP_Enter>", lambda e: self.on_entry(e) or "break")
-        self.entry.bind("<Escape>", lambda e: (
-            self.end_naming() if getattr(self, "naming", None) is not None
-            else self.end_talk()) or "break")
-        self.canvas = tk.Canvas(left, bg="black", highlightthickness=0)
-        self.canvas.pack(fill="both", expand=True)
-        self.shell.entry = self.entry
-        self.screen = TkScreen(self.canvas)
+        canvas = self.shell.build(self, (
+            ("use", "Use", self.use_tool),
+            ("tool", "Tool", self.tool_menu),
+            ("bag", "Bag", self.bag_menu),
+            ("wait", "Wait", self.wait_menu),
+            ("folks", "Friends", self.show_friends),
+            ("diary", "Diary", self.show_diary),
+            ("map", "Map", self.toggle_map),
+            ("menu", "Menu", self.action_menu)), big=self.scale >= 3)
+        self.screen = TkScreen(canvas)
 
         self.season_drawn = None
         self.shown = []
@@ -9214,7 +9367,7 @@ class Game:
         self.p = None
 
         self.screen.listen(self)
-        self.shell.listen(self, self.canvas)
+        self.shell.listen(self)
 
         try:
             self.restore(saved["game"])
@@ -9518,6 +9671,8 @@ class Game:
     def ask_hero(self, done):
         """Make your farmer: a name, your farm's name, and how you look.
         done gets the result, or None if cancelled."""
+        def TF(*font):              # (until it's drawn in the game itself)
+            return TkFonts.get(F(*font))
         root = self.root
         if not self.open_dialog():
             return
@@ -9528,7 +9683,7 @@ class Game:
         rng = random.Random()
         look = self.random_look(rng)
         tk.Label(dlg, text="Who are you?", bg=PANEL, fg=ACCENT,
-                 font=F("Helvetica", 16, "bold")).pack(anchor="w")
+                 font=TF("Helvetica", 16, "bold")).pack(anchor="w")
         form = tk.Frame(dlg, bg=PANEL)
         form.pack(fill="x", pady=(8, 4))
         entries = {}
@@ -9536,10 +9691,10 @@ class Game:
                 ("name", "Your name:", rng.choice(FARMER_NAMES)),
                 ("farm", "Farm name:", rng.choice(FARM_NAMES)))):
             tk.Label(form, text=label, bg=PANEL, fg=INK,
-                     font=F("Helvetica", 13)).grid(row=row, column=0,
+                     font=TF("Helvetica", 13)).grid(row=row, column=0,
                                                    sticky="w")
             e = tk.Entry(form, bg=LOG_BG, fg=INK, insertbackground=INK,
-                         font=F(*MONO), width=20, highlightthickness=0)
+                         font=TF(*MONO), width=20, highlightthickness=0)
             e.insert(0, default)
             e.grid(row=row, column=1, sticky="w", padx=8, pady=2)
             entries[key] = e
@@ -9547,11 +9702,11 @@ class Game:
         prow = tk.Frame(form, bg=PANEL)
         prow.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
         tk.Label(prow, text="Call me:", bg=PANEL, fg=INK,
-                 font=F("Helvetica", 13)).pack(side="left")
+                 font=TF("Helvetica", 13)).pack(side="left")
         for v in ("they", "she", "he"):
             tk.Radiobutton(prow, text=v, variable=pron, value=v, bg=PANEL,
                            fg=INK, selectcolor=LOG_BG, activebackground=PANEL,
-                           font=F("Helvetica", 12)).pack(side="left")
+                           font=TF("Helvetica", 12)).pack(side="left")
 
         cols = tk.Frame(dlg, bg=PANEL)
         cols.pack(fill="x", pady=(8, 0))
@@ -9593,13 +9748,13 @@ class Game:
             line = tk.Frame(parts, bg=PANEL)
             line.pack(fill="x")
             tk.Label(line, text=label, width=8, anchor="w", bg=PANEL,
-                     fg=ACCENT, font=F("Helvetica", 12, "bold")).pack(
+                     fg=ACCENT, font=TF("Helvetica", 12, "bold")).pack(
                          side="left")
             tk.Button(line, text="<", width=2, highlightbackground=PANEL,
                       command=lambda k=key, o=opts: step(k, o, -1)).pack(
                           side="left")
             labels[key] = tk.Label(line, width=9, bg=PANEL, fg=INK,
-                                   font=F("Helvetica", 12))
+                                   font=TF("Helvetica", 12))
             labels[key].pack(side="left")
             tk.Button(line, text=">", width=2, highlightbackground=PANEL,
                       command=lambda k=key, o=opts: step(k, o, 1)).pack(
@@ -9611,7 +9766,7 @@ class Game:
         tk.Button(parts, text="Surprise me", command=random_look,
                   highlightbackground=PANEL).pack(anchor="w", pady=(6, 0))
         tk.Label(dlg, bg=PANEL, fg=INK_DIM, justify="left",
-                 font=F("Helvetica", 11), wraplength=S(420),
+                 font=TF("Helvetica", 11), wraplength=S(420),
                  text="Your grandmother Lily left you her farm at the edge "
                       "of Apple Blossom Village. It has been empty for "
                       "years. You start on the first of Spring with 500 "
@@ -9793,9 +9948,7 @@ class Game:
         self.load_images()
         self.area = a
         self.settle_npcs()
-        self.log.config(state="normal")
-        self.log.delete("1.0", "end")
-        self.log.config(state="disabled")
+        self.shell.log_clear()
         self.say("Among Grandmother's tools you find a magic wand. Hold "
                  "it and use it to aim a spell: it can turn people to gold, "
                  "and back again.", "quest")
@@ -9936,10 +10089,7 @@ class Game:
             self.shell.close()
 
     def say(self, text, tag=None):
-        self.log.config(state="normal")
-        self.log.insert("end", text + "\n", tag or ())
-        self.log.see("end")
-        self.log.config(state="disabled")
+        self.shell.log_add(text, tag)
         self.logged = getattr(self, "logged", [])[-60:] + [(text, tag)]
 
     # ── The calendar ──
@@ -13121,7 +13271,7 @@ class Game:
                      "back to life." % name, "quest")
             self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
                          "text": ""}
-            self.talkbar.pack(side="bottom", fill="x", before=self.log)
+            self.shell.show_entry()
             self.friend(vid)["met"] = True
             self.speak(vid, UNSTATUE.get(vid, "(surprised)What... what "
                                                "just happened?"))
@@ -13248,7 +13398,7 @@ class Game:
             flags.append("chickfixed:" + vid)
         self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
                      "text": ""}
-        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.shell.show_entry()
         self.friend(vid)["met"] = True
         self.speak(vid, CHICKEN_BACK[vid][0 if likes else 1])
         if pts:
@@ -13327,7 +13477,7 @@ class Game:
             line = lines[3 if likes else 2]
         self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
                      "text": ""}
-        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.shell.show_entry()
         self.friend(vid)["met"] = True
         self.speak(vid, line)
         if pts:
@@ -13410,7 +13560,7 @@ class Game:
             flags.append("treefixed:" + vid)
         self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
                      "text": ""}
-        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.shell.show_entry()
         self.friend(vid)["met"] = True
         self.speak(vid, TREE_BACK[vid][0 if likes else 1])
         if pts:
@@ -13497,7 +13647,7 @@ class Game:
             flags.append("loofixed:" + vid)
         self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
                      "text": ""}
-        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.shell.show_entry()
         self.friend(vid)["met"] = True
         self.speak(vid, LOO_BACK[vid][0 if likes else 1])
         if pts:
@@ -14100,7 +14250,7 @@ class Game:
         if self.talk:
             self.end_talk()
         self.talk = {"v": vid, "mode": "kw", "expr": "cross", "text": ""}
-        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.shell.show_entry()
         self.friend(vid)["met"] = True
         self.speak(vid, TREE_CHOPPED[vid])
         self.say("(%s will not forget this.)" % name, "bad")
@@ -14684,7 +14834,7 @@ class Game:
             flags.append(kind + "fixed:" + vid)
         self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
                      "text": ""}
-        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.shell.show_entry()
         self.friend(vid)["met"] = True
         self.speak(vid, b["back"][vid][0 if likes else 1])
         if pts:
@@ -15700,7 +15850,7 @@ class Game:
                 flags.append("swapfixed:" + vid)
         self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
                      "text": ""}
-        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        self.shell.show_entry()
         self.friend(vid)["met"] = True
         self.speak(vid, line)
         if pts:
@@ -15887,13 +16037,9 @@ class Game:
         it."""
         self.naming = i
         self.naming_pen = pen
-        self.talkbar.pack(side="bottom", fill="x", before=self.log)
-        self.prompt.config(text="New name:" if pen == "kids" else
-                           "Her new name:")
-        self.entry.delete(0, "end")
-        self.entry.insert(0, self.st[pen][i]["name"])
-        self.entry.select_range(0, "end")
-        self.entry.focus_set()
+        self.shell.show_entry(
+            prompt="New name:" if pen == "kids" else "Her new name:",
+            text=self.st[pen][i]["name"], select=True, focus=True)
         self.say("Type a new name for %s and press Return (Esc keeps the "
                  "old one)." % self.st[pen][i]["name"], "info")
         self.render()
@@ -15912,9 +16058,8 @@ class Game:
 
     def end_naming(self):
         self.naming = None
-        self.prompt.config(text="Ask about:")
-        self.talkbar.pack_forget()
-        self.canvas.focus_set()
+        self.shell.hide_entry(prompt="Ask about:")
+        self.shell.focus_play()
         self.render()
 
     def statue_bump(self, n):
@@ -17365,10 +17510,7 @@ class Game:
         f = self.friend(vid)
         self.walking = None
         self.talk = {"v": vid, "mode": "kw", "expr": "neutral", "text": ""}
-        self.talkbar.pack(side="bottom", fill="x", before=self.log)
-        self.entry.delete(0, "end")
-        if not ANDROID:
-            self.entry.focus_set()
+        self.shell.show_entry(text="", focus=not ANDROID)
         # turn to face you
         if not f["met"]:
             f["met"] = True
@@ -17481,14 +17623,21 @@ class Game:
         self.menu = None
         self.talk = None
         self.scene = None
-        self.talkbar.pack_forget()
-        self.canvas.focus_set()
+        self.shell.hide_entry()
+        self.shell.focus_play()
         if self.p and self.area:
             self.render()
 
+    def on_entry_escape(self):
+        """Escape in the entry: keep the old name, or end the talk."""
+        if getattr(self, "naming", None) is not None:
+            self.end_naming()
+        else:
+            self.end_talk()
+
     def on_entry(self, ev=None):
-        text = self.entry.get().strip()
-        self.entry.delete(0, "end")
+        """Return in the entry, or a word picked to ask about."""
+        text = self.shell.take_entry().strip()
         if getattr(self, "naming", None) is not None:
             self.finish_naming(text)
             return
@@ -18720,8 +18869,7 @@ class Game:
                     and not self.scene and not self.talk.get("mm") and \
                     not self.talk.get("kid") and not self.talk.get("who"):
                 self.menu = None
-                self.entry.focus_set()
-                self.entry.insert("end", ev.char)
+                self.shell.type_into_entry(ev.char)
                 self.render()
             return "break"
         if self.overlay:
@@ -19468,7 +19616,7 @@ class Game:
         it be bigger."""
         scr = self.screen
         W, H = scr.size()
-        key = (text, W, H, font_px(12))     # fonts scale with the window
+        key = (text, W, H, UI[0])           # fonts scale with the window
         cache = getattr(self, "box_fit", {})
         if key not in cache:
             cache[key] = self.fit_text_box(text, W, H)
@@ -19644,8 +19792,8 @@ class Game:
         p, st = self.p, self.st
         a = self.area
         here = a.name if not a.outdoor else self.district()
-        self.set_text(self.status, cap(here))
-        self.set_text(self.clock_label, "%s %d  %s  %s" % (
+        self.shell.set_status(cap(here))
+        self.shell.set_clock("%s %d  %s  %s" % (
             SEASONS[self.season()], self.dom(), WEEKDAYS[self.weekday()],
             self.clock()))
         e = max(0, p["energy"])
@@ -19685,7 +19833,7 @@ class Game:
             cond.append("EXHAUSTED")
         if getattr(self, "aim", False):
             cond.append("WAND RAISED: pick a direction")
-        self.set_text(self.condition, "\n".join(cond))
+        self.shell.set_condition("\n".join(cond))
         if self.festival_on():
             self.sound.tune = "festival"
         elif a.key == "mine":
@@ -19898,8 +20046,7 @@ class Game:
         self.fit_job = None
         if getattr(self, "small_dialog", None) and not force:
             return
-        root = self.root
-        W, H = root.winfo_width(), root.winfo_height()
+        W, H = self.shell.window_size()
         if W < 100 or H < 100:
             return
         tall = H > W * 1.15
@@ -19909,52 +20056,17 @@ class Game:
                 tall == getattr(self, "tall", None):
             return
         self.tall = tall
-        set_fonts(u)
-        n = len(self.btn)
-        root.update_idletasks()
-        each = max(b.winfo_reqwidth() for b in self.btn.values()) + S(4)
-        rows = 2 if tall else 1
-        while rows < n and -(-n // rows) * each > W:
-            rows += 1
-        per = -(-n // rows)
-        for i, b in enumerate(self.btn.values()):
-            b.grid(row=i // per, column=i % per, sticky="ew", padx=S(2),
-                   pady=S(4))
-        for col in range(n):
-            self.bar.columnconfigure(col, weight=int(col < per),
-                                     uniform="b" if col < per else "")
-        sb = self.sidebar
-        sb.pack_forget()
-        if tall:
-            sb.pack_propagate(True)
-            sb.pack(side="bottom", fill="x", before=self.leftside)
-            wrap_ = (W - S(50)) // 2
-        else:
-            sb.configure(width=S(250))
-            sb.pack_propagate(False)
-            sb.pack(side="right", fill="y", before=self.leftside)
-            wrap_ = S(230)
-        for w in (self.panel, self.panel2, self.condition):
-            w.configure(wraplength=wrap_ if w is not self.condition or
-                        not tall else W - S(24))
-        self.log.configure(height=4 if tall else 6)
+        self.shell.set_ui_scale(u)
+        self.shell.arrange(tall, W)
         self.portraits = {}
         if hasattr(self, "panel_lines"):
             self.show_panel(self.panel_lines)
         self.layout()
 
-    def set_text(self, label, text):
-        """A label's text, changed only if it's different: Tk lays a label
-        out afresh on every change, and this is done every turn."""
-        if label.cget("text") != text:
-            label.config(text=text)
-
     def show_panel(self, lines):
         self.panel_lines = lines
         if not self.tall or len(lines) < 8:
-            self.set_text(self.panel, "\n".join(lines))
-            if self.panel2.winfo_manager():
-                self.panel2.pack_forget()
+            self.shell.set_panel(lines)
             return
         mid = len(lines) // 2
         cuts = [i for i, line in enumerate(lines) if not line.strip()]
@@ -19962,11 +20074,7 @@ class Game:
         first, second = lines[:cut], lines[cut:]
         while second and not second[0].strip():
             second = second[1:]
-        self.set_text(self.panel, "\n".join(first))
-        self.set_text(self.panel2, "\n".join(second))
-        if not self.panel2.winfo_manager():
-            self.panel2.pack(side="left", fill="x", expand=True, anchor="n",
-                             padx=(S(10), S(10)), pady=(S(8), 0))
+        self.shell.set_panel(first, second)
 
     def fit_dialog(self, dlg):
         root = self.root
@@ -19983,7 +20091,7 @@ class Game:
             if k >= 1.0:
                 break
             shrunk = True
-            set_fonts(UI[0] * k * 0.97)
+            self.shell.set_ui_scale(UI[0] * k * 0.97)
             todo = [dlg]
             while todo:
                 w = todo.pop()
