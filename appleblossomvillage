@@ -47,6 +47,7 @@ days without opening a window.
 """
 
 import array
+import ast
 import atexit
 import glob
 import json
@@ -8832,10 +8833,12 @@ Press any key to close."""
 
 
 # ── The display layer ───────────────────────────────────────────────────────
-# The game reaches the window only through these: TkShell for what's around
-# the play area (timers and input so far; the panel, log and buttons to
-# come) and TkScreen for the play area itself.  A Kivy version would be two
-# more classes with the same methods.
+# The game reaches the window only through these: TkShell for what's round
+# the play area (the bars, panel, log and entry; timers; keys and taps) and
+# TkScreen for the play area itself (pictures, tiles, print and shapes),
+# with TkFonts to make F()'s fonts.  main() picks them; a Kivy version would
+# be two more classes with the same methods.  The self-test checks that
+# nothing else reaches for Tk: see display_layer_problems().
 
 Key = namedtuple("Key", "name char ctrl in_entry")
 Key.__doc__ = """A key press: its Tk keysym name ("Up", "KP_8", "Return"), the
@@ -8904,7 +8907,7 @@ class TkShell:
         """The window: a bar with the place and the time; the play area,
         with the log under it and, while talking, the "Ask about:" entry;
         the panel at the side; and a row of buttons, (key, label, command)
-        each.  Returns the play area's canvas."""
+        each.  Returns the play area, a TkScreen."""
         root, T = self.root, TkFonts.get
         root.title("Apple Blossom Village")
         root.configure(bg=PANEL)
@@ -8983,7 +8986,7 @@ class TkShell:
                         lambda e: game.on_entry_escape() or "break")
         self.canvas = tk.Canvas(left, bg="black", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
-        return self.canvas
+        return TkScreen(self.canvas)
 
     def arrange(self, tall, W):
         """Lay the window out for its width W: wide, the panel at the side
@@ -9320,8 +9323,9 @@ class TkScreen:
 
 
 class Game:
-    def __init__(self, root):
-        self.shell = TkShell(root)
+    def __init__(self, shell):
+        """The game, in the window shell (a TkShell, say) gives it."""
+        self.shell = shell
         self.sound = Sound()
         saved = load_saved()
         self.sound.muted = bool(saved.get("muted"))
@@ -9332,7 +9336,7 @@ class Game:
         self.text_k = text if text in TEXT_SIZES else 1.0
         self.scale = 3 if self.shell.screen_height() >= 1000 else 2
         self.tall = None
-        canvas = self.shell.build(self, (
+        self.screen = self.shell.build(self, (
             ("use", "Use", self.use_tool),
             ("tool", "Tool", self.tool_menu),
             ("bag", "Bag", self.bag_menu),
@@ -9341,7 +9345,6 @@ class Game:
             ("diary", "Diary", self.show_diary),
             ("map", "Map", self.toggle_map),
             ("menu", "Menu", self.action_menu)), big=self.scale >= 3)
-        self.screen = TkScreen(canvas)
 
         self.season_drawn = None
         self.shown = []
@@ -23972,6 +23975,34 @@ ART["puff"] = ({"g": "#e8e0d0", "G": "#b8b0a0"}, (
 
 # ── Checking ─────────────────────────────────────────────────────────────────
 
+def display_layer_problems(path=None):
+    """Places outside the display layer (the Tk classes, and main(), which
+    picks them) that reach for Tk itself: the game has to go through the
+    shell and the screen, so that another backend can stand in for them."""
+    try:
+        with open(path or os.path.abspath(__file__), encoding="utf-8") as f:
+            tree = ast.parse(f.read())
+    except (OSError, SyntaxError):
+        return []
+    layer = [(n.lineno, n.end_lineno) for n in tree.body
+             if isinstance(n, (ast.ClassDef, ast.FunctionDef)) and
+             (n.name.startswith("Tk") or n.name == "main")]
+    tk_names = {"tk", "tkfont", "TkShell", "TkScreen", "TkFonts"}
+    found = set()
+    for n in ast.walk(tree):
+        if isinstance(n, ast.Name) and n.id in tk_names:
+            what = n.id
+        elif isinstance(n, ast.Attribute) and n.attr in ("canvas", "root") \
+                and isinstance(n.value, ast.Name) and n.value.id == "self":
+            what = "self." + n.attr
+        else:
+            continue
+        if not any(a <= n.lineno <= b for a, b in layer):
+            found.add((n.lineno, what))
+    return ["line %d uses %s, past the display layer" % f
+            for f in sorted(found)]
+
+
 def selftest():
     """Build everything and check the people, places and tunes fit
     together; then run a season of days without a window."""
@@ -24211,6 +24242,7 @@ def selftest():
             render_tune(tune)
         except (ValueError, KeyError) as e:
             problems.append("tune %s: %s" % (name, e))
+    problems += display_layer_problems()
     for line in problems:
         print("PROBLEM:", line)
     print("selftest: %d tiles a season, %d rooms, %d villagers, %d tunes; "
@@ -24371,9 +24403,10 @@ def main():
         return
     if "--selftest" in sys.argv:
         sys.exit(0 if selftest() else 1)
-    game = Game(tk.Tk())
-    game.shell.set_icon(icon_render_png(64))
-    game.shell.run()
+    shell = TkShell(tk.Tk())
+    Game(shell)
+    shell.set_icon(icon_render_png(64))
+    shell.run()
 
 
 if __name__ == "__main__":
