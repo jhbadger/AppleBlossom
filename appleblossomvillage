@@ -8977,6 +8977,56 @@ class TkScreen:
             return 0, self.metrics(font)[1]
         return bb[2] - bb[0], bb[3] - bb[1]
 
+    # The tiles: a grid of cells, each with a few layers of picture (the
+    # ground, what's on it, who's standing there), and over them the gold
+    # square you're facing and a picture that flashes up for a moment.
+
+    def grid_build(self, cols, rows, ox, oy, ts, layers=3):
+        """Start afresh with an empty grid, ts pixels a cell, its top left
+        at ox, oy; cells count along rows, left to right."""
+        c = self.canvas
+        c.delete("all")
+        self.cells = [tuple(c.create_image(ox + i * ts, oy + j * ts,
+                                           anchor="nw", state="hidden")
+                            for _ in range(layers))
+                      for j in range(rows) for i in range(cols)]
+        self.fx_item = c.create_image(0, 0, anchor="nw", state="hidden")
+        self.cursor_item = c.create_rectangle(0, 0, 0, 0, outline=GOLD,
+                                              width=2, state="hidden")
+
+    def grid_set(self, index, layer, img):
+        """One layer of one cell: a picture, or None for nothing."""
+        item = self.cells[index][layer]
+        if img is None:
+            self.canvas.itemconfig(item, state="hidden")
+        else:
+            self.canvas.itemconfig(item, image=img, state="normal")
+
+    def cursor(self, rect):
+        """The gold square, (x0, y0, x1, y1), over the tiles but under the
+        weather and the overlay; None hides it."""
+        c = self.canvas
+        if rect is None:
+            c.itemconfig(self.cursor_item, state="hidden")
+            return
+        c.coords(self.cursor_item, *rect)
+        c.itemconfig(self.cursor_item, state="normal")
+        c.tag_raise(self.cursor_item)
+        for layer in ("weather", "overlay"):
+            if self.has(layer):
+                c.tag_lower(self.cursor_item, layer)
+                break
+
+    def effect(self, x, y, img):
+        """A picture over everything, top left at x, y; img None hides it."""
+        c = self.canvas
+        if img is None:
+            c.itemconfig(self.fx_item, state="hidden")
+            return
+        c.coords(self.fx_item, x, y)
+        c.itemconfig(self.fx_item, image=img, state="normal")
+        c.tag_raise(self.fx_item)
+
     # Drawing over the tiles.  Everything goes in a layer: "weather" (rain
     # and snow), under "overlay" (boxes, menus, the map), and each layer is
     # cleared and drawn afresh, later things on top.  Options are named as
@@ -9142,7 +9192,6 @@ class Game:
         self.screen = TkScreen(self.canvas)
 
         self.season_drawn = None
-        self.cells = []
         self.shown = []
         self.frame = 0
         self.view = (0, 0, 0, 0, 16)
@@ -9263,16 +9312,15 @@ class Game:
         """Flip every animated square to its other frame, and let the rain
         fall."""
         self.frame ^= 1
-        if self.cells and not self.overlay and self.area:
-            c = self.canvas
+        if self.shown and not self.overlay and self.area:
             for idx, names in enumerate(self.shown):
                 new = tuple(self.framed(n) for n in names)
                 if new == names:
                     continue
                 self.shown[idx] = new
-                for item, old, n in zip(self.cells[idx], names, new):
+                for layer, (old, n) in enumerate(zip(names, new)):
                     if n != old and n:
-                        c.itemconfig(item, image=self.image(n))
+                        self.screen.grid_set(idx, layer, self.image(n))
             self.draw_weather()
         self.shell.after(500, self.animate)
 
@@ -18905,7 +18953,7 @@ class Game:
     def on_tap(self, sx, sy):
         """A tap or click on the play area, at sx, sy pixels."""
         self.walking = None
-        if not self.cells:
+        if not self.shown:
             return
         if self.menu:
             for x0, y0, x1, y1, i in self.menu_rows:
@@ -19030,31 +19078,21 @@ class Game:
     def layout(self):
         if not self.area or not self.p:
             return
-        c = self.canvas
         scale = self.auto_scale()
         if scale != self.scale:
             self.scale = scale
             self.scale_images()
             self.portraits = {}
-        c.delete("all")
         ts = 16 * self.scale
-        W, H = max(c.winfo_width(), ts * 5), max(c.winfo_height(), ts * 5)
+        W, H = self.screen.size()
+        W, H = max(W, ts * 5), max(H, ts * 5)
         cols, rows = -(-W // ts), -(-H // ts)
         cols += 1 - cols % 2
         rows += 1 - rows % 2
         ox, oy = (W - cols * ts) // 2, (H - rows * ts) // 2
         self.view = (cols, rows, ox, oy, ts)
-        self.cells = []
-        for j in range(rows):
-            for i in range(cols):
-                x, y = ox + i * ts, oy + j * ts
-                self.cells.append(tuple(
-                    c.create_image(x, y, anchor="nw", state="hidden")
-                    for _ in range(3)))
-        self.shown = [(None, None, None)] * len(self.cells)
-        self.fx = c.create_image(0, 0, anchor="nw", state="hidden")
-        self.cursor = c.create_rectangle(0, 0, 0, 0, outline=GOLD, width=2,
-                                         state="hidden")
+        self.screen.grid_build(cols, rows, ox, oy, ts)
+        self.shown = [(None, None, None)] * (cols * rows)
         self.render()
 
     def camera(self):
@@ -19069,13 +19107,13 @@ class Game:
         return axis(x, cols, a.w), axis(y, rows, a.h)
 
     def render(self):
-        if not self.cells or not self.area or not self.p:
+        if not self.shown or not self.area or not self.p:
             return
         if self.season_drawn != self.season():
             self.load_images()
             self.layout()
             return
-        c, a, st = self.canvas, self.area, self.st
+        a, st = self.area, self.st
         cols, rows, ox, oy, ts = self.view
         self.cam = cx, cy = self.camera()
         px, py = self.pos()
@@ -19216,25 +19254,19 @@ class Game:
                 if old == names:
                     continue
                 self.shown[idx] = names
-                for item, o, n in zip(self.cells[idx], old, names):
-                    if n == o:
-                        continue
-                    if n is None:
-                        c.itemconfig(item, state="hidden")
-                    else:
-                        c.itemconfig(item, image=self.image(n),
-                                     state="normal")
+                for layer, (o, n) in enumerate(zip(old, names)):
+                    if n != o:
+                        self.screen.grid_set(
+                            idx, layer, None if n is None else self.image(n))
         # the square you're facing
         fx, fy = self.ahead()
         if (a.outdoor or a.key == "greenhouse" or
                 self.held() == "magic wand") and not self.talk \
                 and self.tool_applies(fx, fy):
             sx, sy = ox + (fx - cx) * ts, oy + (fy - cy) * ts
-            c.coords(self.cursor, sx + 1, sy + 1, sx + ts - 1, sy + ts - 1)
-            c.itemconfig(self.cursor, state="normal")
-            c.tag_raise(self.cursor)
+            self.screen.cursor((sx + 1, sy + 1, sx + ts - 1, sy + ts - 1))
         else:
-            c.itemconfig(self.cursor, state="hidden")
+            self.screen.cursor(None)
         self.screen.clear()
         if getattr(self, "aim", False):
             self.draw_aim()
@@ -19285,7 +19317,6 @@ class Game:
         key = (w, self.frame, self.st["minute"], W, H, self.scale)
         if w and key == getattr(self, "weather_key", None) and \
                 scr.has("weather"):
-            self.canvas.tag_lower(self.cursor, "weather")   # (just raised)
             return
         self.weather_key = key
         scr.clear("weather")
@@ -19424,13 +19455,11 @@ class Game:
             return
         self.fx_token += 1
         token = self.fx_token
-        self.canvas.coords(self.fx, ox + i * ts, oy + j * ts)
-        self.canvas.itemconfig(self.fx, image=self.img[tile], state="normal")
-        self.canvas.tag_raise(self.fx)
+        self.screen.effect(ox + i * ts, oy + j * ts, self.img[tile])
 
         def hide():
             if token == self.fx_token:
-                self.canvas.itemconfig(self.fx, state="hidden")
+                self.screen.effect(0, 0, None)
         self.shell.after(300, hide)
 
     def draw_text_box(self, text, color=INK):
@@ -19853,8 +19882,7 @@ class Game:
             self.layout()
 
     def auto_scale(self):
-        c = self.canvas
-        short = min(c.winfo_width(), c.winfo_height())
+        short = min(self.screen.size())
         return max(1, min(MAX_ZOOM, round(short / (16 * 12)) + self.zoom_d))
 
     def on_resize(self):
