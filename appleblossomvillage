@@ -9352,7 +9352,14 @@ def load_kivy(width=1000, height=740):
     config = importlib.import_module(k + ".config").Config
     config.set("kivy", "exit_on_escape", "0")       # Escape and Back: ours
     config.set("kivy", "log_level", "warning")
-    config.set("input", "mouse", "mouse,disable_multitouch")
+    # A touch can come twice, from the touch screen and again as a mouse:
+    # on a phone there's no mouse to want, and elsewhere the mouse gives
+    # way while the touch screen is in use.
+    if ANDROID:
+        config.remove_option("input", "mouse")
+    else:
+        config.set("input", "mouse",
+                   "mouse,disable_multitouch,disable_on_activity")
     config.set("graphics", "width", str(width))
     config.set("graphics", "height", str(height))
     part(".core.window", "Window")
@@ -9460,8 +9467,10 @@ class KivyScreen:
                 if touch.is_mouse_scrolling or not self.collide_point(
                         *touch.pos) or screen.game is None:
                     return super().on_touch_down(touch)
-                screen.game.tapped(int(touch.x - self.x),    # (whole pixels,
-                                   int(self.top - touch.y))   # as Tk's)
+                x, y = int(touch.x - self.x), int(self.top - touch.y)
+                if screen.echo(x, y):
+                    return True
+                screen.game.tapped(x, y)        # (whole pixels, as Tk's)
                 return True
         self.widget = PlayArea()
         self.groups = {}
@@ -9469,8 +9478,20 @@ class KivyScreen:
             g = self.groups[layer] = kv["InstructionGroup"]()
             self.widget.canvas.add(g)
         self.cells = []
+        self.last_tap = (0, -999, -999)
         self.labels = {}            # (text, font, ...) -> texture
         self.rgba = {}              # "#rrggbb" -> 4 bytes
+
+    def echo(self, x, y):
+        """Whether a tap at x, y is the last one over again: the same
+        square within a third of a second, as when one touch reaches Kivy
+        twice.  Answered for real, it could undo the first (opening a menu,
+        then closing it)."""
+        t, lx, ly = self.last_tap
+        now = time.time()
+        self.last_tap = (now, x, y)
+        half = max(8, self.game.view[4] // 2)
+        return now - t < 0.3 and abs(x - lx) < half and abs(y - ly) < half
 
     # Where things go: the game's top-left pixels to Kivy's.
 
