@@ -51,14 +51,26 @@ Buildozer installed:
 buildozer -v android debug
 ```
 
-or on a Mac, with Docker:
+or on a Mac, with Docker. Homebrew's `docker` is only the command; it needs
+an engine to talk to, such as [Colima](https://github.com/abiosoft/colima)
+(or Docker Desktop). On an Apple-silicon Mac, start Colima with Rosetta,
+since Android's build tools are made for Intel Linux:
 
 ```bash
-docker run --rm -v "$PWD":/home/user/hostcwd kivy/buildozer -v android debug
+brew install colima
 ```
 
-The first build downloads Android's SDK and NDK, a few gigabytes, and takes
-a while; the APK lands in `bin/`. Install it with
+```bash
+colima start --vm-type vz --vz-rosetta --cpu 4 --memory 8 --disk 60
+```
+
+```bash
+docker run --rm --platform linux/amd64 -v "$HOME/.buildozer":/home/user/.buildozer -v "$PWD":/home/user/hostcwd kivy/buildozer -v android debug
+```
+
+The `~/.buildozer` folder keeps Android's SDK and NDK between builds. The
+first build downloads them, a few gigabytes, and takes a while; the APK
+lands in `bin/`. `colima stop` shuts the engine down afterwards. Install it with
 `adb install -r bin/*.apk`, or copy it to the phone and open it. The app has
 no Tk, so it runs with Kivy; it saves when you switch away from it, and if
 it can't write to its home folder it keeps the save in its own private one.
