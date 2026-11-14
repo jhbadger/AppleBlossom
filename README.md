@@ -34,8 +34,11 @@ schedules, gifts and scenes all fit together.
 
 A new game starts by asking who you are: your name, your farm's name, how
 people should refer to you (they, she or he), and how you look. You pick your
-build, hairstyle, hair colour, skin, eyes, shirt and trousers. The dialog
-shows both the small sprite you walk around as and the large portrait.
+build, hairstyle, hair colour, skin, eyes, shirt and trousers, or let
+"Surprise me" pick. The screen shows both the small sprite you walk around as
+and the large portrait. Move up and down the rows with the arrow keys, a tap
+or the gamepad; left and right (or the arrows on each row) step through the
+choices, and Return on a name opens the entry at the foot to type it.
 
 ## Time
 

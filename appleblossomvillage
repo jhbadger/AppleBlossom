@@ -9321,7 +9321,6 @@ class TkScreen:
 
 class Game:
     def __init__(self, root):
-        self.root = root
         self.shell = TkShell(root)
         self.sound = Sound()
         saved = load_saved()
@@ -9361,6 +9360,7 @@ class Game:
         self.mine = None            # the floor of the mine you're on
         self.portraits = {}
         self.naming = None
+        self.creating = None        # making a farmer: see ask_hero()
         self.heard = []
         self.npcs = {}
         self.area = None
@@ -9421,6 +9421,9 @@ class Game:
 
     def pad_direction(self, d):
         self.walking = None
+        if self.creating:
+            self.creator_pad(d=d)
+            return
         if self.menu:
             self.menu_move(-1 if d in ((0, -1), (-1, 0)) else 1)
         elif self.busy or self.talk:
@@ -9434,6 +9437,9 @@ class Game:
 
     def pad_button(self, name):
         self.walking = None
+        if self.creating:
+            self.creator_pad(button=name)
+            return
         if getattr(self, "aim", False):
             if name == "b":
                 self.cancel_aim()
@@ -9623,36 +9629,10 @@ class Game:
     # ── Making your farmer ──
 
     def tapped(self, x, y):
-        if time.time() < getattr(self, "tap_guard", 0) or not self.area:
+        if time.time() < getattr(self, "tap_guard", 0) or not (
+                self.area or self.creating):
             return
         self.on_tap(x, y)
-
-    def open_dialog(self):
-        dlg = getattr(self, "dialog", None)
-        try:
-            if dlg is not None and dlg.winfo_exists():
-                dlg.lift()
-                return False
-        except tk.TclError:
-            pass
-        return True
-
-    def close_dialog(self, dlg=None):
-        dlg = dlg or getattr(self, "dialog", None)
-        if dlg is not None:
-            try:
-                dlg.destroy()
-            except tk.TclError:
-                pass
-        if dlg is getattr(self, "dialog", None):
-            self.dialog = None
-        self.tap_guard = time.time() + 0.6
-
-    def grab(self, dlg):
-        try:
-            dlg.grab_set()
-        except tk.TclError:
-            pass
 
     @staticmethod
     def random_look(rng, body=None):
@@ -9668,160 +9648,270 @@ class Game:
                 "shirt": rng.choice(SHIRTS), "pants": rng.choice(PANTS),
                 "bg": "#f8e0c0", "extras": ()}
 
+    # A screen of its own, over the map (or, the very first time, over
+    # nothing): rows to pick from with the keys, a tap or the gamepad, the
+    # names typed in the "Ask about:" entry, and you as you'll look.
+
+    @staticmethod
+    def look_parts():
+        """(key, label, choices) for each part of how you look."""
+        return (("body", "Build", ["M", "F"]),
+                ("style", "Hair", list(HAIRSTYLES)),
+                ("hair", "Colour", list(HAIR_COLOURS.values())),
+                ("skin", "Skin", list(range(len(SKIN)))),
+                ("eyes", "Eyes", list(EYE_COLOURS.values())),
+                ("shirt", "Shirt", SHIRTS),
+                ("pants", "Trousers", PANTS))
+
+    @staticmethod
+    def look_name(key, v):
+        """What to call a choice: "slight", "auburn", "olive"..."""
+        return {"body": {"M": "broad", "F": "slight"},
+                "hair": {v: k for k, v in HAIR_COLOURS.items()},
+                "eyes": {v: k for k, v in EYE_COLOURS.items()},
+                "skin": dict(enumerate(SKIN_NAMES)),
+                "shirt": dict(zip(SHIRTS, SHIRT_NAMES)),
+                "pants": dict(zip(PANTS, PANT_NAMES))}.get(key, {}).get(
+                    v, str(v))
+
+    PRONOUNS = ("they", "she", "he")
+    NEW_FARMER = ("Your grandmother Lily left you her farm at the edge of "
+                  "Apple Blossom Village. It has been empty for years. You "
+                  "start on the first of Spring with 500 gold, her old "
+                  "tools, and some turnip seeds.")
+
     def ask_hero(self, done):
         """Make your farmer: a name, your farm's name, and how you look.
         done gets the result, or None if cancelled."""
-        def TF(*font):              # (until it's drawn in the game itself)
-            return TkFonts.get(F(*font))
-        root = self.root
-        if not self.open_dialog():
+        if self.creating:
             return
-        dlg = self.dialog = tk.Toplevel(root, bg=PANEL, padx=18, pady=14)
-        dlg.title("A new farmer")
-        dlg.transient(root)
-        dlg.resizable(False, False)
         rng = random.Random()
-        look = self.random_look(rng)
-        tk.Label(dlg, text="Who are you?", bg=PANEL, fg=ACCENT,
-                 font=TF("Helvetica", 16, "bold")).pack(anchor="w")
-        form = tk.Frame(dlg, bg=PANEL)
-        form.pack(fill="x", pady=(8, 4))
-        entries = {}
-        for row, (key, label, default) in enumerate((
-                ("name", "Your name:", rng.choice(FARMER_NAMES)),
-                ("farm", "Farm name:", rng.choice(FARM_NAMES)))):
-            tk.Label(form, text=label, bg=PANEL, fg=INK,
-                     font=TF("Helvetica", 13)).grid(row=row, column=0,
-                                                   sticky="w")
-            e = tk.Entry(form, bg=LOG_BG, fg=INK, insertbackground=INK,
-                         font=TF(*MONO), width=20, highlightthickness=0)
-            e.insert(0, default)
-            e.grid(row=row, column=1, sticky="w", padx=8, pady=2)
-            entries[key] = e
-        pron = tk.StringVar(value="they")
-        prow = tk.Frame(form, bg=PANEL)
-        prow.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
-        tk.Label(prow, text="Call me:", bg=PANEL, fg=INK,
-                 font=TF("Helvetica", 13)).pack(side="left")
-        for v in ("they", "she", "he"):
-            tk.Radiobutton(prow, text=v, variable=pron, value=v, bg=PANEL,
-                           fg=INK, selectcolor=LOG_BG, activebackground=PANEL,
-                           font=TF("Helvetica", 12)).pack(side="left")
+        self.menu = None
+        self.creating = {"done": done, "rng": rng, "sel": 0, "typing": None,
+                         "name": rng.choice(FARMER_NAMES),
+                         "farm": rng.choice(FARM_NAMES), "pron": "they",
+                         "look": self.random_look(rng), "hits": []}
+        self.render()
 
-        cols = tk.Frame(dlg, bg=PANEL)
-        cols.pack(fill="x", pady=(8, 0))
-        z = max(3, S(4))
-        pics = tk.Frame(cols, bg=PANEL)
-        pics.pack(side="left", anchor="n", padx=(0, 12))
-        face = tk.Canvas(pics, width=PW * z, height=PW * z, bg=LOG_BG,
-                         highlightthickness=0)
-        face.pack()
-        sz = max(3, S(5))
-        body = tk.Canvas(pics, width=16 * sz, height=16 * sz, bg=LOG_BG,
-                         highlightthickness=0)
-        body.pack(pady=(6, 0))
-        parts = tk.Frame(cols, bg=PANEL)
-        parts.pack(side="left", anchor="n")
-        choices = (("body", "Build", ["M", "F"]),
-                   ("style", "Hair", list(HAIRSTYLES)),
-                   ("hair", "Colour", list(HAIR_COLOURS.values())),
-                   ("skin", "Skin", list(range(len(SKIN)))),
-                   ("eyes", "Eyes", list(EYE_COLOURS.values())),
-                   ("shirt", "Shirt", SHIRTS),
-                   ("pants", "Trousers", PANTS))
-        names = {"body": {"M": "broad", "F": "slight"},
-                 "hair": {v: k for k, v in HAIR_COLOURS.items()},
-                 "eyes": {v: k for k, v in EYE_COLOURS.items()},
-                 "skin": dict(enumerate(SKIN_NAMES)),
-                 "shirt": dict(zip(SHIRTS, SHIRT_NAMES)),
-                 "pants": dict(zip(PANTS, PANT_NAMES))}
-        labels = {}
+    def creator_rows(self):
+        """(key, label, value, kind): kind "type" for a name to type,
+        "cycle" for a choice to step through, "act" for a button."""
+        c = self.creating
+        rows = [("name", "Your name", c["name"], "type"),
+                ("farm", "Farm name", c["farm"], "type"),
+                ("pron", "Call me", c["pron"], "cycle")]
+        for key, label, _ in self.look_parts():
+            rows.append((key, label, self.look_name(key, c["look"].get(key)),
+                         "cycle"))
+        return rows + [("surprise", "Surprise me", None, "act"),
+                       ("begin", "Begin", None, "act"),
+                       ("cancel", "Cancel", None, "act")]
 
-        def step(key, opts, d):
-            cur = look.get(key, opts[0])
-            look[key] = opts[(opts.index(cur) + d) % len(opts)] \
-                if cur in opts else opts[0]
-            if key == "body":
-                look["face"] = look["body"]
-            show()
-        for key, label, opts in choices:
-            line = tk.Frame(parts, bg=PANEL)
-            line.pack(fill="x")
-            tk.Label(line, text=label, width=8, anchor="w", bg=PANEL,
-                     fg=ACCENT, font=TF("Helvetica", 12, "bold")).pack(
-                         side="left")
-            tk.Button(line, text="<", width=2, highlightbackground=PANEL,
-                      command=lambda k=key, o=opts: step(k, o, -1)).pack(
-                          side="left")
-            labels[key] = tk.Label(line, width=9, bg=PANEL, fg=INK,
-                                   font=TF("Helvetica", 12))
-            labels[key].pack(side="left")
-            tk.Button(line, text=">", width=2, highlightbackground=PANEL,
-                      command=lambda k=key, o=opts: step(k, o, 1)).pack(
-                          side="left")
+    def creator_step(self, key, d):
+        c = self.creating
+        if key == "pron":
+            opts = self.PRONOUNS
+            c["pron"] = opts[(opts.index(c["pron"]) + d) % len(opts)]
+            return
+        opts = {k: o for k, _, o in self.look_parts()}[key]
+        look = c["look"]
+        cur = look.get(key, opts[0])
+        look[key] = opts[(opts.index(cur) + d) % len(opts)] \
+            if cur in opts else opts[0]
+        if key == "body":
+            look["face"] = look["body"]
 
-        def random_look():
-            look.update(self.random_look(rng))
-            show()
-        tk.Button(parts, text="Surprise me", command=random_look,
-                  highlightbackground=PANEL).pack(anchor="w", pady=(6, 0))
-        tk.Label(dlg, bg=PANEL, fg=INK_DIM, justify="left",
-                 font=TF("Helvetica", 11), wraplength=S(420),
-                 text="Your grandmother Lily left you her farm at the edge "
-                      "of Apple Blossom Village. It has been empty for "
-                      "years. You start on the first of Spring with 500 "
-                      "gold, her old tools, and some turnip seeds.").pack(
-                          anchor="w", pady=(10, 0))
+    def creator_activate(self, i=None):
+        """Return, the A button or a tap on a row: type a name, step a
+        choice on, or press a button."""
+        c = self.creating
+        if i is not None:
+            c["sel"] = i
+        key, label, value, kind = self.creator_rows()[c["sel"]]
+        self.creator_commit()
+        if kind == "type":
+            c["typing"] = key
+            self.shell.show_entry(prompt=label + ":", text=value, select=True,
+                                  focus=True)
+        elif kind == "cycle":
+            self.creator_step(key, 1)
+        elif key == "surprise":
+            c["look"].update(self.random_look(c["rng"]))
+        elif key == "begin":
+            self.creator_finish({
+                "name": " ".join(c["name"].split())[:20] or "Lily",
+                "farm": " ".join(c["farm"].split())[:20] or "Applewood",
+                "pron": c["pron"], "look": dict(c["look"])})
+            return
+        else:
+            self.creator_finish(None)
+            return
+        self.render()
 
-        def show():
-            face.delete("all")
-            px = portrait(look, "happy")
-            for y, row in enumerate(px):
-                for x, c in enumerate(row):
-                    face.create_rectangle(x * z, y * z, x * z + z, y * z + z,
-                                          fill=c, outline="")
-            body.delete("all")
-            pal, rows = person_art(look)
-            for y, row in enumerate(rows):
-                for x, ch in enumerate(row):
-                    if ch in pal:
-                        body.create_rectangle(x * sz, y * sz, x * sz + sz,
-                                              y * sz + sz, fill=pal[ch],
-                                              outline="")
-            for key, _, _ in choices:
-                v = look.get(key)
-                labels[key].config(text=names.get(key, {}).get(v, str(v)))
+    def creator_commit(self, text=None):
+        """Settle a name being typed: what's in the entry, or text."""
+        c = self.creating
+        key = c["typing"]
+        if key is None:
+            return
+        if text is None:
+            text = self.shell.take_entry()
+        name = " ".join(text.split())[:20]
+        if name:
+            c[key] = name
+        c["typing"] = None
+        self.shell.hide_entry(prompt="Ask about:")
+        self.shell.focus_play()
 
-        def begin(_=None):
-            who = {"name": " ".join(entries["name"].get().split())[:20]
-                   or "Lily", "farm": " ".join(
-                       entries["farm"].get().split())[:20] or "Applewood",
-                   "pron": pron.get(), "look": dict(look)}
-            self.close_dialog(dlg)
-            done(who)
+    def creator_finish(self, who):
+        done = self.creating["done"]
+        self.creator_commit()
+        self.creating = None
+        self.render()
+        done(who)
 
-        def cancel(_=None):
-            self.close_dialog(dlg)
-            done(None)
-        show()
-        bar = tk.Frame(dlg, bg=PANEL)
-        bar.pack(fill="x", pady=(12, 0))
-        tk.Button(bar, text="Begin", command=begin, width=9,
-                  highlightbackground=PANEL).pack(side="right")
-        tk.Button(bar, text="Cancel", command=cancel, width=8,
-                  highlightbackground=PANEL).pack(side="right", padx=6)
-        dlg.bind("<Return>", begin)
-        dlg.bind("<Escape>", cancel)
-        dlg.protocol("WM_DELETE_WINDOW", cancel)
-        entries["name"].focus_set()
-        entries["name"].select_range(0, "end")
-        self.fit_dialog(dlg)
-        dlg.geometry("+%d+%d" % (
-            root.winfo_rootx() + max(0, (root.winfo_width() -
-                                         dlg.winfo_reqwidth()) // 2),
-            root.winfo_rooty() + max(0, min(40, (root.winfo_height() -
-                                                 dlg.winfo_reqheight()) // 2))))
-        self.grab(dlg)
+    def creator_key(self, ev):
+        if ev.in_entry:             # typing a name: Return and Escape there
+            return
+        k, c = ev.name, self.creating
+        rows = self.creator_rows()
+        if k in ("Up", "w", "KP_Up"):
+            c["sel"] = (c["sel"] - 1) % len(rows)
+        elif k in ("Down", "s", "KP_Down", "Tab"):
+            c["sel"] = (c["sel"] + 1) % len(rows)
+        elif k in ("Left", "a", "KP_Left", "Right", "d", "KP_Right"):
+            key, _, _, kind = rows[c["sel"]]
+            if kind == "cycle":
+                self.creator_step(key, -1 if k in ("Left", "a", "KP_Left")
+                                  else 1)
+        elif k in ("Return", "KP_Enter", "space", "e"):
+            self.creator_activate()
+            return "break"
+        elif k == "Escape":
+            self.creator_finish(None)
+            return "break"
+        else:
+            return "break"
+        self.render()
+        return "break"
+
+    def creator_pad(self, d=None, button=None):
+        """The gamepad: up and down pick a row, left and right step a
+        choice, A presses, B cancels."""
+        c = self.creating
+        if d in ((0, -1), (0, 1)):
+            c["sel"] = (c["sel"] + d[1]) % len(self.creator_rows())
+        elif d:
+            key, _, _, kind = self.creator_rows()[c["sel"]]
+            if kind == "cycle":
+                self.creator_step(key, d[0])
+        elif button == "a":
+            self.creator_activate()
+            return
+        elif button == "b":
+            self.creator_finish(None)
+            return
+        self.render()
+
+    def creator_tap(self, sx, sy):
+        for x0, y0, x1, y1, i, d in self.creating["hits"]:
+            if x0 <= sx <= x1 and y0 <= sy <= y1:
+                if d:
+                    self.creator_commit()
+                    self.creating["sel"] = i
+                    self.creator_step(self.creator_rows()[i][0], d)
+                    self.render()
+                else:
+                    self.creator_activate(i)
+                return
+
+    def draw_creator(self):
+        """The new farmer: a box in the middle, you on the left, the rows
+        on the right, and a word about the farm at the foot if there's
+        room."""
+        scr, c = self.screen, self.creating
+        W, H = scr.size()
+        size = 15 if ANDROID else 13
+        f, bold = F("Helvetica", size), F("Helvetica", size, "bold")
+        tf, small = F("Helvetica", size + 3, "bold"), F("Helvetica", 11)
+        lh, th = scr.metrics(f)[1], scr.metrics(tf)[1]
+        rows = self.creator_rows()
+        pad = S(12)
+        bw = max(160, min(W - 16, S(560)))
+        z = max(2, min(6, int(bw * 0.26) // PW))
+        pw = PW * z
+        rx = pad * 2 + pw                   # where the rows start
+        rw = bw - rx - pad
+        rh = lh + S(12 if ANDROID else 6)
+        blurb_h = scr.text_size(self.NEW_FARMER, small, bw - pad * 2)[1]
+        bh = pad * 3 + th + len(rows) * rh + blurb_h + pad
+        if bh > H - 16:                     # no room: no blurb, then
+            blurb_h = 0                     # tighter rows
+            bh = pad * 3 + th + len(rows) * rh
+            if bh > H - 16:
+                rh = max(lh + 2, (H - 16 - pad * 3 - th) // len(rows))
+                bh = pad * 3 + th + len(rows) * rh
+        x0, y0 = (W - bw) // 2, max(8, (H - bh) // 2)
+        scr.rect(x0, y0, x0 + bw, y0 + bh, fill=PANEL, outline=ACCENT,
+                 width=2)
+        scr.text(x0 + pad, y0 + pad, text="Who are you?", font=tf,
+                 fill=ACCENT, anchor="nw")
+        top = y0 + pad * 2 + th
+        # you, as you'll look: face, and below it the farmer on the map
+        scr.rect(x0 + pad, top, x0 + pad + pw, top + pw, fill=LOG_BG,
+                 outline="")
+        c["face"] = scr.make_image(portrait(c["look"], "happy"), z)
+        scr.image(x0 + pad, top, image=c["face"], anchor="nw")
+        sz = max(2, pw * 5 // 8 // 16)
+        by = top + pw + S(6)
+        if by + 16 * sz <= top + len(rows) * rh:
+            bx = x0 + pad + (pw - 16 * sz) // 2
+            scr.rect(bx, by, bx + 16 * sz, by + 16 * sz, fill=LOG_BG,
+                     outline="")
+            c["body"] = scr.make_image(art_pixels(*person_art(c["look"])),
+                                       sz)
+            scr.image(bx, by, image=c["body"], anchor="nw")
+        # the rows: label, then the value between two arrows
+        label_w = max(scr.measure(bold, label) for _, label, _, _ in rows
+                      if label not in ("Surprise me", "Begin", "Cancel"))
+        aw = max(6, lh // 2)                # an arrow's width
+        vx = x0 + rx + label_w + S(10)
+        vx1 = x0 + bw - pad
+        c["hits"] = []
+        for i, (key, label, value, kind) in enumerate(rows):
+            ry = top + i * rh
+            mid = ry + rh / 2
+            if i == c["sel"]:
+                scr.rect(x0 + rx - S(6), ry, x0 + bw - S(6), ry + rh,
+                         fill="#5a3450", outline="")
+            if kind == "act":
+                scr.text(x0 + rx, mid, text=label, anchor="w",
+                         font=bold if key == "begin" else f,
+                         fill=GOLD if key == "begin" else INK)
+                c["hits"].append((x0 + rx - S(6), ry, x0 + bw, ry + rh, i,
+                                  0))
+                continue
+            scr.text(x0 + rx, mid, text=label, anchor="w", font=bold,
+                     fill=ACCENT)
+            if kind == "type":
+                scr.text(vx, mid, text=value, anchor="w", font=f, fill=INK)
+                c["hits"].append((x0 + rx - S(6), ry, x0 + bw, ry + rh, i,
+                                  0))
+                continue
+            for ax, d in ((vx, -1), (vx1 - aw, 1)):
+                tip, back = (ax, ax + aw) if d < 0 else (ax + aw, ax)
+                scr.polygon((tip, mid, back, mid - aw * 0.6, back,
+                             mid + aw * 0.6), fill=ACCENT)
+            scr.text((vx + aw + vx1 - aw) / 2, mid, text=value, font=f,
+                     fill=INK)
+            third = (vx1 - vx) / 3
+            c["hits"] += [(vx - S(8), ry, vx + third, ry + rh, i, -1),
+                          (vx1 - third, ry, x0 + bw, ry + rh, i, 1),
+                          (x0 + rx - S(6), ry, vx1 - third, ry + rh, i, 0)]
+        if blurb_h:
+            scr.text(x0 + pad, top + len(rows) * rh + pad,
+                     text=self.NEW_FARMER, font=small, fill=INK_DIM,
+                     anchor="nw", width=bw - pad * 2)
 
     # ── A new game, and saved ones ──
 
@@ -10183,7 +10273,7 @@ class Game:
 
     def ready(self):
         return bool(self.p) and self.area is not None and not (
-            self.busy or self.menu or self.talk or self.overlay or
+            self.creating or self.busy or self.menu or self.talk or self.overlay or
             self.scene or getattr(self, "aim", False) or
             getattr(self, "naming", None) is not None)
 
@@ -17630,6 +17720,12 @@ class Game:
 
     def on_entry_escape(self):
         """Escape in the entry: keep the old name, or end the talk."""
+        if self.creating:
+            self.creating["typing"] = None
+            self.shell.hide_entry(prompt="Ask about:")
+            self.shell.focus_play()
+            self.render()
+            return
         if getattr(self, "naming", None) is not None:
             self.end_naming()
         else:
@@ -17638,6 +17734,10 @@ class Game:
     def on_entry(self, ev=None):
         """Return in the entry, or a word picked to ask about."""
         text = self.shell.take_entry().strip()
+        if self.creating:
+            self.creator_commit(text)
+            self.render()
+            return
         if getattr(self, "naming", None) is not None:
             self.finish_naming(text)
             return
@@ -18839,8 +18939,8 @@ class Game:
     def on_key(self, ev):
         """A Key from the shell; "break" when it's been dealt with."""
         k = ev.name
-        if getattr(self, "dialog", None) is not None:
-            return
+        if self.creating:
+            return self.creator_key(ev)
         if getattr(self, "naming", None) is not None:
             if k == "Escape":
                 self.end_naming()
@@ -19050,7 +19150,7 @@ class Game:
             self.menu_rows.append((x0, ry, x0 + bw, ry + rh, i))
 
     def action_menu(self):
-        if self.busy or self.talk:
+        if self.busy or self.talk or self.creating:
             return
         self.overlay = None
         self.open_menu("Apple Blossom Village", [
@@ -19101,6 +19201,9 @@ class Game:
     def on_tap(self, sx, sy):
         """A tap or click on the play area, at sx, sy pixels."""
         self.walking = None
+        if self.creating:
+            self.creator_tap(sx, sy)
+            return
         if not self.shown:
             return
         if self.menu:
@@ -19225,6 +19328,8 @@ class Game:
 
     def layout(self):
         if not self.area or not self.p:
+            if self.creating:
+                self.render()
             return
         scale = self.auto_scale()
         if scale != self.scale:
@@ -19255,6 +19360,10 @@ class Game:
         return axis(x, cols, a.w), axis(y, rows, a.h)
 
     def render(self):
+        if self.creating and not (self.shown and self.area and self.p):
+            self.screen.clear()         # the very first farmer: no map yet
+            self.draw_creator()
+            return
         if not self.shown or not self.area or not self.p:
             return
         if self.season_drawn != self.season():
@@ -19429,6 +19538,8 @@ class Game:
             self.draw_talk()
         if self.menu:
             self.draw_menu()
+        if self.creating:
+            self.draw_creator()
         self.render_chrome()
 
     def draw_aim(self):
@@ -20011,7 +20122,7 @@ class Game:
     # ── Commands ──
 
     def toggle_map(self):
-        if self.busy or self.talk:
+        if self.busy or self.talk or self.creating:
             return
         self.overlay = None if self.overlay == "map" else "map"
         self.render()
@@ -20044,8 +20155,6 @@ class Game:
         a wide window has the panel at the side and one row of buttons, a
         tall one (a phone held upright) the panel underneath and two."""
         self.fit_job = None
-        if getattr(self, "small_dialog", None) and not force:
-            return
         W, H = self.shell.window_size()
         if W < 100 or H < 100:
             return
@@ -20075,41 +20184,6 @@ class Game:
         while second and not second[0].strip():
             second = second[1:]
         self.shell.set_panel(first, second)
-
-    def fit_dialog(self, dlg):
-        root = self.root
-        root.update_idletasks()
-        self.fit()
-        W, H = root.winfo_width(), root.winfo_height()
-        if W < 100:
-            return
-        shrunk = False
-        for _ in range(5):
-            dlg.update_idletasks()
-            k = min(1.0, (W - 8) / max(1, dlg.winfo_reqwidth()),
-                    (H - 8) / max(1, dlg.winfo_reqheight()))
-            if k >= 1.0:
-                break
-            shrunk = True
-            self.shell.set_ui_scale(UI[0] * k * 0.97)
-            todo = [dlg]
-            while todo:
-                w = todo.pop()
-                todo += w.winfo_children()
-                try:
-                    wl = int(w.cget("wraplength"))
-                except (tk.TclError, ValueError):
-                    continue
-                if wl:
-                    w.configure(wraplength=max(60, int(wl * k)))
-        if shrunk:
-            self.small_dialog = dlg
-
-            def closed(e):
-                if e.widget is dlg:
-                    self.small_dialog = None
-                    self.shell.after_idle(self.fit, True)
-            dlg.bind("<Destroy>", closed, add="+")
 
     def text_size(self, d):
         i = TEXT_SIZES.index(self.text_k) + d
