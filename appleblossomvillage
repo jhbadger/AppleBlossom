@@ -9006,6 +9006,16 @@ class TkShell:
                         lambda e: game.on_entry_escape() or "break")
         self.canvas = tk.Canvas(left, bg="black", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
+        # an entry of its own over the play area, for typing a name just
+        # where it shows (see show_entry's box)
+        self.inline = tk.Entry(self.canvas, bg=LOG_BG, fg=INK,
+                               insertbackground=INK, highlightthickness=1,
+                               highlightcolor=ACCENT, bd=0)
+        for k, fn in (("<Return>", game.on_entry),
+                      ("<KP_Enter>", game.on_entry),
+                      ("<Escape>", game.on_entry_escape)):
+            self.inline.bind(k, lambda e, fn=fn: fn() or "break")
+        self.typing_to = self.entry
         return TkScreen(self.canvas)
 
     def arrange(self, tall, W):
@@ -9089,34 +9099,51 @@ class TkShell:
     # The "Ask about:" entry: Return there calls game.on_entry(), Escape
     # game.on_entry_escape().
 
-    def show_entry(self, prompt=None, text=None, select=False, focus=False):
+    def show_entry(self, prompt=None, text=None, select=False, focus=False,
+                   box=None, font=None):
         """Show the entry, with a new prompt, or text in it (all selected),
-        or the keys going to it, as asked."""
-        self.talkbar.pack(side="bottom", fill="x", before=self.log)
+        or the keys going to it, as asked.  Given box, (x0, y0, x1, y1) on
+        the play area, it's an entry there instead, in font."""
+        if box is not None:
+            self.typing_to = e = self.inline
+            if font is not None:
+                e.configure(font=TkFonts.get(font))
+            self.move_entry(box)
+        else:
+            self.typing_to = e = self.entry
+            self.talkbar.pack(side="bottom", fill="x", before=self.log)
         if prompt is not None:
             self.prompt.config(text=prompt)
         if text is not None:
-            self.entry.delete(0, "end")
+            e.delete(0, "end")
             if text:
-                self.entry.insert(0, text)
+                e.insert(0, text)
         if select:
-            self.entry.select_range(0, "end")
+            e.select_range(0, "end")
         if focus:
-            self.entry.focus_set()
+            e.focus_set()
+
+    def move_entry(self, box):
+        """The entry on the play area, to box: the play area redrawn."""
+        x0, y0, x1, y1 = (int(v) for v in box)
+        self.inline.place(x=x0, y=y0, width=x1 - x0, height=y1 - y0)
 
     def hide_entry(self, prompt=None):
         if prompt is not None:
             self.prompt.config(text=prompt)
         self.talkbar.pack_forget()
+        self.inline.place_forget()
 
     def take_entry(self):
         """What's been typed in the entry, which is emptied."""
-        text = self.entry.get()
-        self.entry.delete(0, "end")
+        e = self.typing_to
+        text = e.get()
+        e.delete(0, "end")
         return text
 
     def type_into_entry(self, char):
         """Keys to the entry from now on, starting with char."""
+        self.typing_to = self.entry
         self.entry.focus_set()
         self.entry.insert("end", char)
 
@@ -9139,7 +9166,7 @@ class TkShell:
 
         def key(e):
             return game.on_key(Key(e.keysym, e.char, bool(e.state & 0x4),
-                                   e.widget is self.entry))
+                                   e.widget in (self.entry, self.inline)))
         root.bind("<KeyPress>", key)
         canvas.bind("<ButtonPress-1>", lambda e: game.tapped(e.x, e.y))
         root.bind("<Configure>", lambda e: e.widget is root and
@@ -9483,7 +9510,9 @@ class KivyScreen:
         class PlayArea(kv["StencilView"]):     # (drawing kept inside it)
             def on_touch_down(self, touch):
                 if touch.is_mouse_scrolling or not self.collide_point(
-                        *touch.pos) or screen.game is None:
+                        *touch.pos) or screen.game is None or any(
+                            c.collide_point(*touch.pos)
+                            for c in self.children):
                     return super().on_touch_down(touch)
                 x, y = int(touch.x - self.x), int(self.top - touch.y)
                 if screen.echo(x, y):
@@ -9816,6 +9845,7 @@ class KivyShell:
         self.fonts.append((lab, font))
         if wrap:
             lab.size_hint_y = None
+            lab.height = 0              # nothing yet: no room
             lab.bind(texture_size=lambda w, v: setattr(w, "height", v[1]))
         else:
             lab.size_hint = (None, None)
@@ -9859,6 +9889,17 @@ class KivyShell:
         self.fonts.append((self.entry, F(*MONO)))
         self.entry.bind(on_text_validate=lambda *a: game.on_entry())
         self.talkbar.add_widget(self.entry)
+        # an entry of its own over the play area, for typing a name just
+        # where it shows (see show_entry's box)
+        self.inline = kv["TextInput"](
+            multiline=False, write_tab=False, size_hint=(None, None),
+            padding=(S(4), 0), background_color=kivy_rgba(LOG_BG),
+            foreground_color=kivy_rgba(INK), cursor_color=kivy_rgba(INK))
+        self.inline.bind(on_text_validate=lambda *a: game.on_entry())
+        self.inline_font = None
+        self.typing_to = self.entry
+        if ANDROID:                 # the keyboard mustn't hide what's typed
+            kv["Window"].softinput_mode = "below_target"
         self.log_view = self.painted(kv["ScrollView"](
             size_hint_y=None, height=S(100), do_scroll_x=False,
             bar_width=S(4)), LOG_BG)
@@ -9872,7 +9913,8 @@ class KivyShell:
         self.side = kv["BoxLayout"](orientation="vertical",
                                     size_hint_x=None, width=S(250),
                                     padding=(S(10), S(8)), spacing=S(4))
-        self.panelrow = kv["BoxLayout"](size_hint_y=None, spacing=S(10))
+        self.panelrow = kv["BoxLayout"](size_hint_y=None, height=0,
+                                        spacing=S(10))
         self.panel = self.label(F(*MONO), INK, wrap=True)
         self.panel2 = self.label(F(*MONO), INK, wrap=True)
         for p in (self.panel, self.panel2):
@@ -9881,7 +9923,8 @@ class KivyShell:
         self.condition = self.label(F("Menlo", 12, "bold"), GOLD, wrap=True)
         self.side.add_widget(self.panelrow)
         self.side.add_widget(self.condition)
-        self.side.add_widget(kv["Widget"]())
+        self.spacer = kv["Widget"]()        # (wide: the rest of the height)
+        self.side.add_widget(self.spacer)
         self.body.add_widget(self.side)
         self.root.add_widget(self.body)
 
@@ -9924,13 +9967,17 @@ class KivyShell:
         if tall:
             self.body.orientation = "vertical"
             self.side.size_hint = (1, None)
+            self.spacer.size_hint_y = None      # (or its height in a wide
+            self.spacer.height = 0              # window counts here)
             self.side.bind(minimum_height=self.side.setter("height"))
+            self.side.height = self.side.minimum_height  # (no change, no call)
             wrap_ = (W - S(50)) // 2
         else:
             self.body.orientation = "horizontal"
             self.side.unbind(minimum_height=self.side.setter("height"))
             self.side.size_hint = (None, 1)
             self.side.width = S(250)
+            self.spacer.size_hint_y = 1
             wrap_ = S(230)
         self.body.add_widget(self.side)
         for p in (self.panel, self.panel2):
@@ -9990,19 +10037,40 @@ class KivyShell:
 
     # The "Ask about:" entry.
 
-    def show_entry(self, prompt=None, text=None, select=False, focus=False):
-        if not self.entry_shown:
-            self.left.add_widget(self.talkbar, index=1)
-            self.entry_shown = True
+    def show_entry(self, prompt=None, text=None, select=False, focus=False,
+                   box=None, font=None):
+        if box is not None:
+            self.typing_to = e = self.inline
+            if font is not None and font != self.inline_font:
+                if self.inline_font is not None:
+                    self.fonts.remove((self.inline, self.inline_font))
+                self.inline_font = font
+                self.fonts.append((self.inline, font))
+                for k, v in KivyFonts.options(font).items():
+                    if k in ("font_name", "font_size"):
+                        setattr(self.inline, k, v)
+            self.move_entry(box)
+            if not self.inline.parent:
+                self.screen.widget.add_widget(self.inline)
+        else:
+            self.typing_to = e = self.entry
+            if not self.entry_shown:
+                self.left.add_widget(self.talkbar, index=1)
+                self.entry_shown = True
         if prompt is not None:
             self.prompt.text = prompt
         if text is not None:
-            self.entry.text = text
+            e.text = text
         if focus:
-            self.entry.focus = True
+            e.focus = True
         if select:
-            self.kv["Clock"].schedule_once(
-                lambda dt: self.entry.select_all(), 0)
+            self.kv["Clock"].schedule_once(lambda dt: e.select_all(), 0)
+
+    def move_entry(self, box):
+        x0, y0, x1, y1 = box
+        scr = self.screen
+        self.inline.size = (x1 - x0, y1 - y0)
+        self.inline.pos = (scr.kx(x0), scr.ky(y0, y1 - y0))
 
     def hide_entry(self, prompt=None):
         if prompt is not None:
@@ -10011,18 +10079,23 @@ class KivyShell:
             self.entry.focus = False
             self.left.remove_widget(self.talkbar)
             self.entry_shown = False
+        if self.inline.parent:
+            self.inline.focus = False
+            self.inline.parent.remove_widget(self.inline)
 
     def take_entry(self):
-        text, self.entry.text = self.entry.text, ""
+        e = self.typing_to
+        text, e.text = e.text, ""
         return text
 
     def type_into_entry(self, char):
+        self.typing_to = self.entry
         self.entry.focus = True
         self.entry.text += char
         self.entry.cursor = (len(self.entry.text), 0)
 
     def focus_play(self):
-        self.entry.focus = False
+        self.entry.focus = self.inline.focus = False
 
     # Time, keys and taps.
 
@@ -10040,7 +10113,7 @@ class KivyShell:
         win = self.kv["Window"]
 
         def key_down(window, key, scancode, codepoint, modifiers):
-            in_entry = bool(self.entry.focus)
+            in_entry = bool(self.entry.focus or self.inline.focus)
             if in_entry and key == 27:
                 game.on_entry_escape()
                 return True
@@ -10517,8 +10590,10 @@ class Game:
         self.creator_commit()
         if kind == "type":
             c["typing"] = key
+            # typed just where the name shows
             self.shell.show_entry(prompt=label + ":", text=value, select=True,
-                                  focus=True)
+                                  focus=True, box=c["boxes"][key],
+                                  font=c["font"])
         elif kind == "cycle":
             self.creator_step(key, 1)
         elif key == "surprise":
@@ -10665,7 +10740,7 @@ class Game:
         aw = max(6, lh // 2)                # an arrow's width
         vx = x0 + rx + label_w + S(10)
         vx1 = x0 + bw - pad
-        c["hits"] = []
+        c["hits"], c["boxes"], c["font"] = [], {}, f
         for i, (key, label, value, kind) in enumerate(rows):
             ry = top + i * rh
             mid = ry + rh / 2
@@ -10682,7 +10757,13 @@ class Game:
             scr.text(x0 + rx, mid, text=label, anchor="w", font=bold,
                      fill=ACCENT)
             if kind == "type":
-                scr.text(vx, mid, text=value, anchor="w", font=f, fill=INK)
+                box = c["boxes"][key] = (vx - S(4), ry + S(2),
+                                         x0 + bw - S(10), ry + rh - S(2))
+                if c["typing"] == key:      # the entry's there, over it
+                    self.shell.move_entry(box)
+                else:
+                    scr.text(vx, mid, text=value, anchor="w", font=f,
+                             fill=INK)
                 c["hits"].append((x0 + rx - S(6), ry, x0 + bw, ry + rh, i,
                                   0))
                 continue
