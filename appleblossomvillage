@@ -117,6 +117,24 @@ def art_pixels(palette, rows):
 SHADED = {}
 
 
+def heart_bar(h, n=10):
+    """A row of n hearts, h of them filled, with the count after it: some
+    phone fonts draw a filled heart and an empty one alike, and the
+    number says it either way."""
+    return "\u2665" * h + "\u2661" * (n - h) + " (%d)" % h
+
+
+HEART_SHAPE = ((0.5, 0.28), (0.5, 0.28), (0.72, 0.02), (0.97, 0.12),
+               (1.0, 0.42), (0.5, 0.98), (0.5, 0.98), (0.0, 0.42),
+               (0.03, 0.12), (0.28, 0.02))
+
+
+def heart_points(x, y, size):
+    """A heart as smooth-polygon points, size across, top-left at x, y."""
+    return [v for px, py in HEART_SHAPE for v in (x + px * size,
+                                                  y + py * size)]
+
+
 def shade(c, f):
     """Colour c at brightness f (remembered: the tiles share a few hundred
     colours, and every one is shaded for dusk and night)."""
@@ -11143,8 +11161,7 @@ class Game:
                 m["tell"] = level
         if after > before and not quiet:
             self.sound.play("heart")
-            self.say("%s: %s" % (m["name"], "♥" * after + "♡" * (
-                10 - after)), "heart")
+            self.say("%s: %s" % (m["name"], heart_bar(after)), "heart")
 
     def mm_partner(self):
         """The monster maid you're courting, engaged or married to."""
@@ -14869,7 +14886,7 @@ class Game:
 
     def pet_hearts_text(self, c):
         h = self.pet_hearts(c)
-        return "\u2665" * h + "\u2661" * (5 - h)
+        return heart_bar(h, 5)
 
     def pick_egg(self, x, y):
         st = self.st
@@ -17047,7 +17064,7 @@ class Game:
         if after > before and not quiet:
             self.sound.play("heart")
             self.say("%s: %s" % (VILLAGERS[vid]["short"],
-                                 "♥" * after + "♡" * (10 - after)),
+                                 heart_bar(after)),
                      "heart")
         if after >= 3 > before:
             self.teach_recipes()
@@ -19129,6 +19146,21 @@ class Game:
                               width=1, tags="weather")
         c.tag_raise("overlay")
 
+    def hearts_width(self, font, n=10):
+        return font.metrics("ascent") * 1.2 * n
+
+    def draw_hearts(self, x, y, h, font, n=10):
+        """n hearts in a row, h of them filled, drawn as shapes so they
+        look the same whatever fonts the machine has; the width taken."""
+        size = font.metrics("ascent")
+        top = y + (font.metrics("linespace") - size) / 2
+        for i in range(n):
+            self.canvas.create_polygon(
+                heart_points(x + i * size * 1.2, top, size), smooth=True,
+                fill=HEARTC if i < h else "", outline=HEARTC,
+                width=max(1, size // 10), tags="overlay")
+        return self.hearts_width(font, n)
+
     def draw_talk(self):
         """The conversation: their portrait large on the left, their name
         and hearts, and what they've just said."""
@@ -19187,9 +19219,8 @@ class Game:
             age = self.kid_age(kid)
             c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
                           text=kid["name"], font=bold, fill=ACCENT)
-            c.create_text(tx + bold.measure(kid["name"]) + S(12), y0 + pad,
-                          anchor="nw", tags="overlay", font=F("Helvetica", 13),
-                          fill=HEARTC, text="♥" * h + "♡" * (10 - h))
+            self.draw_hearts(tx + bold.measure(kid["name"]) + S(12),
+                             y0 + pad, h, F("Helvetica", 13))
             c.create_text(tx, y0 + pad + lh, anchor="nw", tags="overlay",
                           font=F("Helvetica", 13), fill=INK_DIM,
                           text="(your %s, %d day%s old)" % (
@@ -19207,10 +19238,8 @@ class Game:
             role = {"dating": "your sweetheart", "engaged": "your fiancée",
                     "married": "your wife"}.get(mm["status"], "your maid")
             hf = F("Helvetica", 13)
-            hearts = "♥" * h + "♡" * (10 - h)
-            hx = tx + bold.measure(mm["name"]) + S(12)
-            c.create_text(hx, y0 + pad, anchor="nw", tags="overlay",
-                          font=hf, fill=HEARTC, text=hearts)
+            self.draw_hearts(tx + bold.measure(mm["name"]) + S(12),
+                             y0 + pad, h, hf)
             c.create_text(tx, y0 + pad + lh, anchor="nw", tags="overlay",
                           font=hf, fill=INK_DIM, text="(%s, once %s)" % (
                               role, an(MONSTERS[mm["kind"]].name)))
@@ -19228,13 +19257,14 @@ class Game:
         c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
                       text=self.display_name(vid), font=bold, fill=ACCENT)
         hf = F("Helvetica", 13)
-        hearts = "♥" * h + "♡" * (10 - h) + status
         hx, hy = tx + bold.measure(self.display_name(vid)) + S(12), \
             y0 + pad
-        if hx + hf.measure(hearts) > W - pad * 2:
+        if hx + self.hearts_width(hf) + hf.measure(status) > W - pad * 2:
             hx, hy = tx, y0 + pad + lh
-        c.create_text(hx, hy, anchor="nw", tags="overlay", text=hearts,
-                      font=hf, fill=HEARTC)
+        hx += self.draw_hearts(hx, hy, h, hf)
+        if status:
+            c.create_text(hx, hy, anchor="nw", tags="overlay", text=status,
+                          font=hf, fill=HEARTC)
         c.create_text(tx, hy + lh + S(6), anchor="nw", width=tw,
                       text=text, font=F("Helvetica", 14, "italic") if
                       t.get("narr") else f,
@@ -19518,7 +19548,7 @@ class Game:
                 mark = " ❀"
             bd = "%s %d" % (SEASONS[v["birthday"][0]][:3], v["birthday"][1])
             lines.append("%-8s %s  %s%s  %s%s" % (
-                v["short"], "♥" * h + "♡" * (10 - h), bd,
+                v["short"], heart_bar(h), bd,
                 "  talked" if f["talked"] == self.st["day"] else "",
                 "gifts %d/2" % f["week"], mark))
         lines += ["", "❀ could become a sweetheart"]
@@ -19553,7 +19583,7 @@ class Game:
             for m in self.mmaids():
                 h = self.mm_hearts(m)
                 lines.append("%-12s %s  %s%s" % (
-                    m["name"][:12], "♥" * h + "♡" * (10 - h),
+                    m["name"][:12], heart_bar(h),
                     "talked  " if m["talked"] == self.st["day"] else "",
                     {"dating": "sweetheart", "engaged": "engaged",
                      "married": "spouse"}.get(m["status"], "❀")))
