@@ -124,6 +124,8 @@ def heart_bar(h, n=10):
     return "\u2665" * h + "\u2661" * (n - h) + " (%d)" % h
 
 
+NO_HEARTS = {0x2665: " ", 0x2661: " "}     # hearts drawn in their place
+
 HEART_SHAPE = ((0.5, 0.28), (0.5, 0.28), (0.72, 0.02), (0.97, 0.12),
                (1.0, 0.42), (0.5, 0.98), (0.5, 0.98), (0.0, 0.42),
                (0.03, 0.12), (0.28, 0.02))
@@ -19309,9 +19311,10 @@ class Game:
                 page + 1, len(pages), "Any key or tap: next. Esc closes."
                 if page + 1 < len(pages) else "Any key closes. \u2190 back.")
         ts, x = [], 0
-        for col in cols:
-            t = c.create_text(x, 0, text=col, fill=color, font=font,
-                              justify="left", anchor="nw", tags="overlay")
+        for col in cols:        # hearts are drawn, not printed: see below
+            t = c.create_text(x, 0, text=col.translate(NO_HEARTS),
+                              fill=color, font=font, justify="left",
+                              anchor="nw", tags="overlay")
             ts.append(t)
             x = c.bbox(t)[2] + 32
         x0, y0, x1, y1 = c.bbox(*ts)
@@ -19324,6 +19327,30 @@ class Game:
                                tags="overlay")
         for t in ts:
             c.tag_raise(t, r)
+        self.draw_text_hearts(ts, cols, font)
+
+    def draw_text_hearts(self, ts, cols, font):
+        """Hearts in a text box, filled and empty, drawn as shapes where
+        the print has a space for them: some phone fonts draw the two
+        heart characters alike."""
+        c = self.canvas
+        lh = font.metrics("linespace")
+        asc = font.metrics("ascent")
+        cell = font.measure(" ")
+        size = max(5, min(cell * 0.95, asc * 0.8))
+        for t, col in zip(ts, cols):
+            tx, ty = c.coords(t)
+            for i, line in enumerate(col.split("\n")):
+                plain = line.translate(NO_HEARTS)
+                for j, ch in enumerate(line):
+                    if ch not in ("\u2665", "\u2661"):
+                        continue
+                    hx = tx + font.measure(plain[:j]) + (cell - size) / 2
+                    hy = ty + i * lh + asc - size
+                    c.create_polygon(
+                        heart_points(hx, hy, size), smooth=True,
+                        fill=HEARTC if ch == "\u2665" else "",
+                        outline=HEARTC, width=1, tags="overlay")
 
     def fit_text_box(self, text, W, H):
         """Pages of (columns, font) for a text box: all on one page, in one
