@@ -74,8 +74,25 @@ try:
 except ImportError:                 # a Python with only Kivy: see main()
     tk = tkfont = None
 
-SAVE_FILE = os.path.expanduser("~/.appleblossomvillage.json")
 ANDROID = hasattr(sys, "getandroidapilevel") or "ANDROID_ROOT" in os.environ
+
+
+def home_dir():
+    """Where the save and the music cache go: your home folder, or, if
+    that can't be written to (as may be so in an Android app built with
+    --build-android), the app's own private folder."""
+    home = os.path.expanduser("~")
+    if home != "~" and os.access(home, os.W_OK):
+        return home
+    for d in (os.environ.get("ANDROID_PRIVATE"), os.getcwd(),
+              tempfile.gettempdir()):
+        if d and os.access(d, os.W_OK):
+            return d
+    return home
+
+
+HOME_DIR = home_dir()
+SAVE_FILE = os.path.join(HOME_DIR, ".appleblossomvillage.json")
 
 # ── Time ─────────────────────────────────────────────────────────────────────
 #
@@ -7846,7 +7863,7 @@ CHAT_POINTS = 20
 # ── Sound ────────────────────────────────────────────────────────────────────
 
 RATE = 22050
-MUSIC_CACHE = os.path.expanduser("~/.cache/appleblossomvillage")
+MUSIC_CACHE = os.path.join(HOME_DIR, ".cache", "appleblossomvillage")
 MUSIC_VOLUME = 0.55             # relative to the sound effects
 
 # ── Music ────────────────────────────────────────────────────────────────────
@@ -10058,11 +10075,19 @@ class KivyShell:
     def run(self):
         root = self.root
 
+        game = self.game
+
         class AppleBlossomVillage(self.kv["App"]):
             title = "Apple Blossom Village"
 
             def build(app):
                 return root
+
+            def on_pause(app):
+                """Switched away from: Android may close the app without
+                another word, so the game is saved now."""
+                game.save()
+                return True
         self.app = AppleBlossomVillage()
         self.app.run()
 
@@ -25140,8 +25165,52 @@ def icon_build_app(dest):
     return app
 
 
+ANDROID_SPEC = """\
+[app]
+title = Apple Blossom Village
+package.name = appleblossomvillage
+package.domain = org.badgerjh
+source.dir = .
+source.include_exts = py,png
+version = 1.0
+# Kivy draws it; pyjnius reaches Android's MediaPlayer for the sound
+requirements = python3,kivy,pyjnius
+orientation = portrait, landscape
+fullscreen = 0
+icon.filename = %(source.dir)s/icon.png
+presplash.filename = %(source.dir)s/icon.png
+android.presplash_color = #2a2030
+android.archs = arm64-v8a, armeabi-v7a
+android.allow_backup = True
+
+[buildozer]
+log_level = 2
+warn_on_root = 1
+"""
+
+
+def build_android(dest):
+    """A folder for Buildozer to make an Android app of: the game as
+    main.py, its icon, and a buildozer.spec (written only if there isn't
+    one, so that your changes to it stay)."""
+    os.makedirs(dest, exist_ok=True)
+    shutil.copy(os.path.abspath(__file__), os.path.join(dest, "main.py"))
+    with open(os.path.join(dest, "icon.png"), "wb") as fh:
+        fh.write(icon_render_png(512))
+    spec = os.path.join(dest, "buildozer.spec")
+    if not os.path.exists(spec):
+        with open(spec, "w") as fh:
+            fh.write(ANDROID_SPEC)
+    return dest
+
+
 def icon_args(args):
-    """Handle --build-app [DIR] and --icon-png SIZE [OUT]; True if handled."""
+    """Handle --build-app [DIR], --build-android [DIR] and --icon-png SIZE
+    [OUT]; True if handled."""
+    if args[:1] == ["--build-android"]:
+        print(build_android(args[1] if len(args) > 1 else os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "android")))
+        return True
     if args[:1] == ["--build-app"]:
         print(icon_build_app(args[1] if len(args) > 1 else
                              os.path.dirname(os.path.abspath(__file__))))

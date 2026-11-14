@@ -40,6 +40,29 @@ sys.argv.append("--kivy")
 runpy.run_path(game, run_name="__main__")
 ```
 
+**As an Android app:** `./appleblossomvillage --build-android [DIR]` makes
+a folder (`android/` by default) for [Buildozer](https://buildozer.readthedocs.io)
+to turn into an APK: the game as `main.py`, its icon, and a
+`buildozer.spec`. Run it again after changing the game; it leaves your
+changes to the spec alone. Then, in that folder, on Linux or WSL with
+Buildozer installed:
+
+```bash
+buildozer -v android debug
+```
+
+or on a Mac, with Docker:
+
+```bash
+docker run --rm -v "$PWD":/home/user/hostcwd kivy/buildozer -v android debug
+```
+
+The first build downloads Android's SDK and NDK, a few gigabytes, and takes
+a while; the APK lands in `bin/`. Install it with
+`adb install -r bin/*.apk`, or copy it to the phone and open it. The app has
+no Tk, so it runs with Kivy; it saves when you switch away from it, and if
+it can't write to its home folder it keeps the save in its own private one.
+
 On macOS, `./appleblossomvillage --build-app [DIR]` builds an
 `appleblossomvillage.app` with its own icon (an apple blossom), and
 `--icon-png SIZE [OUT.png]` writes just the icon. `--selftest` builds the
@@ -863,6 +886,7 @@ Zoom in and out from the menu, and make the text bigger or smaller.
 
 - `appleblossomvillage`: the game
 - `abv_kivy.py` (yours to make, see above): runs it with Kivy in Pydroid
+- `android/` (made by `--build-android`): the Android app's build folder
 - `~/.appleblossomvillage.json`: the saved game (written when you change
   place, sleep and quit)
 - `~/.cache/appleblossomvillage/`: cached music
