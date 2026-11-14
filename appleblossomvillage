@@ -8857,9 +8857,67 @@ your tool there, yourself to use it ahead.
 Press any key to close."""
 
 
+# ── The display layer ───────────────────────────────────────────────────────
+# The game reaches the window only through these: TkShell for what's around
+# the play area (timers and input so far; the panel, log and buttons to
+# come) and TkScreen for the play area itself.  A Kivy version would be two
+# more classes with the same methods.
+
+Key = namedtuple("Key", "name char ctrl in_entry")
+Key.__doc__ = """A key press: its Tk keysym name ("Up", "KP_8", "Return"), the
+character it types, whether Control was held, and whether it was typed
+into the "Ask about:" entry."""
+
+
+class TkShell:
+    def __init__(self, root):
+        self.root = root
+        self.entry = None           # the "Ask about:" entry, once made
+
+    def after(self, ms, fn, *args):
+        return self.root.after(ms, fn, *args)
+
+    def after_idle(self, fn, *args):
+        return self.root.after_idle(fn, *args)
+
+    def cancel(self, job):
+        self.root.after_cancel(job)
+
+    def listen(self, game, canvas):
+        """Keys, taps on the play area, the window resized or closed."""
+        root = self.root
+
+        def key(e):
+            return game.on_key(Key(e.keysym, e.char, bool(e.state & 0x4),
+                                   e.widget is self.entry))
+        root.bind("<KeyPress>", key)
+        canvas.bind("<ButtonPress-1>", lambda e: game.tapped(e.x, e.y))
+        root.bind("<Configure>", lambda e: e.widget is root and
+                  game.on_resize(), add="+")
+        for k in ("Control-q", "Command-q"):
+            root.bind("<%s>" % k, lambda e: game.quit())
+        root.protocol("WM_DELETE_WINDOW", game.quit)
+
+    def run(self):
+        self.root.mainloop()
+
+    def close(self):
+        self.root.destroy()
+
+
+class TkScreen:
+    def __init__(self, canvas):
+        self.canvas = canvas
+
+    def listen(self, game):
+        """The play area resized: lay the tiles out afresh."""
+        self.canvas.bind("<Configure>", lambda e: game.layout())
+
+
 class Game:
     def __init__(self, root):
         self.root = root
+        self.shell = TkShell(root)
         self.sound = Sound()
         saved = load_saved()
         self.sound.muted = bool(saved.get("muted"))
@@ -8954,6 +9012,8 @@ class Game:
             else self.end_talk()) or "break")
         self.canvas = tk.Canvas(left, bg="black", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
+        self.shell.entry = self.entry
+        self.screen = TkScreen(self.canvas)
 
         self.season_drawn = None
         self.cells = []
@@ -8978,18 +9038,13 @@ class Game:
         self.area = None
         self.p = None
 
-        self.canvas.bind("<Configure>", lambda e: self.layout())
-        root.bind("<Configure>", self.on_resize, add="+")
-        self.canvas.bind("<ButtonPress-1>", self.tapped)
-        root.bind("<KeyPress>", self.on_key)
-        for k in ("Control-q", "Command-q"):
-            root.bind("<%s>" % k, lambda e: self.quit())
-        root.protocol("WM_DELETE_WINDOW", self.quit)
+        self.screen.listen(self)
+        self.shell.listen(self, self.canvas)
 
         try:
             self.restore(saved["game"])
         except (KeyError, TypeError, ValueError, IndexError, AttributeError):
-            self.root.after(50, self.new_game)
+            self.shell.after(50, self.new_game)
         self.music_tick()
         self.animate()
         self.pad = Gamepad()
@@ -9023,18 +9078,18 @@ class Game:
                         break
                 if held != self.pad_dir:
                     self.pad_hold(held)
-        self.root.after(30, self.pad_poll)
+        self.shell.after(30, self.pad_poll)
 
     def pad_hold(self, d):
         self.pad_dir = d
         if d:
             self.pad_direction(d)
-            self.root.after(350, self.pad_repeat, d)
+            self.shell.after(350, self.pad_repeat, d)
 
     def pad_repeat(self, d):
         if self.pad_dir == d:
             self.pad_direction(d)
-            self.root.after(160, self.pad_repeat, d)
+            self.shell.after(160, self.pad_repeat, d)
 
     def pad_direction(self, d):
         self.walking = None
@@ -9093,7 +9148,7 @@ class Game:
                     if n != old and n:
                         c.itemconfig(item, image=self.image(n))
             self.draw_weather()
-        self.root.after(500, self.animate)
+        self.shell.after(500, self.animate)
 
     def framed(self, name):
         if not name:
@@ -9107,7 +9162,7 @@ class Game:
 
     def music_tick(self):
         self.sound.tick()
-        self.root.after(100, self.music_tick)
+        self.shell.after(100, self.music_tick)
 
     # ── Images ──
     #
@@ -9262,10 +9317,10 @@ class Game:
 
     # ── Making your farmer ──
 
-    def tapped(self, ev):
+    def tapped(self, x, y):
         if time.time() < getattr(self, "tap_guard", 0) or not self.area:
             return
-        self.on_tap(ev)
+        self.on_tap(x, y)
 
     def open_dialog(self):
         dlg = getattr(self, "dialog", None)
@@ -9726,7 +9781,7 @@ class Game:
             self.save()
         finally:
             self.sound.stop_music()
-            self.root.destroy()
+            self.shell.close()
 
     def say(self, text, tag=None):
         self.log.config(state="normal")
@@ -16606,7 +16661,7 @@ class Game:
             self.sound.play("splash")
             self.flash(x, y, "splash")
             self.render()
-        self.root.after(350, bite)
+        self.shell.after(350, bite)
 
     # ── Sleeping, and the morning ──
 
@@ -18483,14 +18538,15 @@ class Game:
     # ── Keys ──
 
     def on_key(self, ev):
-        k = ev.keysym
+        """A Key from the shell; "break" when it's been dealt with."""
+        k = ev.name
         if getattr(self, "dialog", None) is not None:
             return
         if getattr(self, "naming", None) is not None:
             if k == "Escape":
                 self.end_naming()
             return
-        if self.talk and ev.widget is self.entry:
+        if self.talk and ev.in_entry:
             # typing a word: the entry has it, but arrows still move
             # through the menu, and Return picks from it when it's empty
             if self.menu and k in ("Up", "Down"):
@@ -18530,7 +18586,7 @@ class Game:
             return
         if not self.p or self.busy:
             return
-        ctrl = ev.state & 0x4
+        ctrl = ev.ctrl
         if getattr(self, "aim", False):
             if k in MOVE_KEYS and not ctrl:
                 self.zap(*MOVE_KEYS[k])
@@ -18744,13 +18800,14 @@ class Game:
 
     # ── Taps and walking ──
 
-    def on_tap(self, ev):
+    def on_tap(self, sx, sy):
+        """A tap or click on the play area, at sx, sy pixels."""
         self.walking = None
         if not self.cells:
             return
         if self.menu:
             for x0, y0, x1, y1, i in self.menu_rows:
-                if x0 <= ev.x <= x1 and y0 <= ev.y <= y1:
+                if x0 <= sx <= x1 and y0 <= sy <= y1:
                     self.menu_pick(i)
                     return
             if self.scene:
@@ -18765,8 +18822,8 @@ class Game:
             self.close_overlay()
             return
         cols, rows, ox, oy, ts = self.view
-        tx = self.cam[0] + (ev.x - ox) // ts
-        ty = self.cam[1] + (ev.y - oy) // ts
+        tx = self.cam[0] + (sx - ox) // ts
+        ty = self.cam[1] + (sy - oy) // ts
         x, y = self.pos()
         dx, dy = tx - x, ty - y
         if getattr(self, "aim", False):
@@ -18864,7 +18921,7 @@ class Game:
             self.walking = None
             return
         if self.walking:
-            self.root.after(80, self.walk_step)
+            self.shell.after(80, self.walk_step)
 
     # ── Drawing ──
 
@@ -19288,7 +19345,7 @@ class Game:
         def hide():
             if token == self.fx_token:
                 self.canvas.itemconfig(self.fx, state="hidden")
-        self.root.after(300, hide)
+        self.shell.after(300, hide)
 
     def draw_text_box(self, text, color=INK):
         """Text in a box in the middle of the map, as big as will fit: in
@@ -19720,11 +19777,11 @@ class Game:
         short = min(c.winfo_width(), c.winfo_height())
         return max(1, min(MAX_ZOOM, round(short / (16 * 12)) + self.zoom_d))
 
-    def on_resize(self, ev):
-        if ev.widget is self.root:
-            if getattr(self, "fit_job", None):
-                self.root.after_cancel(self.fit_job)
-            self.fit_job = self.root.after(80, self.fit)
+    def on_resize(self):
+        """The window changed size: fit it once it's stopped changing."""
+        if getattr(self, "fit_job", None):
+            self.shell.cancel(self.fit_job)
+        self.fit_job = self.shell.after(80, self.fit)
 
     def fit(self, force=False):
         """Scale the fonts, the side panel and the buttons to the window:
@@ -19835,7 +19892,7 @@ class Game:
             def closed(e):
                 if e.widget is dlg:
                     self.small_dialog = None
-                    self.root.after_idle(self.fit, True)
+                    self.shell.after_idle(self.fit, True)
             dlg.bind("<Destroy>", closed, add="+")
 
     def text_size(self, d):
@@ -24035,8 +24092,7 @@ def main():
         sys.exit(0 if selftest() else 1)
     root = tk.Tk()
     set_window_icon(root)
-    Game(root)
-    root.mainloop()
+    Game(root).shell.run()
 
 
 if __name__ == "__main__":
