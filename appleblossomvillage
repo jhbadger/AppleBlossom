@@ -114,10 +114,18 @@ def art_pixels(palette, rows):
     return [[None if ch == "." else palette[ch] for ch in r] for r in rows]
 
 
+SHADED = {}
+
+
 def shade(c, f):
-    r, g, b = (int(c[i:i + 2], 16) for i in (1, 3, 5))
-    return "#%02x%02x%02x" % tuple(max(0, min(255, int(v * f)))
-                                    for v in (r, g, b))
+    """Colour c at brightness f (remembered: the tiles share a few hundred
+    colours, and every one is shaded for dusk and night)."""
+    out = SHADED.get((c, f))
+    if out is None:
+        r, g, b = (int(c[i:i + 2], 16) for i in (1, 3, 5))
+        out = SHADED[(c, f)] = "#%02x%02x%02x" % tuple(
+            max(0, min(255, int(v * f))) for v in (r, g, b))
+    return out
 
 
 def mix(a, b, t):
@@ -9797,6 +9805,22 @@ class Game:
             return ("forage", st["forage"][k])
         return None
 
+    def standing(self, a):
+        """The squares of area a that monster maids, children, Auriel and
+        (here) your companion stand on just now, for can_stand."""
+        taken = set()
+        if a.key in ("cabin", "valley"):
+            for where in [self.mmaid_where(m) for m in self.mmaids()] + [
+                    self.kid_where(k) for k in self.kids()]:
+                if where[0] == a.key:
+                    taken.add((where[1], where[2]))
+        if a.key == "valley" and self.auriel_here():
+            taken.add(tuple(AURIEL_SPOT))
+        comp, _ = self.companion()
+        if a is self.area and comp and comp["area"] == self.where_key():
+            taken.add((comp["x"], comp["y"]))
+        return taken
+
     def npc_at(self, x, y, area=None):
         a = (area or self.area).key
         for n in self.npcs.values():
@@ -9804,14 +9828,20 @@ class Game:
                 return n
         return None
 
-    def can_stand(self, x, y, area=None):
+    def can_stand(self, x, y, area=None, taken=None):
+        """taken, from standing(), saves a long search asking after every
+        maid and child at every square."""
         a = area or self.area
         if not a.inside(x, y):
             return False
-        if self.decor_at(x, y, a) or self.mmaid_at(x, y, a) or \
-                self.kid_at(x, y, a) or self.auriel_at(x, y, a):
+        if self.decor_at(x, y, a):
             return False
-        if a is self.area and self.comp_at(x, y):
+        if taken is not None:
+            if (x, y) in taken:
+                return False
+        elif self.mmaid_at(x, y, a) or self.kid_at(x, y, a) or \
+                self.auriel_at(x, y, a) or (a is self.area and
+                                            self.comp_at(x, y)):
             return False
         t = self.tile_at(x, y, a)
         if t not in WALKABLE:
@@ -14681,17 +14711,18 @@ class Game:
         """Where a pet may be: the cabin floor for cats, the farmyard by
         the cabin door for dogs."""
         a = self.areas[area]
+        if area not in ("cabin", "valley"):
+            return []
+        taken = self.standing(a)
         if area == "cabin":
             return [(x, y) for y in range(a.h) for x in range(a.w)
-                    if self.can_stand(x, y, a) and a.grid[y][x] != "exit"
-                    and (x, y) != a.entry]
-        if area != "valley":
-            return []
+                    if self.can_stand(x, y, a, taken) and
+                    a.grid[y][x] != "exit" and (x, y) != a.entry]
         dx, dy = door_of("cabin")
         return [(x, y) for y in range(dy + 1, dy + 6)
                 for x in range(dx - 5, dx + 6)
                 if (x, y) != (dx, dy + 1) and (x, y) not in self.door_at
-                and self.can_stand(x, y, a)]
+                and self.can_stand(x, y, a, taken)]
 
     def pet_at(self, area, x, y):
         for i, c in enumerate(self.st.get("pets", ())):
@@ -16917,6 +16948,7 @@ class Game:
         start = (n.x, n.y)
         prev = {start: None}
         q = deque([start])
+        taken = self.standing(a)
         while q:
             cur = q.popleft()
             if cur == tgt:
@@ -16925,7 +16957,8 @@ class Game:
                 nx, ny = cur[0] + dx, cur[1] + dy
                 if (nx, ny) in prev:
                     continue
-                if (nx, ny) != tgt and not self.can_stand(nx, ny, a):
+                if (nx, ny) != tgt and not self.can_stand(nx, ny, a,
+                                                          taken):
                     continue
                 if not a.inside(nx, ny):
                     continue
@@ -19018,14 +19051,24 @@ class Game:
                               outline=GOLD, width=3, tags="overlay")
 
     def draw_weather(self):
+        """Rain or snow over the view.  The drops only change with the
+        minute and the frame; if they'd come out just the same, the old
+        ones stay, since redrawing them means repainting the whole view."""
         c = self.canvas
-        c.delete("weather")
-        if not self.area or not self.area.outdoor or self.overlay:
-            return
-        w = self.st["weather"]
+        w = self.st["weather"] if self.area and self.area.outdoor and \
+            not self.overlay else None
         if w not in ("rain", "storm", "snow"):
-            return
+            w = None
         W, H = c.winfo_width(), c.winfo_height()
+        key = (w, self.frame, self.st["minute"], W, H, self.scale)
+        if w and key == getattr(self, "weather_key", None) and \
+                c.find_withtag("weather"):
+            c.tag_lower(self.cursor, "weather")     # (just raised)
+            return
+        self.weather_key = key
+        c.delete("weather")
+        if not w:
+            return
         rng = random.Random(self.frame * 7 + self.st["minute"])
         n = 70 if w == "storm" else 45
         for _ in range(n):
@@ -19332,8 +19375,8 @@ class Game:
         p, st = self.p, self.st
         a = self.area
         here = a.name if not a.outdoor else self.district()
-        self.status.config(text=cap(here))
-        self.clock_label.config(text="%s %d  %s  %s" % (
+        self.set_text(self.status, cap(here))
+        self.set_text(self.clock_label, "%s %d  %s  %s" % (
             SEASONS[self.season()], self.dom(), WEEKDAYS[self.weekday()],
             self.clock()))
         e = max(0, p["energy"])
@@ -19373,7 +19416,7 @@ class Game:
             cond.append("EXHAUSTED")
         if getattr(self, "aim", False):
             cond.append("WAND RAISED: pick a direction")
-        self.condition.config(text="\n".join(cond))
+        self.set_text(self.condition, "\n".join(cond))
         if self.festival_on():
             self.sound.tune = "festival"
         elif a.key == "mine":
@@ -19632,11 +19675,18 @@ class Game:
             self.show_panel(self.panel_lines)
         self.layout()
 
+    def set_text(self, label, text):
+        """A label's text, changed only if it's different: Tk lays a label
+        out afresh on every change, and this is done every turn."""
+        if label.cget("text") != text:
+            label.config(text=text)
+
     def show_panel(self, lines):
         self.panel_lines = lines
         if not self.tall or len(lines) < 8:
-            self.panel.config(text="\n".join(lines))
-            self.panel2.pack_forget()
+            self.set_text(self.panel, "\n".join(lines))
+            if self.panel2.winfo_manager():
+                self.panel2.pack_forget()
             return
         mid = len(lines) // 2
         cuts = [i for i, line in enumerate(lines) if not line.strip()]
@@ -19644,8 +19694,8 @@ class Game:
         first, second = lines[:cut], lines[cut:]
         while second and not second[0].strip():
             second = second[1:]
-        self.panel.config(text="\n".join(first))
-        self.panel2.config(text="\n".join(second))
+        self.set_text(self.panel, "\n".join(first))
+        self.set_text(self.panel2, "\n".join(second))
         if not self.panel2.winfo_manager():
             self.panel2.pack(side="left", fill="x", expand=True, anchor="n",
                              padx=(S(10), S(10)), pady=(S(8), 0))
