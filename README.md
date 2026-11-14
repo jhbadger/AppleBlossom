@@ -384,8 +384,9 @@ Genderswap just leaves a monster baffled for a few turns. The Mine King is
 too old and wicked to change, but every spell burns him.
 
 **Monster maids.** Invite a maidified monster to your cabin and she comes
-to live there (the cabin has room for four maids, villagers and monster
-maids together; any more wait in a row in the yard outside the door), with
+to live there (the cabin has room for four maids, or eight once Ivy's
+built the extension, villagers and monster maids together; any more wait
+in a row in the yard outside the door), with
 a name of her own (Ember the fire imp, Bonnie the skeleton, Wisp the
 ghost, Gobbelina the goblin, and Poopy the excrement blob, who very much
 hopes she doesn't smell too bad...), and her hair the monster's colour.
@@ -769,7 +770,10 @@ confession at eight hearts.
 1. Give a **Blossom Bouquet** (Mabel's store) to someone at 8 hearts to go
    steady. Sweethearts can reach 10 hearts and can be asked on a **DATE** in
    the evenings.
-2. Have Ivy build a **cabin extension** so there's room for two.
+2. Have Ivy build a **cabin extension** (3,000g and 150 wood) so there's
+   room for two. Overnight she knocks through the cabin's east wall into a
+   new bedroom, with your bed, a bookshelf, a fireplace and room for four
+   more maids.
 3. Give a **Blossom Pendant** (Otto's smithy) to your sweetheart at 10 hearts
    to propose. The wedding is three days later in the square.
 4. Your spouse moves into your cabin, still goes to work, and some mornings

@@ -6237,6 +6237,15 @@ ROOMS["greenhouse"] = ("stone_floor", "W", (   # beds where anything grows
     "I.zzz.zzz.I",
     "I.........I",
     "IIIIIxIIIII"))
+BIG_CABIN = ("logfloor", "l", (    # once Ivy's built the extension: the
+    "llwllllwllllllwlll",             # same room, with a doorway east
+    "lOZ.P.....lS.DD.Pl",             # into a bedroom (the bed moves in
+    "l..2......l6.1..7l",             # there), and room for four more
+    "l.TT..3.5........l",             # maids
+    "l.hh...rr.l..rr..l",
+    "l4.....rr.l8..F.9l",
+    "lllllxllllllllllll"))
+MAID_SPOTS_BIG = "6789"         # the extension's maid spots
 EXTRA_ROOMS = {   # rooms that aren't buildings in the valley
     "loo": ("boards", "l", (     # inside whichever outhouse you're in
         "lllmlll",
@@ -6256,9 +6265,11 @@ ROOM_TILES = {"Y": "hay", "U": "churn", "H": "loohole", "j": "loobench",
 SPOT_CHARS = "123456789a"
 
 
-def make_room(key):
-    """A room's grid, its spots, where you come in and the way out."""
-    floor, wall, rows = ROOMS[key] if key in ROOMS else EXTRA_ROOMS[key]
+def make_room(key, big=False):
+    """A room's grid, its spots, where you come in and the way out (big:
+    the cabin with Ivy's extension)."""
+    floor, wall, rows = BIG_CABIN if big and key == "cabin" else \
+        ROOMS[key] if key in ROOMS else EXTRA_ROOMS[key]
     grid, spots, exit_ = [], {}, None
     for y, row in enumerate(rows):
         line = []
@@ -9432,7 +9443,7 @@ class Game:
 
     # ── A new game, and saved ones ──
 
-    def build_world(self, seed, built=()):
+    def build_world(self, seed, built=(), big_cabin=False):
         """The valley and every room, from the code (and the farm's debris
         from the seed)."""
         grid, labels = make_valley(seed, built)
@@ -9440,10 +9451,7 @@ class Game:
         v.labels = labels
         self.areas = {"valley": v}
         for key in ROOMS:
-            g, spots, entry, ex = make_room(key)
-            a = Area(key, g, BUILDINGS[key][6])
-            a.spots, a.entry, a.exit = spots, entry, ex
-            self.areas[key] = a
+            self.build_room(key, big_cabin)
         for key in EXTRA_ROOMS:
             g, spots, entry, ex = make_room(key)
             a = Area(key, g, "the outhouse")
@@ -9455,6 +9463,39 @@ class Game:
         self.door_at = {door_of(k): k for k in BUILDINGS
                         if k not in ON_ORDER or k in built}
         self.npcs = {vid: Villager(vid) for vid in VILLAGERS}
+
+    def build_room(self, key, big_cabin=False):
+        g, spots, entry, ex = make_room(key, big_cabin)
+        a = Area(key, g, BUILDINGS[key][6])
+        a.spots, a.entry, a.exit = spots, entry, ex
+        self.areas[key] = a
+        return a
+
+    def maid_spots(self):
+        """The cabin's spots for maids: four, or eight with the
+        extension."""
+        return MAID_SPOTS + (MAID_SPOTS_BIG if self.p and
+                             self.p.get("cabin_big") else "")
+
+    def build_extension(self):
+        """Overnight, once it's paid for: Ivy's crew knock through the
+        cabin's east wall and build a bedroom, and carry your bed in."""
+        p = self.p
+        if not p["extension"] or p.get("cabin_big"):
+            return
+        p["cabin_big"] = True
+        old = self.areas["cabin"]
+        a = self.build_room("cabin", True)
+        if self.area is old:
+            self.area = a
+            bx, by = a.spots["1"]
+            self.st["pos"] = [bx - 1, by]
+            self.face(1, 0)
+        self.clear_cabin_furniture()
+        self.say("Ivy and Pip worked through the night: there's a doorway "
+                 "in the cabin's east wall now, and through it a proper "
+                 "bedroom, with your bed moved in, a bookshelf, a fireplace, "
+                 "and room for four more maids.", "quest")
 
     def new_game(self, who=None):
         if who is None:
@@ -9590,7 +9631,8 @@ class Game:
         st.setdefault("loo_in", None)
         if "magic wand" not in self.p["tools"]:
             self.p["tools"].append("magic wand")     # older saves
-        self.build_world(st["seed"], self.p["built"])
+        self.build_world(st["seed"], self.p["built"],
+                         self.p.get("cabin_big"))
         self.apply_felled()
         self.museum_cases()
         self.stock_quarry()             # (an older save has an empty one)
@@ -11125,9 +11167,10 @@ class Game:
         order = sorted(self.st.get("maids", {})) + [
             "mm:%d" % m["id"] for m in self.mmaids()]
         i = order.index(key) if key in order else len(order)
-        if i < len(MAID_SPOTS):
-            return "cabin." + MAID_SPOTS[i]
-        return "out.maidwait%d" % ((i - len(MAID_SPOTS)) % 8 + 1)
+        spots = self.maid_spots()
+        if i < len(spots):
+            return "cabin." + spots[i]
+        return "out.maidwait%d" % ((i - len(spots)) % 8 + 1)
 
     def mmaid_where(self, m):
         """Where a monster maid is now: (area, x, y). On a dry morning a
@@ -11219,8 +11262,10 @@ class Game:
                          an(MONSTERS[e["kind"]].name), name), "heart")
         if self.maid_home("mm:%d" % self.mmaids()[-1]["id"]).startswith(
                 "out."):
-            self.say("(The cabin has room for four maids, and it's full: "
-                     "%s will wait outside by the door.)" % name, "info")
+            self.say("(The cabin has room for %s maids, and it's full: "
+                     "%s will wait outside by the door.)" % (
+                         "eight" if self.p.get("cabin_big") else "four",
+                         name), "info")
         self.end_turn(1)
 
     def mmaid_says(self, m, line, expr="happy"):
@@ -16703,6 +16748,7 @@ class Game:
         p["magic"] = max(p["magic"], int(p["max_magic"] * rest + 0.5))
         if self.season_drawn != season:
             self.load_images()
+        self.build_extension()
         self.morning_news()
         if prank:
             vid = random.choice(prank)
@@ -23564,12 +23610,26 @@ def selftest():
         g, spots, entry, ex = make_room(key)
         if g[entry[1]][entry[0]] not in WALKABLE or ex is None:
             problems.append("room %s has no way in and out" % key)
-    for key, (floor, wall, rows) in ROOMS.items():
+    for key, (floor, wall, rows) in list(ROOMS.items()) + [
+            ("cabin+", BIG_CABIN)]:
+        big = key == "cabin+"
+        key = key.rstrip("+")
         if len({len(r) for r in rows}) != 1:
             problems.append("room %s rows differ" % key)
             continue
-        g, spots, entry, ex = make_room(key)
-        rooms[key] = (g, spots, entry)
+        g, spots, entry, ex = make_room(key, big)
+        if big:
+            small, s_spots, s_entry, _ = make_room(key)
+            if set(s_spots) - set(spots) or entry != s_entry or any(
+                    small[y][x] in WALKABLE and g[y][x] not in WALKABLE
+                    for y in range(len(small))
+                    for x in range(len(small[0]))):
+                problems.append("the cabin extension builds over the cabin")
+            if not set(MAID_SPOTS_BIG) <= set(spots) or \
+                    "bed2" not in {t for r in g for t in r}:
+                problems.append("the cabin extension lacks spots or a bed")
+        else:
+            rooms[key] = (g, spots, entry)
         if g[entry[1]][entry[0]] not in WALKABLE:
             problems.append("room %s entry blocked" % key)
         # every spot reachable from the entry
