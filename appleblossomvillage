@@ -8898,6 +8898,15 @@ class TkShell:
             root.bind("<%s>" % k, lambda e: game.quit())
         root.protocol("WM_DELETE_WINDOW", game.quit)
 
+    def set_icon(self, png):
+        """The window's icon, from PNG bytes."""
+        try:
+            self.root._icon = tk.PhotoImage(
+                data=base64.b64encode(png).decode())
+            self.root.iconphoto(True, self.root._icon)
+        except tk.TclError:
+            pass
+
     def run(self):
         self.root.mainloop()
 
@@ -8908,6 +8917,43 @@ class TkShell:
 class TkScreen:
     def __init__(self, canvas):
         self.canvas = canvas
+
+    # Pictures: rows of "#rrggbb" colours, a blank (None or "") wherever
+    # the picture is see-through.
+
+    def make_image(self, rows, z=1):
+        """A picture from rows of colours, zoomed z times."""
+        img = tk.PhotoImage(width=len(rows[0]), height=len(rows))
+        self.paint_image(img, rows)
+        return img.zoom(z) if z > 1 else img
+
+    def paint_image(self, img, rows):
+        """Draw rows of colours into a picture, over whatever was there:
+        anything already showing it shows the new one."""
+        img.blank()
+        if all(c for r in rows for c in r):
+            img.put(" ".join("{" + " ".join(r) + "}" for r in rows))
+            return
+        for y, row in enumerate(rows):
+            x, w = 0, len(row)
+            while x < w:
+                c = row[x]
+                x1 = x + 1
+                while x1 < w and row[x1] == c:
+                    x1 += 1
+                if c:
+                    img.put(c, to=(x, y, x1, y + 1))
+                x = x1
+
+    def zoom_image(self, img, z):
+        """A copy of a picture, z times the size."""
+        return img.zoom(z)
+
+    def zoom_into(self, big, img, z):
+        """Redraw big as img zoomed z times, keeping big the same picture
+        so that whatever shows it shows the change."""
+        big.blank()
+        big.tk.call(big.name, "copy", img.name, "-zoom", z, z)
 
     def listen(self, game):
         """The play area resized: lay the tiles out afresh."""
@@ -9174,9 +9220,11 @@ class Game:
         self.season_drawn = season
         self.base = {}
         self.avg = {}
+        tints = {k: {} for k in SHADES}     # colour -> shaded, per light
         for name, px in all_tiles(season).items():
             sprite = name.split("@")[0] in SPRITES
             for lvl, k in enumerate(SHADES):
+                shaded = tints[k]
                 if lvl and name.startswith(("v_", "s_", "vx_", "sx_",
                                             "vm_", "sm_", "tv_", "lh_",
                                             "shen_", "cow_", "scow_",
@@ -9185,24 +9233,13 @@ class Game:
                                             "hen_", "mon_", "smon_",
                                             "mmaid_", "mtree_", "mloo_")):
                     continue
-                img = tk.PhotoImage(width=16, height=16)
-                if sprite:
-                    for y, row in enumerate(px):
-                        x = 0
-                        while x < 16:
-                            c = row[x]
-                            x1 = x
-                            while x1 < 16 and row[x1] == c:
-                                x1 += 1
-                            if c:
-                                img.put(c if k == 1.0 else shade(c, k),
-                                        to=(x, y, x1, y + 1))
-                            x = x1
+                if k != 1.0:
+                    px_k = [[shaded.get(c) or shaded.setdefault(
+                        c, shade(c, k)) if c else c for c in r] for r in px]
                 else:
-                    img.put(" ".join("{" + " ".join(
-                        c if k == 1.0 else shade(c, k) for c in r) + "}"
-                        for r in px))
-                self.base[("%d:" % lvl if lvl else "") + name] = img
+                    px_k = px
+                self.base[("%d:" % lvl if lvl else "") + name] = \
+                    self.screen.make_image(px_k)
             if not sprite:
                 tot = [0, 0, 0]
                 for r in px:
@@ -9222,12 +9259,7 @@ class Game:
         pal, rows = person_art(self.p["look"])
         px = art_pixels(pal, rows)
         for n, frame in (("you", px), ("you@1", px[1:] + [[None] * 16])):
-            img = tk.PhotoImage(width=16, height=16)
-            for y, row in enumerate(frame):
-                for x, c in enumerate(row):
-                    if c:
-                        img.put(c, to=(x, y, x + 1, y + 1))
-            self.base[n] = img
+            self.base[n] = self.screen.make_image(frame)
         SPRITES.add("you")
 
     def paint_specials(self, scale=False):
@@ -9256,27 +9288,23 @@ class Game:
         pointing at nothing."""
         img = self.base.get(n)
         if img is None:
-            img = self.base[n] = tk.PhotoImage(width=16, height=16)
-        img.blank()
-        for y, row in enumerate(frame):
-            for x, c in enumerate(row):
-                if c:
-                    img.put(c, to=(x, y, x + 1, y + 1))
+            img = self.base[n] = self.screen.make_image(frame)
+        else:
+            self.screen.paint_image(img, frame)
         SPRITES.add(n.split("@")[0])
         if scale and hasattr(self, "img"):
             big = self.img.get(n)
             if big is None:
-                self.img[n] = img.zoom(self.scale)
+                self.img[n] = self.screen.zoom_image(img, self.scale)
             else:
-                big.blank()
-                big.tk.call(big.name, "copy", img.name, "-zoom",
-                            self.scale, self.scale)
+                self.screen.zoom_into(big, img, self.scale)
             if n.endswith("@1"):
                 self.animated.add(n[:-2])
 
     def scale_images(self):
         s = self.scale
-        self.img = {n: i.zoom(s) for n, i in self.base.items()}
+        self.img = {n: self.screen.zoom_image(i, s)
+                    for n, i in self.base.items()}
         self.animated = {n for n in self.base if n + "@1" in self.base}
 
     def image(self, name):
@@ -9291,9 +9319,7 @@ class Game:
         img = self.portraits.get(key)
         if img is None:
             px = portrait(monster_maid_look(kind), expr)
-            base = tk.PhotoImage(width=PW, height=PW)
-            base.put(" ".join("{" + " ".join(r) + "}" for r in px))
-            img = self.portraits[key] = base.zoom(z)
+            img = self.portraits[key] = self.screen.make_image(px, z)
         return img
 
     def portrait_image(self, who, expr, z):
@@ -9310,9 +9336,7 @@ class Game:
         if img is None:
             look = self.p["look"] if who == "you" else self.look_of(who)
             px = portrait(look, expr)
-            base = tk.PhotoImage(width=PW, height=PW)
-            base.put(" ".join("{" + " ".join(r) + "}" for r in px))
-            img = self.portraits[key] = base.zoom(z)
+            img = self.portraits[key] = self.screen.make_image(px, z)
         return img
 
     # ── Making your farmer ──
@@ -12256,9 +12280,7 @@ class Game:
         img = self.portraits.get(key)
         if img is None:
             px = portrait(look, expr)
-            base = tk.PhotoImage(width=PW, height=PW)
-            base.put(" ".join("{" + " ".join(r) + "}" for r in px))
-            img = self.portraits[key] = base.zoom(z)
+            img = self.portraits[key] = self.screen.make_image(px, z)
         return img
 
     # ── Auriel, after the Archangel ──
@@ -19496,11 +19518,9 @@ class Game:
                     t = "soil"
                 row.append("#f0a050" if (x, y) in self.door_at else
                            self.avg.get(t, "#000000"))
-            rows.append("{" + " ".join(row) + "}")
-        img = tk.PhotoImage(width=a.w, height=a.h)
-        img.put(" ".join(rows))
+            rows.append(row)
         z = max(1, min((W - 20) // a.w, (H - 50) // a.h))
-        self.map_img = img.zoom(z)
+        self.map_img = self.screen.make_image(rows, z)
         c.create_rectangle(0, 0, W, H, fill="black", tags="overlay")
         mx, my = (W - a.w * z) / 2, (H - a.h * z) / 2 + 10
         c.create_image(mx, my, image=self.map_img, anchor="nw",
@@ -24076,23 +24096,14 @@ def icon_args(args):
     return False
 
 
-def set_window_icon(root):
-    try:
-        data = base64.b64encode(icon_render_png(64)).decode()
-        root._icon = tk.PhotoImage(data=data)
-        root.iconphoto(True, root._icon)
-    except tk.TclError:
-        pass
-
-
 def main():
     if icon_args(sys.argv[1:]):
         return
     if "--selftest" in sys.argv:
         sys.exit(0 if selftest() else 1)
-    root = tk.Tk()
-    set_window_icon(root)
-    Game(root).shell.run()
+    game = Game(tk.Tk())
+    game.shell.set_icon(icon_render_png(64))
+    game.shell.run()
 
 
 if __name__ == "__main__":
