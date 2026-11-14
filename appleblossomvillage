@@ -8977,6 +8977,58 @@ class TkScreen:
             return 0, self.metrics(font)[1]
         return bb[2] - bb[0], bb[3] - bb[1]
 
+    # Drawing over the tiles.  Everything goes in a layer: "weather" (rain
+    # and snow), under "overlay" (boxes, menus, the map), and each layer is
+    # cleared and drawn afresh, later things on top.  Options are named as
+    # Tk's are; a colour left as None is the backend's own default (black
+    # lines and print, no fill).
+
+    def size(self):
+        """(W, H) of the play area, in pixels."""
+        return self.canvas.winfo_width(), self.canvas.winfo_height()
+
+    def clear(self, layer="overlay"):
+        self.canvas.delete(layer)
+
+    def has(self, layer):
+        """Whether anything is drawn in a layer."""
+        return bool(self.canvas.find_withtag(layer))
+
+    def lift(self, layer):
+        """Put a layer back on top of everything."""
+        self.canvas.tag_raise(layer)
+
+    def text(self, x, y, text="", font=None, fill=None,
+             anchor="center", width=0, justify="left", layer="overlay"):
+        self.canvas.create_text(x, y, text=text, font=font, fill=fill,
+                                anchor=anchor, width=width or 0,
+                                justify=justify, tags=layer)
+
+    def rect(self, x0, y0, x1, y1, fill="", outline=None, width=1,
+             layer="overlay"):
+        self.canvas.create_rectangle(x0, y0, x1, y1, fill=fill,
+                                     outline=outline, width=width,
+                                     tags=layer)
+
+    def oval(self, x0, y0, x1, y1, fill="", outline=None, width=1,
+             layer="overlay"):
+        self.canvas.create_oval(x0, y0, x1, y1, fill=fill, outline=outline,
+                                width=width, tags=layer)
+
+    def line(self, x0, y0, x1, y1, fill=None, width=1,
+             layer="overlay"):
+        self.canvas.create_line(x0, y0, x1, y1, fill=fill, width=width,
+                                tags=layer)
+
+    def polygon(self, points, fill=None, outline="", width=1,
+                smooth=False, layer="overlay"):
+        self.canvas.create_polygon(points, fill=fill, outline=outline,
+                                   width=width, smooth=smooth, tags=layer)
+
+    def image(self, x, y, image=None, anchor="center", layer="overlay"):
+        self.canvas.create_image(x, y, image=image, anchor=anchor,
+                                 tags=layer)
+
     def zoom_into(self, big, img, z):
         """Redraw big as img zoomed z times, keeping big the same picture
         so that whatever shows it shows the change."""
@@ -18745,8 +18797,8 @@ class Game:
     def draw_menu(self):
         """The menu: in the middle of the map, or, while you're talking,
         above the conversation on the right."""
-        c, m = self.canvas, self.menu
-        W, H = c.winfo_width(), c.winfo_height()
+        scr, m = self.screen, self.menu
+        W, H = scr.size()
         size = 15 if ANDROID else 13
         f, bold = F("Helvetica", size), F("Helvetica", size, "bold")
         rh = self.screen.metrics(f)[1] + S(14 if ANDROID else 8)
@@ -18780,26 +18832,25 @@ class Game:
             y0 = max(top_y, bottom_y - bh)
         else:
             x0, y0 = (W - bw) // 2, max(8, (H - bh) // 2)
-        c.create_rectangle(x0, y0, x0 + bw, y0 + bh, fill=PANEL,
-                           outline=ACCENT, width=2, tags="overlay")
+        scr.rect(x0, y0, x0 + bw, y0 + bh, fill=PANEL,
+                           outline=ACCENT, width=2)
         if title:
-            c.create_text(x0 + 20, y0 + 8 + th // 2, text=title, anchor="w",
-                          fill=ACCENT, font=bold, tags="overlay")
+            scr.text(x0 + 20, y0 + 8 + th // 2, text=title, anchor="w",
+                          fill=ACCENT, font=bold)
         self.menu_rows = []
         for n, (i, label) in enumerate(shown):
             ry = y0 + 8 + th + n * rh
             if i == m["sel"]:
-                c.create_rectangle(x0 + 6, ry, x0 + bw - 6, ry + rh,
-                                   fill="#5a3450", outline="",
-                                   tags="overlay")
+                scr.rect(x0 + 6, ry, x0 + bw - 6, ry + rh,
+                                   fill="#5a3450", outline="")
             if isinstance(i, str):
                 if label:
-                    c.create_text(x0 + bw // 2, ry + rh // 2, text=label,
-                                  fill=ACCENT, font=f, tags="overlay")
+                    scr.text(x0 + bw // 2, ry + rh // 2, text=label,
+                                  fill=ACCENT, font=f)
                     self.menu_rows.append((x0, ry, x0 + bw, ry + rh, i))
                 continue
-            c.create_text(x0 + 20, ry + rh // 2, text=label, anchor="w",
-                          fill=INK, font=f, tags="overlay")
+            scr.text(x0 + 20, ry + rh // 2, text=label, anchor="w",
+                          fill=INK, font=f)
             self.menu_rows.append((x0, ry, x0 + bw, ry + rh, i))
 
     def action_menu(self):
@@ -19184,7 +19235,7 @@ class Game:
             c.tag_raise(self.cursor)
         else:
             c.itemconfig(self.cursor, state="hidden")
-        c.delete("overlay")
+        self.screen.clear()
         if getattr(self, "aim", False):
             self.draw_aim()
         self.draw_weather()
@@ -19203,7 +19254,7 @@ class Game:
     def draw_aim(self):
         """While the wand is raised: an arrow each way, and a gold ring
         round anyone a spell that way would hit."""
-        c = self.canvas
+        scr = self.screen
         cols, rows, ox, oy, ts = self.view
         cx, cy = self.cam
         px, py = self.pos()
@@ -19212,34 +19263,32 @@ class Game:
                                           "\u25b6")):
             sx = ox + (px + dx - cx) * ts + ts // 2
             sy = oy + (py + dy - cy) * ts + ts // 2
-            c.create_text(sx + 1, sy + 1, text=arrow, font=f, fill="#000000",
-                          tags="overlay")
-            c.create_text(sx, sy, text=arrow, font=f, fill=GOLD,
-                          tags="overlay")
+            scr.text(sx + 1, sy + 1, text=arrow, font=f, fill="#000000")
+            scr.text(sx, sy, text=arrow, font=f, fill=GOLD)
             n = self.wand_target(dx, dy)
             if n:
                 x0 = ox + (n.x - cx) * ts
                 y0 = oy + (n.y - cy) * ts
-                c.create_oval(x0 + 1, y0 + 1, x0 + ts - 1, y0 + ts - 1,
-                              outline=GOLD, width=3, tags="overlay")
+                scr.oval(x0 + 1, y0 + 1, x0 + ts - 1, y0 + ts - 1,
+                              outline=GOLD, width=3)
 
     def draw_weather(self):
         """Rain or snow over the view.  The drops only change with the
         minute and the frame; if they'd come out just the same, the old
         ones stay, since redrawing them means repainting the whole view."""
-        c = self.canvas
+        scr = self.screen
         w = self.st["weather"] if self.area and self.area.outdoor and \
             not self.overlay else None
         if w not in ("rain", "storm", "snow"):
             w = None
-        W, H = c.winfo_width(), c.winfo_height()
+        W, H = scr.size()
         key = (w, self.frame, self.st["minute"], W, H, self.scale)
         if w and key == getattr(self, "weather_key", None) and \
-                c.find_withtag("weather"):
-            c.tag_lower(self.cursor, "weather")     # (just raised)
+                scr.has("weather"):
+            self.canvas.tag_lower(self.cursor, "weather")   # (just raised)
             return
         self.weather_key = key
-        c.delete("weather")
+        scr.clear("weather")
         if not w:
             return
         rng = random.Random(self.frame * 7 + self.st["minute"])
@@ -19248,13 +19297,13 @@ class Game:
             x, y = rng.uniform(0, W), rng.uniform(0, H)
             if w == "snow":
                 r = rng.uniform(1.5, 3.5) * self.scale / 2
-                c.create_oval(x, y, x + r, y + r, fill="#ffffff",
-                              outline="", tags="weather")
+                scr.oval(x, y, x + r, y + r, fill="#ffffff",
+                              outline="", layer="weather")
             else:
                 ln = 6 * self.scale
-                c.create_line(x, y, x - ln / 3, y + ln, fill="#a8c8f0",
-                              width=1, tags="weather")
-        c.tag_raise("overlay")
+                scr.line(x, y, x - ln / 3, y + ln, fill="#a8c8f0",
+                              width=1, layer="weather")
+        scr.lift("overlay")
 
     def hearts_width(self, font, n=10):
         return self.screen.metrics(font)[0] * 1.2 * n
@@ -19265,17 +19314,17 @@ class Game:
         size, lh = self.screen.metrics(font)
         top = y + (lh - size) / 2
         for i in range(n):
-            self.canvas.create_polygon(
+            self.screen.polygon(
                 heart_points(x + i * size * 1.2, top, size), smooth=True,
                 fill=HEARTC if i < h else "", outline=HEARTC,
-                width=max(1, size // 10), tags="overlay")
+                width=max(1, size // 10))
         return self.hearts_width(font, n)
 
     def draw_talk(self):
         """The conversation: their portrait large on the left, their name
         and hearts, and what they've just said."""
-        c, t = self.canvas, self.talk
-        W, H = c.winfo_width(), c.winfo_height()
+        scr, t = self.screen, self.talk
+        W, H = scr.size()
         vid = t["v"]
         mm = t.get("mm")
         kid = t.get("kid")
@@ -19297,50 +19346,41 @@ class Game:
         bh = min(bh, H - 20)
         y0 = H - bh - pad
         self.talk_box_top = y0
-        c.create_rectangle(pad, y0, W - pad, y0 + bh, fill=PANEL,
-                           outline=ACCENT, width=2, tags="overlay")
+        scr.rect(pad, y0, W - pad, y0 + bh, fill=PANEL,
+                           outline=ACCENT, width=2)
         expr = t.get("expr", "neutral")
-        c.create_image(pad * 2, y0 + pad, anchor="nw", tags="overlay",
-                       image=self.mmaid_portrait(mm["kind"], expr, pz) if mm
+        scr.image(pad * 2, y0 + pad, anchor="nw", image=self.mmaid_portrait(mm["kind"], expr, pz) if mm
                        else self.look_portrait(
                            (kid["name"], kid["born"]), kid["look"], expr, pz)
                        if kid else self.look_portrait(who["name"], who["look"],
                                                       expr, pz)
                        if who else self.portrait_image(vid, expr, pz))
-        c.create_rectangle(pad * 2, y0 + pad, pad * 2 + psz, y0 + pad + psz,
-                           outline=shade(v["look"]["bg"], 0.6), width=2,
-                           tags="overlay")
+        scr.rect(pad * 2, y0 + pad, pad * 2 + psz, y0 + pad + psz,
+                           outline=shade(v["look"]["bg"], 0.6), width=2)
         if who:
-            c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
-                          text=who["name"], font=bold, fill=ACCENT)
-            c.create_text(tx, y0 + pad + lh, anchor="nw", tags="overlay",
-                          font=F("Helvetica", 13), fill=INK_DIM,
+            scr.text(tx, y0 + pad, anchor="nw", text=who["name"], font=bold, fill=ACCENT)
+            scr.text(tx, y0 + pad + lh, anchor="nw", font=F("Helvetica", 13), fill=INK_DIM,
                           text=who["sub"])
-            c.create_text(tx, y0 + pad + lh * 2 + S(6), anchor="nw",
-                          width=tw, text=text, font=f, fill=INK,
-                          tags="overlay")
+            scr.text(tx, y0 + pad + lh * 2 + S(6), anchor="nw",
+                          width=tw, text=text, font=f, fill=INK)
             return
         if kid:
             h = min(10, kid["love"] // 100)
             age = self.kid_age(kid)
-            c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
-                          text=kid["name"], font=bold, fill=ACCENT)
+            scr.text(tx, y0 + pad, anchor="nw", text=kid["name"], font=bold, fill=ACCENT)
             self.draw_hearts(tx + self.screen.measure(bold, kid["name"]) +
                              S(12),
                              y0 + pad, h, F("Helvetica", 13))
-            c.create_text(tx, y0 + pad + lh, anchor="nw", tags="overlay",
-                          font=F("Helvetica", 13), fill=INK_DIM,
+            scr.text(tx, y0 + pad + lh, anchor="nw", font=F("Helvetica", 13), fill=INK_DIM,
                           text="(your %s, %d day%s old)" % (
                               "daughter" if kid["sex"] == "F" else "son",
                               age, "" if age == 1 else "s"))
-            c.create_text(tx, y0 + pad + lh * 2 + S(6), anchor="nw",
-                          width=tw, text=text, tags="overlay",
-                          font=F("Helvetica", 14, "italic") if t.get("narr")
+            scr.text(tx, y0 + pad + lh * 2 + S(6), anchor="nw",
+                          width=tw, text=text, font=F("Helvetica", 14, "italic") if t.get("narr")
                           else f, fill=INK_DIM if t.get("narr") else INK)
             return
         if mm:
-            c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
-                          text=mm["name"], font=bold, fill=ACCENT)
+            scr.text(tx, y0 + pad, anchor="nw", text=mm["name"], font=bold, fill=ACCENT)
             h = self.mm_hearts(mm)
             role = {"dating": "your sweetheart", "engaged": "your fiancée",
                     "married": "your wife"}.get(mm["status"], "your maid")
@@ -19348,12 +19388,10 @@ class Game:
             self.draw_hearts(tx + self.screen.measure(bold, mm["name"]) +
                              S(12),
                              y0 + pad, h, hf)
-            c.create_text(tx, y0 + pad + lh, anchor="nw", tags="overlay",
-                          font=hf, fill=INK_DIM, text="(%s, once %s)" % (
+            scr.text(tx, y0 + pad + lh, anchor="nw", font=hf, fill=INK_DIM, text="(%s, once %s)" % (
                               role, an(MONSTERS[mm["kind"]].name)))
-            c.create_text(tx, y0 + pad + lh * 2 + S(6), anchor="nw",
-                          width=tw, text=text, tags="overlay",
-                          font=F("Helvetica", 14, "italic") if t.get("narr")
+            scr.text(tx, y0 + pad + lh * 2 + S(6), anchor="nw",
+                          width=tw, text=text, font=F("Helvetica", 14, "italic") if t.get("narr")
                           else f, fill=INK_DIM if t.get("narr") else INK)
             return
         h = self.hearts(vid)
@@ -19362,8 +19400,7 @@ class Game:
                   "married": "  (spouse)"}.get(f_["status"], "")
         if self.maid(vid):
             status += "  (your maid)"
-        c.create_text(tx, y0 + pad, anchor="nw", tags="overlay",
-                      text=self.display_name(vid), font=bold, fill=ACCENT)
+        scr.text(tx, y0 + pad, anchor="nw", text=self.display_name(vid), font=bold, fill=ACCENT)
         hf = F("Helvetica", 13)
         hx, hy = tx + self.screen.measure(bold, self.display_name(vid)) + \
             S(12), y0 + pad
@@ -19372,13 +19409,12 @@ class Game:
             hx, hy = tx, y0 + pad + lh
         hx += self.draw_hearts(hx, hy, h, hf)
         if status:
-            c.create_text(hx, hy, anchor="nw", tags="overlay", text=status,
+            scr.text(hx, hy, anchor="nw", text=status,
                           font=hf, fill=HEARTC)
-        c.create_text(tx, hy + lh + S(6), anchor="nw", width=tw,
+        scr.text(tx, hy + lh + S(6), anchor="nw", width=tw,
                       text=text, font=F("Helvetica", 14, "italic") if
                       t.get("narr") else f,
-                      fill=INK_DIM if t.get("narr") else INK,
-                      tags="overlay")
+                      fill=INK_DIM if t.get("narr") else INK)
 
     def flash(self, x, y, tile="sparkle"):
         cols, rows, ox, oy, ts = self.view
@@ -19401,8 +19437,8 @@ class Game:
         """Text in a box in the middle of the map, as big as will fit: in
         one column if it can, or two, split at a paragraph, if that lets
         it be bigger."""
-        c = self.canvas
-        W, H = c.winfo_width(), c.winfo_height()
+        scr = self.screen
+        W, H = scr.size()
         key = (text, W, H, font_px(12))     # fonts scale with the window
         cache = getattr(self, "box_fit", {})
         if key not in cache:
@@ -19417,47 +19453,48 @@ class Game:
             cols[-1] += "\n\n— Page %d of %d. %s —" % (
                 page + 1, len(pages), "Any key or tap: next. Esc closes."
                 if page + 1 < len(pages) else "Any key closes. \u2190 back.")
-        ts, x = [], 0
-        for col in cols:        # hearts are drawn, not printed: see below
-            t = c.create_text(x, 0, text=col.translate(NO_HEARTS),
-                              fill=color, font=font, justify="left",
-                              anchor="nw", tags="overlay")
-            ts.append(t)
-            x = c.bbox(t)[2] + 32
-        x0, y0, x1, y1 = c.bbox(*ts)
-        dx, dy = (W - (x1 - x0)) / 2 - x0, (H - (y1 - y0)) / 2 - y0
-        for t in ts:
-            c.move(t, dx, dy)
-        x0, y0, x1, y1 = c.bbox(*ts)
-        r = c.create_rectangle(x0 - 16, y0 - 12, x1 + 16, y1 + 12,
-                               fill=PANEL, outline=ACCENT, width=2,
-                               tags="overlay")
-        for t in ts:
-            c.tag_raise(t, r)
-        self.draw_text_hearts(ts, cols, font)
+        shown = [col.translate(NO_HEARTS) for col in cols]  # hearts: below
 
-    def draw_text_hearts(self, ts, cols, font):
+        def extent(at):
+            """The box round the columns, each with its top left at at."""
+            boxes = [scr.text_box(col, font, x, y)
+                     for col, (x, y) in zip(shown, at)]
+            return (min(b[0] for b in boxes), min(b[1] for b in boxes),
+                    max(b[2] for b in boxes), max(b[3] for b in boxes))
+        at, x = [], 0
+        for col in shown:       # side by side, 32 pixels apart
+            at.append((x, 0))
+            x = scr.text_box(col, font, x)[2] + 32
+        x0, y0, x1, y1 = extent(at)
+        dx, dy = (W - (x1 - x0)) / 2 - x0, (H - (y1 - y0)) / 2 - y0
+        at = [(x + dx, y + dy) for x, y in at]      # centred
+        x0, y0, x1, y1 = extent(at)
+        scr.rect(x0 - 16, y0 - 12, x1 + 16, y1 + 12, fill=PANEL,
+                 outline=ACCENT, width=2)
+        for col, (x, y) in zip(shown, at):
+            scr.text(x, y, text=col, fill=color, font=font, justify="left",
+                     anchor="nw")
+        self.draw_text_hearts(at, cols, font)
+
+    def draw_text_hearts(self, at, cols, font):
         """Hearts in a text box, filled and empty, drawn as shapes where
         the print has a space for them: some phone fonts draw the two
-        heart characters alike."""
-        c = self.canvas
-        asc, lh = self.screen.metrics(font)
-        cell = self.screen.measure(font, " ")
+        heart characters alike.  at: the top left of each column."""
+        scr = self.screen
+        asc, lh = scr.metrics(font)
+        cell = scr.measure(font, " ")
         size = max(5, min(cell * 0.95, asc * 0.8))
-        for t, col in zip(ts, cols):
-            tx, ty = c.coords(t)
+        for (tx, ty), col in zip(at, cols):
             for i, line in enumerate(col.split("\n")):
                 plain = line.translate(NO_HEARTS)
                 for j, ch in enumerate(line):
                     if ch not in ("\u2665", "\u2661"):
                         continue
-                    hx = tx + self.screen.measure(font, plain[:j]) + \
-                        (cell - size) / 2
+                    hx = tx + scr.measure(font, plain[:j]) + (cell - size) / 2
                     hy = ty + i * lh + asc - size
-                    c.create_polygon(
-                        heart_points(hx, hy, size), smooth=True,
-                        fill=HEARTC if ch == "\u2665" else "",
-                        outline=HEARTC, width=1, tags="overlay")
+                    scr.polygon(heart_points(hx, hy, size), smooth=True,
+                                fill=HEARTC if ch == "\u2665" else "",
+                                outline=HEARTC, width=1)
 
     def fit_text_box(self, text, W, H):
         """Pages of (columns, font) for a text box: all on one page, in one
@@ -19532,8 +19569,8 @@ class Game:
         return best or [([text], F("Menlo", 7))]
 
     def draw_map(self):
-        c, a = self.canvas, self.areas["valley"]
-        W, H = c.winfo_width(), c.winfo_height()
+        scr, a = self.screen, self.areas["valley"]
+        W, H = scr.size()
         rows = []
         for y in range(a.h):
             row = []
@@ -19547,33 +19584,30 @@ class Game:
             rows.append(row)
         z = max(1, min((W - 20) // a.w, (H - 50) // a.h))
         self.map_img = self.screen.make_image(rows, z)
-        c.create_rectangle(0, 0, W, H, fill="black", tags="overlay")
+        scr.rect(0, 0, W, H, fill="black")
         mx, my = (W - a.w * z) / 2, (H - a.h * z) / 2 + 10
-        c.create_image(mx, my, image=self.map_img, anchor="nw",
-                       tags="overlay")
+        scr.image(mx, my, image=self.map_img, anchor="nw")
         small = F("Helvetica", 9 if z < 9 else 11)
         for key in BUILDINGS:
             if key in ON_ORDER and key not in self.built():
                 continue
             x, y = door_of(key)
             name = BUILDINGS[key][6].replace("the ", "", 1)
-            c.create_text(mx + (x + 0.5) * z, my + (y - 4) * z,
+            scr.text(mx + (x + 0.5) * z, my + (y - 4) * z,
                           text=cap(name), fill="#ffffff", font=small,
-                          anchor="s", tags="overlay")
+                          anchor="s")
         for n in self.npcs.values():
             if n.where == "valley" and self.friend(n.vid)["met"]:
-                c.create_oval(mx + n.x * z, my + n.y * z, mx + (n.x + 1) * z,
-                              my + (n.y + 1) * z, fill=HEARTC, outline="",
-                              tags="overlay")
+                scr.oval(mx + n.x * z, my + n.y * z, mx + (n.x + 1) * z,
+                              my + (n.y + 1) * z, fill=HEARTC, outline="")
         if self.area is a:
             px, py = self.pos()
         else:
             px, py = self.outside_door()
-        c.create_rectangle(mx + px * z - 2, my + py * z - 2,
+        scr.rect(mx + px * z - 2, my + py * z - 2,
                            mx + (px + 1) * z + 2, my + (py + 1) * z + 2,
-                           outline="#ffff00", width=2, tags="overlay")
-        c.create_text(W / 2, my - 14, fill=ACCENT, font=F(*MONO),
-                      tags="overlay",
+                           outline="#ffff00", width=2)
+        scr.text(W / 2, my - 14, fill=ACCENT, font=F(*MONO),
                       text="Apple Blossom Village   (yellow: you; pink: "
                            "friends; any key closes)")
 
