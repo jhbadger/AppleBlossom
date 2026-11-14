@@ -9434,7 +9434,8 @@ def kivy_markup(text, mono_px=None):
 class KivyFonts:
     """F()'s fonts in Kivy's terms: Roboto for print, Roboto Mono where the
     columns must line up, at a size in real pixels."""
-    pt = 1.0 if ANDROID else 4 / 3     # as Tk counts pixels to a point
+    pt = 4 / 3          # as Tk counts pixels to a point on a desktop: on
+                        # a phone too, so print keeps to the layout's size
 
     @classmethod
     def px(cls, size):
@@ -10076,12 +10077,18 @@ class KivyShell:
         root = self.root
 
         game = self.game
+        Clock = self.kv["Clock"]
 
         class AppleBlossomVillage(self.kv["App"]):
             title = "Apple Blossom Village"
 
             def build(app):
                 return root
+
+            def on_start(app):
+                """Fit the window once it's up: a phone's comes up at its
+                size without ever being resized."""
+                Clock.schedule_once(lambda dt: game.fit(True), 0)
 
             def on_pause(app):
                 """Switched away from: Android may close the app without
@@ -10616,7 +10623,9 @@ class Game:
         lh, th = scr.metrics(f)[1], scr.metrics(tf)[1]
         rows = self.creator_rows()
         pad = S(12)
-        bw = max(160, min(W - 16, S(560)))
+        # a phone held upright: the whole width
+        bw = max(160, W - 16 if getattr(self, "tall", False) else
+                 min(W - 16, S(560)))
         z = max(2, min(6, int(bw * 0.26) // PW))
         pw = PW * z
         rx = pad * 2 + pw                   # where the rows start
