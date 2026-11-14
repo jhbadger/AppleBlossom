@@ -24,6 +24,22 @@ If Python reports `No module named '_tkinter'`, install your Python's Tk
 package (`brew install python-tk` with Homebrew Python, or
 `sudo apt install python3-tk` on Debian and Ubuntu).
 
+**With Kivy instead of Tk:** where [Kivy](https://kivy.org) is installed,
+`./appleblossomvillage --kivy` (or `ABV_UI=kivy`) runs the same game in a
+Kivy window; a Python without Tk uses Kivy by itself. The game never imports
+Kivy by name, so Pydroid 3 on Android still runs it with Tk. To run it with
+Kivy there, save this next to the game as `abv_kivy.py` and run that:
+
+```python
+import kivy  # Pydroid runs a script that imports Kivy with Kivy
+import os, runpy, sys
+here = os.path.dirname(os.path.abspath(__file__))
+game = [os.path.join(here, n) for n in ("appleblossomvillage.py",
+        "appleblossomvillage") if os.path.exists(os.path.join(here, n))][0]
+sys.argv.append("--kivy")
+runpy.run_path(game, run_name="__main__")
+```
+
 On macOS, `./appleblossomvillage --build-app [DIR]` builds an
 `appleblossomvillage.app` with its own icon (an apple blossom), and
 `--icon-png SIZE [OUT.png]` writes just the icon. `--selftest` builds the
@@ -846,6 +862,7 @@ Zoom in and out from the menu, and make the text bigger or smaller.
 ## Files
 
 - `appleblossomvillage`: the game
+- `abv_kivy.py` (yours to make, see above): runs it with Kivy in Pydroid
 - `~/.appleblossomvillage.json`: the saved game (written when you change
   place, sleep and quit)
 - `~/.cache/appleblossomvillage/`: cached music

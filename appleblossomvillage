@@ -64,12 +64,15 @@ import sys
 import tempfile
 import threading
 import time
-import tkinter as tk
 import wave
 import zlib
 import base64
 from collections import deque, namedtuple
-from tkinter import font as tkfont
+try:
+    import tkinter as tk
+    from tkinter import font as tkfont
+except ImportError:                 # a Python with only Kivy: see main()
+    tk = tkfont = None
 
 SAVE_FILE = os.path.expanduser("~/.appleblossomvillage.json")
 ANDROID = hasattr(sys, "getandroidapilevel") or "ANDROID_ROOT" in os.environ
@@ -8836,8 +8839,8 @@ Press any key to close."""
 # The game reaches the window only through these: TkShell for what's round
 # the play area (the bars, panel, log and entry; timers; keys and taps) and
 # TkScreen for the play area itself (pictures, tiles, print and shapes),
-# with TkFonts to make F()'s fonts.  main() picks them; a Kivy version would
-# be two more classes with the same methods.  The self-test checks that
+# with TkFonts to make F()'s fonts.  The Kivy classes further on have the
+# same methods, and main() picks which to use.  The self-test checks that
 # nothing else reaches for Tk: see display_layer_problems().
 
 Key = namedtuple("Key", "name char ctrl in_entry")
@@ -9320,6 +9323,733 @@ class TkScreen:
     def listen(self, game):
         """The play area resized: lay the tiles out afresh."""
         self.canvas.bind("<Configure>", lambda e: game.layout())
+
+
+# ── The display layer, in Kivy ──────────────────────────────────────────────
+# The same shell and screen again, for Kivy: run with --kivy (or ABV_UI=kivy)
+# where Kivy is installed, or from the little Kivy launcher in the README on
+# a phone.  Kivy is only looked for when asked, and by names put together
+# at run time, as for the mixer: Pydroid picks how to run a script from
+# what it imports, and the game itself must still start with Tk.  Kivy
+# counts in real pixels from the bottom left; these classes turn that into
+# the game's pixels from the top left of the play area.
+
+KV = {}             # Kivy's parts, once loaded
+
+
+def load_kivy(width=1000, height=740):
+    """Kivy's classes, by name; the first call opens the window."""
+    if KV:
+        return KV
+    os.environ.setdefault("KIVY_NO_ARGS", "1")      # --kivy is ours
+    import importlib
+    k = "ki" + "vy"
+
+    def part(module, *names):
+        mod = importlib.import_module(k + module)
+        for n in names:
+            KV[n] = getattr(mod, n)
+    config = importlib.import_module(k + ".config").Config
+    config.set("kivy", "exit_on_escape", "0")       # Escape and Back: ours
+    config.set("kivy", "log_level", "warning")
+    config.set("input", "mouse", "mouse,disable_multitouch")
+    config.set("graphics", "width", str(width))
+    config.set("graphics", "height", str(height))
+    part(".core.window", "Window")
+    part(".app", "App")
+    part(".clock", "Clock")
+    part(".graphics", "Color", "Rectangle", "Ellipse", "Line", "Mesh",
+         "InstructionGroup")
+    part(".graphics.texture", "Texture")
+    part(".graphics.tesselator", "Tesselator", "WINDING_ODD",
+         "TYPE_POLYGONS")
+    part(".core.text.markup", "MarkupLabel")
+    part(".uix.widget", "Widget")
+    part(".uix.stencilview", "StencilView")
+    part(".uix.boxlayout", "BoxLayout")
+    part(".uix.gridlayout", "GridLayout")
+    part(".uix.label", "Label")
+    part(".uix.button", "Button")
+    part(".uix.textinput", "TextInput")
+    part(".uix.scrollview", "ScrollView")
+    return KV
+
+
+def kivy_rgba(colour, alpha=1.0):
+    """A Tk colour ("#rrggbb", "black" or "white") as Kivy's (r, g, b, a)."""
+    colour = {"black": "#000000", "white": "#ffffff"}.get(colour, colour)
+    return (int(colour[1:3], 16) / 255, int(colour[3:5], 16) / 255,
+            int(colour[5:7], 16) / 255, alpha)
+
+
+def kivy_markup(text, mono_px=None):
+    """Print for a Kivy label that reads markup: [, ] and & kept as they
+    are, and the symbols Kivy's Roboto fonts lack (hearts, blocks, stars,
+    arrows) set in DejaVu Sans, which Kivy also brings.  In monospaced
+    print of mono_px pixels they're made smaller, so that each takes about
+    one letter's width and the columns still line up."""
+    if mono_px:
+        start = "[font=DejaVuSans][size=%d]" % max(6, round(mono_px * 0.72))
+        end = "[/size][/font]"
+    else:
+        start, end = "[font=DejaVuSans]", "[/font]"
+    out, run = [], []
+    for ch in text:
+        if ord(ch) > 0xff and not 0x2010 <= ord(ch) <= 0x2027:
+            run.append(ch)
+            continue
+        if run:
+            out.append(start + "".join(run) + end)
+            run = []
+        out.append({"&": "&amp;", "[": "&bl;", "]": "&br;"}.get(ch, ch))
+    if run:
+        out.append(start + "".join(run) + end)
+    return "".join(out)
+
+
+class KivyFonts:
+    """F()'s fonts in Kivy's terms: Roboto for print, Roboto Mono where the
+    columns must line up, at a size in real pixels."""
+    pt = 1.0 if ANDROID else 4 / 3     # as Tk counts pixels to a point
+
+    @classmethod
+    def px(cls, size):
+        return max(6, round(size * UI[0] * cls.pt))
+
+    @staticmethod
+    def mono(font):
+        return font[0] in ("Menlo", "Courier", MONO[0])
+
+    @classmethod
+    def markup(cls, text, font):
+        return kivy_markup(text, cls.px(font[1]) if cls.mono(font) else None)
+
+    @classmethod
+    def options(cls, font):
+        family, size, style = font
+        mono = cls.mono(font)
+        return {"font_name": "RobotoMono-Regular" if mono else "Roboto",
+                "font_size": cls.px(size), "bold": "bold" in style,
+                "italic": "italic" in style}
+
+
+class KivyImage:
+    """A picture: a texture, its pixels, its size and how many times over
+    to draw it."""
+    __slots__ = ("texture", "pixels", "w", "h", "z")
+
+    def __init__(self, texture, pixels, w, h, z=1):
+        self.texture, self.pixels = texture, pixels
+        self.w, self.h, self.z = w, h, z
+
+
+class KivyScreen:
+    """The play area in Kivy: a widget whose canvas holds, from the bottom,
+    the tiles, the gold square, the weather, the overlay and the flash."""
+    ANCHOR_X = {"w": 0, "e": 1}
+    ANCHOR_Y = {"n": 0, "s": 1}
+
+    def __init__(self):
+        kv = load_kivy()
+        self.kv = kv
+        screen = self
+        self.game = None
+
+        class PlayArea(kv["StencilView"]):     # (drawing kept inside it)
+            def on_touch_down(self, touch):
+                if touch.is_mouse_scrolling or not self.collide_point(
+                        *touch.pos) or screen.game is None:
+                    return super().on_touch_down(touch)
+                screen.game.tapped(int(touch.x - self.x),    # (whole pixels,
+                                   int(self.top - touch.y))   # as Tk's)
+                return True
+        self.widget = PlayArea()
+        self.groups = {}
+        for layer in ("grid", "cursor", "weather", "overlay", "fx"):
+            g = self.groups[layer] = kv["InstructionGroup"]()
+            self.widget.canvas.add(g)
+        self.cells = []
+        self.labels = {}            # (text, font, ...) -> texture
+        self.rgba = {}              # "#rrggbb" -> 4 bytes
+
+    # Where things go: the game's top-left pixels to Kivy's.
+
+    def kx(self, x):
+        return self.widget.x + x
+
+    def ky(self, y, h=0):
+        """Kivy's y for the bottom of something h high whose top is at y."""
+        return self.widget.y + self.widget.height - y - h
+
+    def size(self):
+        return int(self.widget.width), int(self.widget.height)
+
+    def listen(self, game):
+        """The play area resized: lay the tiles out afresh."""
+        self.game = game
+        trigger = self.kv["Clock"].create_trigger(lambda dt: game.layout())
+        self.widget.bind(size=lambda *a: trigger(), pos=lambda *a: trigger())
+
+    # Pictures.
+
+    def pixel_bytes(self, rows):
+        """Rows of colours, top first, as RGBA bytes from the bottom."""
+        rgba = self.rgba
+        out = bytearray()
+        for row in reversed(rows):
+            for c in row:
+                b = rgba.get(c)
+                if b is None:
+                    b = rgba[c] = bytes((int(c[1:3], 16), int(c[3:5], 16),
+                                         int(c[5:7], 16), 255)) if c \
+                        else b"\0\0\0\0"
+                out += b
+        return bytes(out)
+
+    def make_image(self, rows, z=1):
+        w, h = len(rows[0]), len(rows)
+        tex = self.kv["Texture"].create(size=(w, h), colorfmt="rgba")
+        tex.mag_filter = tex.min_filter = "nearest"
+        pixels = self.pixel_bytes(rows)
+        tex.blit_buffer(pixels, colorfmt="rgba", bufferfmt="ubyte")
+        return KivyImage(tex, pixels, w, h, z)
+
+    def paint_image(self, img, rows):
+        img.pixels = self.pixel_bytes(rows)
+        img.texture.blit_buffer(img.pixels, colorfmt="rgba",
+                                bufferfmt="ubyte")
+
+    def zoom_image(self, img, z):
+        """The same texture, drawn z times bigger: repainting the one
+        repaints the other."""
+        return KivyImage(img.texture, img.pixels, img.w, img.h, img.z * z)
+
+    def zoom_into(self, big, img, z):
+        if big.texture is not img.texture:
+            big.pixels = img.pixels
+            big.texture.blit_buffer(img.pixels, colorfmt="rgba",
+                                    bufferfmt="ubyte")
+
+    # The tiles, the gold square and the flash.
+
+    def grid_build(self, cols, rows, ox, oy, ts, layers=3):
+        kv = self.kv
+        for g in self.groups.values():
+            g.clear()
+        grid = self.groups["grid"]
+        grid.add(kv["Color"](1, 1, 1, 1))
+        self.cells = []
+        for j in range(rows):
+            for i in range(cols):
+                pos = (self.kx(ox + i * ts), self.ky(oy + j * ts, ts))
+                cell = tuple(kv["Rectangle"](pos=pos, size=(0, 0))
+                             for _ in range(layers))
+                for r in cell:
+                    grid.add(r)
+                self.cells.append(cell)
+
+    def grid_set(self, index, layer, img):
+        r = self.cells[index][layer]
+        if img is None:
+            r.size = (0, 0)
+        else:
+            r.texture = img.texture
+            r.size = (img.w * img.z, img.h * img.z)
+
+    def cursor(self, rect):
+        g = self.groups["cursor"]
+        g.clear()
+        if rect is not None:
+            x0, y0, x1, y1 = rect
+            g.add(self.kv["Color"](*kivy_rgba(GOLD)))
+            g.add(self.kv["Line"](rectangle=(self.kx(x0), self.ky(y1),
+                                             x1 - x0, y1 - y0), width=1.5))
+
+    def effect(self, x, y, img):
+        g = self.groups["fx"]
+        g.clear()
+        if img is not None:
+            w, h = img.w * img.z, img.h * img.z
+            g.add(self.kv["Color"](1, 1, 1, 1))
+            g.add(self.kv["Rectangle"](texture=img.texture, size=(w, h),
+                                       pos=(self.kx(x), self.ky(y, h))))
+
+    # Print.
+
+    def label(self, text, font, fill=None, width=0, justify="left"):
+        """A texture of print, kept for next time."""
+        key = (text, font, fill, width, justify, UI[0])
+        tex = self.labels.get(key)
+        if tex is None:
+            if len(self.labels) > 3000:
+                self.labels.clear()
+            lab = self.kv["MarkupLabel"](
+                text=KivyFonts.markup(text, font),
+                color=kivy_rgba(fill or "#000000"),
+                text_size=(width or None, None), halign=justify,
+                **KivyFonts.options(font))
+            lab.refresh()
+            tex = self.labels[key] = lab.texture
+        return tex
+
+    def measure(self, font, s):
+        return self.label(s, font).width if s else 0
+
+    def metrics(self, font):
+        h = self.label("Ag", font).height
+        return round(h * 0.8), h
+
+    def text_box(self, s, font, x=0, y=0, width=None):
+        if not s:
+            return None
+        tex = self.label(s, font, width=width or 0)
+        return x, y, x + tex.width, y + tex.height
+
+    def text_size(self, s, font, width=None):
+        bb = self.text_box(s, font, width=width)
+        if not bb:
+            return 0, self.metrics(font)[1]
+        return bb[2] - bb[0], bb[3] - bb[1]
+
+    # Drawing over the tiles, in layers, later things on top.
+
+    def clear(self, layer="overlay"):
+        self.groups[layer].clear()
+
+    def has(self, layer):
+        return bool(self.groups[layer].children)
+
+    def lift(self, layer):
+        """(The layers always keep their order.)"""
+
+    def place(self, x, y, w, h, anchor):
+        """The game's top left of something w by h anchored at x, y."""
+        ax = 0.5 if anchor in ("center", "n", "s") else \
+            self.ANCHOR_X[anchor[-1]]
+        ay = 0.5 if anchor in ("center", "w", "e") else \
+            self.ANCHOR_Y[anchor[0]]
+        return x - w * ax, y - h * ay
+
+    def add(self, layer, colour, shape):
+        g = self.groups[layer]
+        g.add(self.kv["Color"](*kivy_rgba(colour)))
+        g.add(shape)
+
+    def text(self, x, y, text="", font=None, fill=None, anchor="center",
+             width=0, justify="left", layer="overlay"):
+        if not text:
+            return
+        tex = self.label(text, font or F("Helvetica", 12), fill,
+                         width or 0, justify)
+        left, top = self.place(x, y, tex.width, tex.height, anchor)
+        g = self.groups[layer]
+        g.add(self.kv["Color"](1, 1, 1, 1))
+        g.add(self.kv["Rectangle"](texture=tex, size=tex.size,
+                                   pos=(self.kx(left),
+                                        self.ky(top, tex.height))))
+
+    def rect(self, x0, y0, x1, y1, fill="", outline=None, width=1,
+             layer="overlay"):
+        kv = self.kv
+        x0, x1 = min(x0, x1), max(x0, x1)
+        y0, y1 = min(y0, y1), max(y0, y1)
+        pos, size = (self.kx(x0), self.ky(y1)), (x1 - x0, y1 - y0)
+        if fill:
+            self.add(layer, fill, kv["Rectangle"](pos=pos, size=size))
+        if outline != "":
+            self.add(layer, outline or "#000000", kv["Line"](
+                rectangle=pos + size, width=max(1, width * 0.75)))
+
+    def oval(self, x0, y0, x1, y1, fill="", outline=None, width=1,
+             layer="overlay"):
+        kv = self.kv
+        pos, size = (self.kx(x0), self.ky(y1)), (x1 - x0, y1 - y0)
+        if fill:
+            self.add(layer, fill, kv["Ellipse"](pos=pos, size=size))
+        if outline != "":
+            self.add(layer, outline or "#000000", kv["Line"](
+                ellipse=pos + size, width=max(1, width * 0.75)))
+
+    def line(self, x0, y0, x1, y1, fill=None, width=1, layer="overlay"):
+        self.add(layer, fill or "#000000", self.kv["Line"](
+            points=(self.kx(x0), self.ky(y0), self.kx(x1), self.ky(y1)),
+            width=max(1, width * 0.75)))
+
+    @staticmethod
+    def smoothed(points, steps=6):
+        """Tk's smooth polygon: a curve through the midpoints of its sides,
+        pulled towards each corner; a corner given twice stays sharp."""
+        p = list(zip(points[0::2], points[1::2]))
+        out = []
+        for i in range(len(p)):
+            (ax, ay), (bx, by), (cx, cy) = p[i - 1], p[i], p[(i + 1) % len(p)]
+            m0 = ((ax + bx) / 2, (ay + by) / 2)
+            m1 = ((bx + cx) / 2, (by + cy) / 2)
+            for s in range(steps):
+                t = s / steps
+                u = 1 - t
+                out += [u * u * m0[0] + 2 * u * t * bx + t * t * m1[0],
+                        u * u * m0[1] + 2 * u * t * by + t * t * m1[1]]
+        return out
+
+    def polygon(self, points, fill=None, outline="", width=1, smooth=False,
+                layer="overlay"):
+        kv = self.kv
+        pts = self.smoothed(list(points)) if smooth else list(points)
+        flat = []
+        for x, y in zip(pts[0::2], pts[1::2]):
+            flat += [self.kx(x), self.ky(y)]
+        if fill != "":
+            tess = kv["Tesselator"]()
+            tess.add_contour(flat)
+            if tess.tesselate(kv["WINDING_ODD"], kv["TYPE_POLYGONS"]):
+                g = self.groups[layer]
+                g.add(kv["Color"](*kivy_rgba(fill or "#000000")))
+                for vertices, indices in tess.meshes:
+                    g.add(kv["Mesh"](vertices=vertices, indices=indices,
+                                     mode="triangle_fan"))
+        if outline:
+            self.add(layer, outline, kv["Line"](points=flat, close=True,
+                                                width=max(1, width * 0.75)))
+
+    def image(self, x, y, image=None, anchor="center", layer="overlay"):
+        w, h = image.w * image.z, image.h * image.z
+        left, top = self.place(x, y, w, h, anchor)
+        g = self.groups[layer]
+        g.add(self.kv["Color"](1, 1, 1, 1))
+        g.add(self.kv["Rectangle"](texture=image.texture, size=(w, h),
+                                   pos=(self.kx(left), self.ky(top, h))))
+
+
+KIVY_KEYS = {273: "Up", 274: "Down", 276: "Left", 275: "Right",
+             13: "Return", 271: "KP_Enter", 27: "Escape", 32: "space",
+             9: "Tab", 8: "BackSpace", 269: "KP_Subtract", 270: "KP_Add"}
+KIVY_KEYS.update({256 + n: "KP_%d" % n for n in range(10)})
+KIVY_CHARS = {"+": "plus", "-": "minus", "=": "equal", "?": "question",
+              "/": "slash"}
+
+
+class KivyShell:
+    """The window round the play area, in Kivy: the same bars, panel, log,
+    entry and buttons as the Tk one, and Kivy's clock and keys."""
+
+    def __init__(self):
+        self.kv = load_kivy()
+        self.fonts = []             # (widget, Font): resized together
+        self.raw = {}               # label -> its text, before markup
+        self.log_lines = []
+        self.entry_shown = False
+        self.app = None
+        self.tall = False
+
+    def screen_height(self):
+        return self.kv["Window"].height
+
+    def window_size(self):
+        return tuple(int(v) for v in self.kv["Window"].size)
+
+    def set_ui_scale(self, u):
+        UI[0] = u
+        for w, font in self.fonts:
+            w.font_size = KivyFonts.px(font[1])
+            if w in self.raw:           # symbols sized to the new print
+                w.text = KivyFonts.markup(self.raw[w], font)
+        self.screen.labels.clear()
+        self.show_log()
+
+    # Building.
+
+    def painted(self, widget, colour):
+        """A widget with a background."""
+        kv = self.kv
+        with widget.canvas.before:
+            kv["Color"](*kivy_rgba(colour))
+            r = kv["Rectangle"](pos=widget.pos, size=widget.size)
+        widget.bind(pos=lambda w, v: setattr(r, "pos", v),
+                    size=lambda w, v: setattr(r, "size", v))
+        return widget
+
+    def label(self, font, colour, wrap=False, **kw):
+        kv = self.kv
+        lab = kv["Label"](markup=True, color=kivy_rgba(colour),
+                          halign="left", valign="top",
+                          **dict(KivyFonts.options(font), **kw))
+        self.fonts.append((lab, font))
+        if wrap:
+            lab.size_hint_y = None
+            lab.bind(texture_size=lambda w, v: setattr(w, "height", v[1]))
+        else:
+            lab.size_hint = (None, None)
+            lab.bind(texture_size=lambda w, v: setattr(w, "size", v))
+        return lab
+
+    def build(self, game, buttons, big):
+        kv = self.kv
+        self.game = game
+        if not ANDROID:
+            kv["Window"].system_size = (1200, 880) if big else (1000, 740)
+        self.root = self.painted(kv["BoxLayout"](orientation="vertical"),
+                                 PANEL)
+        top = self.top = kv["BoxLayout"](size_hint_y=None, height=S(30),
+                                         padding=(S(10), S(6)),
+                                         spacing=S(20))
+        top.add_widget(self.label(F("Helvetica", 16, "bold"), ACCENT,
+                                  text="APPLE BLOSSOM VILLAGE"))
+        self.status = self.label(F("Helvetica", 12), INK_DIM)
+        top.add_widget(self.status)
+        top.add_widget(kv["Widget"]())
+        self.clock_label = self.label(F("Helvetica", 12, "bold"), GOLD)
+        top.add_widget(self.clock_label)
+        self.root.add_widget(top)
+
+        self.body = kv["BoxLayout"]()
+        self.left = kv["BoxLayout"](orientation="vertical")
+        self.screen = KivyScreen()
+        self.left.add_widget(self.screen.widget)
+        self.talkbar = self.painted(kv["BoxLayout"](
+            size_hint_y=None, height=S(34), padding=(S(8), S(4)),
+            spacing=S(6)), PANEL)
+        self.prompt = self.label(F(*MONO), ACCENT, text="Ask about:")
+        self.talkbar.add_widget(self.prompt)
+        self.entry = kv["TextInput"](
+            multiline=False, write_tab=False,
+            background_color=kivy_rgba(LOG_BG),
+            foreground_color=kivy_rgba(INK), cursor_color=kivy_rgba(INK),
+            **{k: v for k, v in KivyFonts.options(F(*MONO)).items()
+               if k in ("font_name", "font_size")})
+        self.fonts.append((self.entry, F(*MONO)))
+        self.entry.bind(on_text_validate=lambda *a: game.on_entry())
+        self.talkbar.add_widget(self.entry)
+        self.log_view = self.painted(kv["ScrollView"](
+            size_hint_y=None, height=S(100), do_scroll_x=False,
+            bar_width=S(4)), LOG_BG)
+        self.log = self.label(F(*MONO), INK, wrap=True,
+                              padding=(S(8), S(4)))
+        self.log.bind(width=lambda w, v: setattr(w, "text_size", (v, None)))
+        self.log_view.add_widget(self.log)
+        self.left.add_widget(self.log_view)
+        self.body.add_widget(self.left)
+
+        self.side = kv["BoxLayout"](orientation="vertical",
+                                    size_hint_x=None, width=S(250),
+                                    padding=(S(10), S(8)), spacing=S(4))
+        self.panelrow = kv["BoxLayout"](size_hint_y=None, spacing=S(10))
+        self.panel = self.label(F(*MONO), INK, wrap=True)
+        self.panel2 = self.label(F(*MONO), INK, wrap=True)
+        for p in (self.panel, self.panel2):
+            p.bind(texture_size=lambda w, v: self.fit_panel())
+        self.panelrow.add_widget(self.panel)
+        self.condition = self.label(F("Menlo", 12, "bold"), GOLD, wrap=True)
+        self.side.add_widget(self.panelrow)
+        self.side.add_widget(self.condition)
+        self.side.add_widget(kv["Widget"]())
+        self.body.add_widget(self.side)
+        self.root.add_widget(self.body)
+
+        self.bar = kv["GridLayout"](size_hint_y=None, height=S(40),
+                                    padding=S(2), spacing=S(4))
+        self.btn = {}
+        for key, label, cmd in buttons:
+            b = kv["Button"](text=label, font_size=KivyFonts.px(13))
+            self.fonts.append((b, F("Helvetica", 13)))
+            b.bind(on_release=lambda w, c=cmd: c())
+            self.btn[key] = b
+            self.bar.add_widget(b)
+        self.root.add_widget(self.bar)
+        self.arrange(False, self.window_size()[0])
+        return self.screen
+
+    def fit_panel(self):
+        h = max(self.panel.height, self.panel2.height
+                if self.panel2.parent else 0)
+        self.panelrow.height = h
+
+    def arrange(self, tall, W):
+        """Wide: the panel at the side, the buttons in a row; tall (a phone
+        held upright): the panel underneath, the buttons in rows."""
+        self.tall = tall
+        lh = self.screen.metrics(F(*MONO))[1]
+        self.top.height = self.screen.metrics(F("Helvetica", 16,
+                                                "bold"))[1] + S(12)
+        self.talkbar.height = lh + S(14)
+        self.log_view.height = lh * (4 if tall else 6) + S(8)
+        each = max(self.screen.measure(F("Helvetica", 13), b.text)
+                   for b in self.btn.values()) + S(28)
+        n = len(self.btn)
+        rows = 2 if tall else 1
+        while rows < n and -(-n // rows) * each > W:
+            rows += 1
+        self.bar.cols = -(-n // rows)
+        self.bar.height = rows * (lh + S(18)) + S(4)
+        self.body.remove_widget(self.side)
+        if tall:
+            self.body.orientation = "vertical"
+            self.side.size_hint = (1, None)
+            self.side.bind(minimum_height=self.side.setter("height"))
+            wrap_ = (W - S(50)) // 2
+        else:
+            self.body.orientation = "horizontal"
+            self.side.unbind(minimum_height=self.side.setter("height"))
+            self.side.size_hint = (None, 1)
+            self.side.width = S(250)
+            wrap_ = S(230)
+        self.body.add_widget(self.side)
+        for p in (self.panel, self.panel2):
+            p.text_size = (wrap_, None)
+        self.condition.text_size = (W - S(24) if tall else S(230), None)
+
+    # What the window shows round the play area.
+
+    def set_label(self, label, text):
+        if self.raw.get(label) != text:
+            self.raw[label] = text
+            font = dict(self.fonts)[label]
+            label.text = KivyFonts.markup(text, font)
+
+    def set_status(self, text):
+        self.set_label(self.status, text)
+
+    def set_clock(self, text):
+        self.set_label(self.clock_label, text)
+
+    def set_condition(self, text):
+        self.set_label(self.condition, text)
+
+    def set_panel(self, first, second=None):
+        self.set_label(self.panel, "\n".join(first))
+        if second is None:
+            if self.panel2.parent:
+                self.panelrow.remove_widget(self.panel2)
+        else:
+            self.set_label(self.panel2, "\n".join(second))
+            if not self.panel2.parent:
+                self.panelrow.add_widget(self.panel2)
+        self.fit_panel()
+
+    LOG_TAGS = {"info": INK_DIM, "talk": TALK, "you": ACCENT, "bad": BAD,
+                "good": GOOD, "gold": GOLD, "heart": HEARTC,
+                "quest": ACCENT}
+
+    def log_add(self, text, tag=None):
+        self.log_lines = self.log_lines[-150:] + [(text, tag)]
+        self.show_log()
+
+    def show_log(self):
+        px = KivyFonts.px(MONO[1])
+        lines = []
+        for text, tag in self.log_lines:
+            line = "[color=%s]%s[/color]" % (self.LOG_TAGS.get(tag, INK),
+                                              kivy_markup(text, px))
+            lines.append("[b]%s[/b]" % line if tag == "quest" else line)
+        self.log.text = "\n".join(lines)
+        self.kv["Clock"].schedule_once(
+            lambda dt: setattr(self.log_view, "scroll_y", 0), 0)
+
+    def log_clear(self):
+        self.log_lines = []
+        self.log.text = ""
+
+    # The "Ask about:" entry.
+
+    def show_entry(self, prompt=None, text=None, select=False, focus=False):
+        if not self.entry_shown:
+            self.left.add_widget(self.talkbar, index=1)
+            self.entry_shown = True
+        if prompt is not None:
+            self.prompt.text = prompt
+        if text is not None:
+            self.entry.text = text
+        if focus:
+            self.entry.focus = True
+        if select:
+            self.kv["Clock"].schedule_once(
+                lambda dt: self.entry.select_all(), 0)
+
+    def hide_entry(self, prompt=None):
+        if prompt is not None:
+            self.prompt.text = prompt
+        if self.entry_shown:
+            self.entry.focus = False
+            self.left.remove_widget(self.talkbar)
+            self.entry_shown = False
+
+    def take_entry(self):
+        text, self.entry.text = self.entry.text, ""
+        return text
+
+    def type_into_entry(self, char):
+        self.entry.focus = True
+        self.entry.text += char
+        self.entry.cursor = (len(self.entry.text), 0)
+
+    def focus_play(self):
+        self.entry.focus = False
+
+    # Time, keys and taps.
+
+    def after(self, ms, fn, *args):
+        return self.kv["Clock"].schedule_once(lambda dt: fn(*args),
+                                              ms / 1000)
+
+    def after_idle(self, fn, *args):
+        return self.kv["Clock"].schedule_once(lambda dt: fn(*args), 0)
+
+    def cancel(self, job):
+        job.cancel()
+
+    def listen(self, game):
+        win = self.kv["Window"]
+
+        def key_down(window, key, scancode, codepoint, modifiers):
+            in_entry = bool(self.entry.focus)
+            if in_entry and key == 27:
+                game.on_entry_escape()
+                return True
+            if key in (113, ord("q")) and ("ctrl" in modifiers or
+                                           "meta" in modifiers):
+                game.quit()
+                return True
+            name = KIVY_KEYS.get(key)
+            if name == "Tab" and "shift" in modifiers:
+                name = "ISO_Left_Tab"
+            char = codepoint or ""
+            if name is None and char:
+                name = KIVY_CHARS.get(char, char)
+                if "shift" in modifiers and char.isalpha():
+                    name = char = char.upper()
+            if name is None:
+                return False
+            game.on_key(Key(name, char, "ctrl" in modifiers, in_entry))
+            return not in_entry
+        win.bind(on_key_down=key_down)
+        win.bind(on_resize=lambda *a: game.on_resize())
+        win.bind(on_request_close=lambda *a, **k: game.quit() or True)
+
+    def set_icon(self, png):
+        path = os.path.join(tempfile.gettempdir(), "appleblossomvillage.png")
+        try:
+            with open(path, "wb") as f:
+                f.write(png)
+            self.kv["Window"].set_icon(path)
+        except OSError:
+            pass
+
+    def run(self):
+        root = self.root
+
+        class AppleBlossomVillage(self.kv["App"]):
+            title = "Apple Blossom Village"
+
+            def build(app):
+                return root
+        self.app = AppleBlossomVillage()
+        self.app.run()
+
+    def close(self):
+        if self.app is not None:
+            self.app.stop()
+        else:
+            self.kv["Window"].close()
 
 
 class Game:
@@ -23976,9 +24706,10 @@ ART["puff"] = ({"g": "#e8e0d0", "G": "#b8b0a0"}, (
 # ── Checking ─────────────────────────────────────────────────────────────────
 
 def display_layer_problems(path=None):
-    """Places outside the display layer (the Tk classes, and main(), which
-    picks them) that reach for Tk itself: the game has to go through the
-    shell and the screen, so that another backend can stand in for them."""
+    """Places outside the display layer (the Tk and Kivy classes, and
+    main(), which picks them) that reach for Tk itself: the game has to go
+    through the shell and the screen, so that another backend can stand in
+    for them."""
     try:
         with open(path or os.path.abspath(__file__), encoding="utf-8") as f:
             tree = ast.parse(f.read())
@@ -23986,7 +24717,10 @@ def display_layer_problems(path=None):
         return []
     layer = [(n.lineno, n.end_lineno) for n in tree.body
              if isinstance(n, (ast.ClassDef, ast.FunctionDef)) and
-             (n.name.startswith("Tk") or n.name == "main")]
+             (n.name.startswith(("Tk", "Kivy")) or n.name == "main") or
+             isinstance(n, ast.Try) and any(      # importing tkinter
+                 isinstance(i, (ast.Import, ast.ImportFrom)) and
+                 "tkinter" in ast.dump(i) for i in n.body)]
     tk_names = {"tk", "tkfont", "TkShell", "TkScreen", "TkFonts"}
     found = set()
     for n in ast.walk(tree):
@@ -24403,7 +25137,11 @@ def main():
         return
     if "--selftest" in sys.argv:
         sys.exit(0 if selftest() else 1)
-    shell = TkShell(tk.Tk())
+    if "--kivy" in sys.argv or os.environ.get("ABV_UI") == "kivy" or \
+            tk is None:
+        shell = KivyShell()
+    else:
+        shell = TkShell(tk.Tk())
     Game(shell)
     shell.set_icon(icon_render_png(64))
     shell.run()
