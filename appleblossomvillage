@@ -25173,14 +25173,20 @@ package.domain = org.badgerjh
 source.dir = .
 source.include_exts = py,png
 version = 1.0
-# Kivy draws it; pyjnius reaches Android's MediaPlayer for the sound
-requirements = python3,kivy,pyjnius
+# Kivy draws it; pyjnius reaches Android's MediaPlayer for the sound.
+# Kivy's recipe brings requests, and requests charset-normalizer, which
+# python-for-android would fetch as a compiled Android wheel and then fail
+# to install; naming its pure-Python wheel here keeps it out of the way.
+requirements = python3,kivy,pyjnius,charset-normalizer@https://files.pythonhosted.org/packages/fc/ad/d07d7862a62ffa6d79d68074d14823243dd235a77c45262acbf6adeb28bf/charset_normalizer-3.5.2-py3-none-any.whl
 orientation = portrait, landscape
 fullscreen = 0
 icon.filename = %(source.dir)s/icon.png
 presplash.filename = %(source.dir)s/icon.png
 android.presplash_color = #2a2030
-android.archs = arm64-v8a, armeabi-v7a
+# 64-bit ARM only: nearly every phone, and what the Play Store asks for.
+# (Building for two at once breaks python-for-android's pip: it makes the
+# same venv again for the second, over the first's upgraded pip.)
+android.archs = arm64-v8a
 android.allow_backup = True
 # say yes to Google's SDK licence, which would otherwise be asked for,
 # and wait for an answer that a Docker build can't give
@@ -25188,15 +25194,112 @@ android.accept_sdk_license = True
 
 [buildozer]
 log_level = 2
-warn_on_root = 1
+# in Docker under Colima the project looks root's, so Buildozer runs as
+# root there; don't stop to ask about it (it's harmless in a container)
+warn_on_root = 0
 """
+
+
+ANDROID_TAR = r'''#!/home/user/.venv/bin/python3
+"""tar, for the kivy/buildozer image on a Mac.  Its GNU tar unpacks with
+the openat2 system call, which neither Rosetta nor QEMU can run, so every
+unpacking fails ("Cannot mkdir: Function not implemented").  This unpacks
+with Python's tarfile instead, refusing paths that leave the folder as GNU
+tar does, and hands anything else to the real tar.  Written by
+appleblossomvillage --build-android, and mounted over the image's tar."""
+import os
+import sys
+import tarfile
+
+REAL = "/usr/bin/tar"
+
+
+def real():
+    os.execv(REAL, [REAL] + sys.argv[1:])
+
+
+def main(args):
+    if not args:
+        real()
+    first = args[0].lstrip("-")
+    if args[0].startswith("--") or not first.isalpha() or "x" not in first:
+        real()                      # not unpacking: the real tar can
+    archive, dest, strip = None, ".", 0
+    rest = args[1:]
+    if "f" in first:
+        if not rest:
+            real()
+        archive, rest = rest[0], rest[1:]
+    while rest:
+        a = rest.pop(0)
+        if a == "-C" and rest:
+            dest = rest.pop(0)
+        elif a.startswith("--strip-components="):
+            strip = int(a.split("=", 1)[1])
+        elif a.startswith("--") and a in (
+                "--no-same-owner", "--no-same-permissions", "--overwrite"):
+            pass
+        else:
+            real()                  # members or options we don't know
+    if archive is None or archive == "-":
+        real()
+    with tarfile.open(archive) as tf:
+        members = []
+        for m in tf.getmembers():
+            if strip:
+                parts = m.name.split("/")[strip:]
+                if not parts or not parts[0]:
+                    continue
+                m.name = "/".join(parts)
+            members.append(m)
+        tf.extractall(dest, members=members, filter="tar")
+
+
+main(sys.argv[1:])
+'''
+
+
+ANDROID_BUILD = r'''#!/bin/sh
+# Build the Android app with Buildozer in Docker (kivy/buildozer), from
+# this folder wherever it's run from: ./build.sh, or ./build.sh with
+# Buildozer's own arguments (default: -v android debug).  The APK lands in
+# bin/.  Written by appleblossomvillage --build-android.
+#
+#   buildozer-home    Docker volume: Android's SDK and NDK, kept between
+#                     builds; on Colima's Linux disk, since the NDK has
+#                     names a Mac's disk can't tell apart (xt_RATEEST.h,
+#                     xt_rateest.h).
+#   buildozer-build   Docker volume: what's been compiled, likewise kept.
+#   tar               this folder's tar, over the image's own, which can't
+#                     unpack under Intel emulation on a Mac.
+#
+# Before each build the pip venv python-for-android makes is cleared:
+# it makes it afresh over the old one, mixing two versions of pip.
+set -e
+cd "$(dirname "$0")"
+[ $# -gt 0 ] || set -- -v android debug
+exec docker run --rm --platform linux/amd64 \
+    -v buildozer-home:/home/user/.buildozer \
+    -v buildozer-build:/home/user/hostcwd/.buildozer \
+    -v "$PWD":/home/user/hostcwd \
+    -v "$PWD/tar":/usr/local/bin/tar:ro \
+    --entrypoint /bin/bash kivy/buildozer -c \
+    'rm -rf /home/user/hostcwd/.buildozer/android/platform/build-*/build/venv
+     exec /usr/local/bin/entrypoint.sh "$@"' build "$@"
+'''
 
 
 def build_android(dest):
     """A folder for Buildozer to make an Android app of: the game as
-    main.py, its icon, and a buildozer.spec (written only if there isn't
-    one, so that your changes to it stay)."""
+    main.py, its icon, a buildozer.spec (written only if there isn't one,
+    so that your changes to it stay), and build.sh and the tar it uses,
+    for building in Docker (see ANDROID_BUILD and ANDROID_TAR)."""
     os.makedirs(dest, exist_ok=True)
+    for name, text in (("tar", ANDROID_TAR), ("build.sh", ANDROID_BUILD)):
+        path = os.path.join(dest, name)
+        with open(path, "w") as fh:
+            fh.write(text)
+        os.chmod(path, 0o755)
     shutil.copy(os.path.abspath(__file__), os.path.join(dest, "main.py"))
     with open(os.path.join(dest, "icon.png"), "wb") as fh:
         fh.write(icon_render_png(512))

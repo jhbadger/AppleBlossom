@@ -42,16 +42,18 @@ runpy.run_path(game, run_name="__main__")
 
 **As an Android app:** `./appleblossomvillage --build-android [DIR]` makes
 a folder (`android/` by default) for [Buildozer](https://buildozer.readthedocs.io)
-to turn into an APK: the game as `main.py`, its icon, and a
-`buildozer.spec`. Run it again after changing the game; it leaves your
-changes to the spec alone. Then, in that folder, on Linux or WSL with
-Buildozer installed:
+to turn into an APK: the game as `main.py`, its icon, a `buildozer.spec`,
+and a `build.sh` for building in Docker. Run it again after changing the
+game; it leaves your changes to the spec alone. The app is built for 64-bit
+ARM phones, which is nearly all of them.
+
+On Linux or WSL with Buildozer installed, build from inside that folder:
 
 ```bash
-buildozer -v android debug
+cd android && buildozer -v android debug
 ```
 
-or on a Mac, with Docker. Homebrew's `docker` is only the command; it needs
+On a Mac, build in Docker. Homebrew's `docker` is only the command; it needs
 an engine to talk to, such as [Colima](https://github.com/abiosoft/colima)
 (or Docker Desktop). On an Apple-silicon Mac, start Colima with Rosetta,
 since Android's build tools are made for Intel Linux:
@@ -64,16 +66,29 @@ brew install colima
 colima start --vm-type vz --vz-rosetta --cpu 4 --memory 8 --disk 60
 ```
 
+Then, from anywhere:
+
 ```bash
-docker run --rm --platform linux/amd64 -v "$HOME/.buildozer":/home/user/.buildozer -v "$PWD":/home/user/hostcwd kivy/buildozer -v android debug
+android/build.sh
 ```
 
-The `~/.buildozer` folder keeps Android's SDK and NDK between builds. The
-first build downloads them, a few gigabytes, and takes a while; the APK
-lands in `bin/`. `colima stop` shuts the engine down afterwards. Install it with
-`adb install -r bin/*.apk`, or copy it to the phone and open it. The app has
-no Tk, so it runs with Kivy; it saves when you switch away from it, and if
-it can't write to its home folder it keeps the save in its own private one.
+It runs Buildozer's `kivy/buildozer` image with what it needs on a Mac
+(its comments say why): two Docker volumes, on Colima's Linux disk, keep
+Android's SDK and NDK and everything compiled between builds, since the NDK
+holds names a Mac's disk takes for the same file (`xt_RATEEST.h`,
+`xt_rateest.h`); a small `tar` stands in for the image's own, which can't
+unpack under Intel emulation; and python-for-android's pip venv is cleared
+before each build, since it would otherwise be made again over the old one,
+mixing two versions of pip.
+
+The first build downloads a few gigabytes and compiles for the best part of
+an hour; later ones reuse all that. The APK lands in `android/bin/`.
+`colima stop` shuts the engine down afterwards, and
+`docker volume rm buildozer-home buildozer-build` frees the space. Install
+the APK with `adb install -r android/bin/*.apk`, or copy it to the phone and
+open it. The app has no Tk, so it runs with Kivy; it saves when you switch
+away from it, and if it can't write to its home folder it keeps the save in
+its own private one.
 
 On macOS, `./appleblossomvillage --build-app [DIR]` builds an
 `appleblossomvillage.app` with its own icon (an apple blossom), and
@@ -898,7 +913,8 @@ Zoom in and out from the menu, and make the text bigger or smaller.
 
 - `appleblossomvillage`: the game
 - `abv_kivy.py` (yours to make, see above): runs it with Kivy in Pydroid
-- `android/` (made by `--build-android`): the Android app's build folder
+- `android/` (made by `--build-android`): the Android app's build folder,
+  with `build.sh` to build it
 - `~/.appleblossomvillage.json`: the saved game (written when you change
   place, sleep and quit)
 - `~/.cache/appleblossomvillage/`: cached music
