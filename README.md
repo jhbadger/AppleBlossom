@@ -73,22 +73,28 @@ android/build.sh
 ```
 
 It runs Buildozer's `kivy/buildozer` image with what it needs on a Mac
-(its comments say why): two Docker volumes, on Colima's Linux disk, keep
-Android's SDK and NDK and everything compiled between builds, since the NDK
+(its comments say why). Two Docker volumes, on Colima's Linux disk, keep
+Android's SDK and NDK (`buildozer-home`) and python-for-android with all
+it has compiled (`buildozer-platform`); they live there because the NDK
 holds names a Mac's disk takes for the same file (`xt_RATEEST.h`,
-`xt_rateest.h`); a small `tar` stands in for the image's own, which can't
-unpack under Intel emulation; and python-for-android's pip venv is cleared
+`xt_rateest.h`). A small `tar` stands in for the image's own, which can't
+unpack under Intel emulation, and python-for-android's pip venv is cleared
 before each build, since it would otherwise be made again over the old one,
 mixing two versions of pip.
 
 The first build downloads a few gigabytes and compiles for the best part of
 an hour; later ones reuse all that. The APK lands in `android/bin/`.
 `colima stop` shuts the engine down afterwards, and
-`docker volume rm buildozer-home buildozer-build` frees the space. Install
-the APK with `adb install -r android/bin/*.apk`, or copy it to the phone and
-open it. The app has no Tk, so it runs with Kivy; it saves when you switch
-away from it, and if it can't write to its home folder it keeps the save in
-its own private one.
+`docker volume rm buildozer-home buildozer-platform` frees the space.
+Install the APK with `adb install -r android/bin/*.apk`, or copy it to the
+phone and open it. The app has no Tk, so it runs with Kivy; it saves when you
+switch away from it, and if it can't write to its home folder it keeps the
+save in its own private one.
+
+`build.sh` and `tar` hold nothing of this game, and the two volumes are
+shared: copy the pair next to another Kivy project's `buildozer.spec` and
+`build.sh` builds that too, without downloading or compiling Python, SDL2
+or Kivy again. Build one project at a time, all for 64-bit ARM.
 
 On macOS, `./appleblossomvillage --build-app [DIR]` builds an
 `appleblossomvillage.app` with its own icon (an apple blossom), and

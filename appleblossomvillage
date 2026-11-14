@@ -25172,6 +25172,8 @@ package.name = appleblossomvillage
 package.domain = org.badgerjh
 source.dir = .
 source.include_exts = py,png
+# (files with no extension get in regardless: keep the build's tar out)
+source.exclude_patterns = tar
 version = 1.0
 # Kivy draws it; pyjnius reaches Android's MediaPlayer for the sound.
 # Kivy's recipe brings requests, and requests charset-normalizer, which
@@ -25265,13 +25267,21 @@ ANDROID_BUILD = r'''#!/bin/sh
 # Buildozer's own arguments (default: -v android debug).  The APK lands in
 # bin/.  Written by appleblossomvillage --build-android.
 #
-#   buildozer-home    Docker volume: Android's SDK and NDK, kept between
-#                     builds; on Colima's Linux disk, since the NDK has
-#                     names a Mac's disk can't tell apart (xt_RATEEST.h,
-#                     xt_rateest.h).
-#   buildozer-build   Docker volume: what's been compiled, likewise kept.
-#   tar               this folder's tar, over the image's own, which can't
-#                     unpack under Intel emulation on a Mac.
+#   buildozer-home      Docker volume: Android's SDK and NDK.
+#   buildozer-platform  Docker volume: python-for-android and all it has
+#                       compiled (Python, SDL2, Kivy...), at
+#                       .buildozer/android/platform.  Both are shared by
+#                       every project built with this script, so the second
+#                       needn't download or compile them again; build one
+#                       at a time, all for the same arch (arm64-v8a).  They
+#                       live on Colima's Linux disk, since the NDK has names
+#                       a Mac's disk can't tell apart (xt_RATEEST.h and
+#                       xt_rateest.h).  The rest of .buildozer stays here.
+#   tar                 this folder's tar, over the image's own, which can't
+#                       unpack under Intel emulation on a Mac.
+#
+# It holds nothing of any one app: copy it, with tar, next to another
+# project's buildozer.spec to build that the same way.
 #
 # Before each build the pip venv python-for-android makes is cleared:
 # it makes it afresh over the old one, mixing two versions of pip.
@@ -25280,8 +25290,8 @@ cd "$(dirname "$0")"
 [ $# -gt 0 ] || set -- -v android debug
 exec docker run --rm --platform linux/amd64 \
     -v buildozer-home:/home/user/.buildozer \
-    -v buildozer-build:/home/user/hostcwd/.buildozer \
     -v "$PWD":/home/user/hostcwd \
+    -v buildozer-platform:/home/user/hostcwd/.buildozer/android/platform \
     -v "$PWD/tar":/usr/local/bin/tar:ro \
     --entrypoint /bin/bash kivy/buildozer -c \
     'rm -rf /home/user/hostcwd/.buildozer/android/platform/build-*/build/venv
