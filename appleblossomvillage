@@ -1840,7 +1840,8 @@ HAIR_COLOURS = {"black": "#1e1a1a", "brown": "#5a3a1e",
                 "white": "#eeeeee", "grey": "#9a9a9a", "pink": "#f090b8",
                 "blue": "#4a6ad0", "green": "#4a9a5a"}
 HAIRSTYLES = ("short", "messy", "spiky", "bob", "long", "bangs",
-              "ponytail", "bun", "braid", "curly", "pigtails", "bald")
+              "ponytail", "bun", "braid", "curly", "pigtails", "bald",
+              "swept", "receding", "sidebob")
 EYE_COLOURS = {"brown": "#5a3a1e", "blue": "#3a6ac0", "green": "#3a8a4a",
                "grey": "#6a7080", "hazel": "#8a6a2a", "violet": "#7a4ab0",
                "amber": "#c08020"}
@@ -1858,6 +1859,10 @@ def style_hair(rows, style, sex):
                 if rows[y][x] == "h":
                     rows[y][x] = "k" if y < 3 else rows[y][x]
         return
+    if style == "receding":             # thin on top
+        for x in range(6, 10):
+            if rows[1][x] == "h":
+                rows[1][x] = "k"
     if style in ("long", "braid", "curly", "bangs") and sex != "C":
         put([(y, x) for y in range(4, 10) for x in (3, 12)])
     if style == "bangs":
@@ -2035,9 +2040,10 @@ def portrait(look, expr="neutral"):
     frx, fry = (7.5, 9) if not child else (8.0, 8)
 
     # long hair falls behind the shoulders
-    if style in ("long", "curly", "braid", "bob", "pigtails", "bangs"):
+    if style in ("long", "curly", "braid", "bob", "pigtails", "bangs",
+                 "sidebob"):
         bottom = {"long": 29, "curly": 26, "braid": 22, "bob": 21,
-                  "pigtails": 20, "bangs": 29}[style]
+                  "pigtails": 20, "bangs": 29, "sidebob": 22}[style]
         pdisc(g, cx, fy - 1, frx + 3, fry + 2, hd)
         prect(g, round(cx - frx - 3), fy, round(cx + frx + 3), bottom, hd)
         if style == "curly":
@@ -2065,6 +2071,14 @@ def portrait(look, expr="neutral"):
             if abs(x - cx) <= half:
                 g[y][x] = shirt if abs(x - cx) < half - 1.5 else \
                     shade(shirt, 0.8)
+    if "check" in extras:                       # a checked shirt
+        ck = look.get("checkc", shade(shirt, 0.8))
+        for y in range(24, PW):
+            for x in range(PW):
+                if g[y][x] in (shirt, shade(shirt, 0.8)) and (
+                        x % 3 == 0 or y % 3 == 0):
+                    g[y][x] = shade(ck, 0.85) if x % 3 == y % 3 == 0 \
+                        else ck
     prect(g, 13, fy + 6, 18, 25, skd)
     prect(g, 13, fy + 6, 18, fy + 7, skdd)
     collar = look.get("collar")
@@ -2110,6 +2124,12 @@ def portrait(look, expr="neutral"):
                 if g[y][x] in (shirt, shade(shirt, 0.8)) and \
                         abs(x - cx) > 3.5:
                     g[y][x] = cc if abs(x - cx) < 14 else shade(cc, 0.85)
+    if "highcollar" in extras:                  # a coat's collar, turned up
+        cc = look.get("coatc", shirt)
+        for y in range(21, 27):
+            for x in range(9 + (26 - y) // 3, 13):
+                g[y][x] = cc if x > 9 + (26 - y) // 3 else shade(cc, 0.75)
+                g[y][mirror(x)] = cc if x < 12 else shade(cc, 0.8)
     if "necklace" in extras:
         for x in range(12, 20):
             g[25 + (1 if 13 < x < 18 else 0)][x] = "#f0d040"
@@ -2196,6 +2216,10 @@ def portrait(look, expr="neutral"):
             prect(g, x0, ey + 1, x0 + eye_w + 1, ey + 1, gc)
             prect(g, x0, ey - 2, x0, ey + 1, gc)
             prect(g, x0 + eye_w + 1, ey - 2, x0 + eye_w + 1, ey + 1, gc)
+            if look.get("lens"):                # tinted
+                for y in (ey - 1, ey):
+                    for x in range(x0 + 1, x0 + eye_w + 1):
+                        g[y][x] = mix(g[y][x], look["lens"], 0.3)
         g[ey - 1][15] = g[ey - 1][16] = gc
     ny = fy + 3
     g[ny][15] = skd
@@ -2250,14 +2274,23 @@ def portrait(look, expr="neutral"):
         bc = look.get("beardc", hd)
         prect(g, 13, my - 2, 18, my - 2, bc)
         prect(g, 12, my - 1, 19, my - 1, bc)
+    if "stubble" in extras:                     # a day or two's growth
+        sc = mix(skin, look.get("beardc", hair), 0.4)
+        for y in range(fy + 3, fy + fry + 1):
+            for x in range(PW):
+                if g[y][x] in (skin, skd) and (x + y) % 2 and not (
+                        my - 1 <= y <= my + 1 and 13 <= x <= 18) and (
+                        y >= my - 2 or abs(x - cx) > 4.5):
+                    g[y][x] = sc
     if "wrinkles" in extras:
         for side in (0, 1):
             x0 = 9 if side == 0 else mirror(9)
             g[ey + 1][x0] = skdd
             g[my - 1][12 if side == 0 else 19] = skdd
-    if "earring" in extras:
-        g[fy + 3][round(cx - frx - 0.5)] = "#f0d040"
-        g[fy + 3][mirror(round(cx - frx - 0.5))] = "#f0d040"
+    if "earring" in extras and not look.get("drop"):
+        ec = look.get("earringc", "#f0d040")
+        g[fy + 3][round(cx - frx - 0.5)] = ec
+        g[fy + 3][mirror(round(cx - frx - 0.5))] = ec
 
     # the hair on top
     top = fy - fry
@@ -2270,6 +2303,7 @@ def portrait(look, expr="neutral"):
         g[top + 2][13] = shade(skin, 1.12)
     else:
         line = fy - fry + (4 if not child else 4)       # the hairline
+        line -= {"swept": 1, "receding": 2}.get(style, 0)
         crown_ry = {"spiky": 6.5, "messy": 6, "curly": 7}.get(style, 5.5)
         pdisc(g, cx, line - 0.5, frx + 1.2, crown_ry, hair,
               lambda x, y: y <= line)
@@ -2280,11 +2314,13 @@ def portrait(look, expr="neutral"):
             for x in (9, 13, 16, 20):
                 g[top - 1][x] = hair
                 g[top - 1][x + 1] = hd
-        if style in ("short", "spiky", "messy", "ponytail", "bun", "bald"):
+        if style in ("short", "spiky", "messy", "ponytail", "bun", "bald",
+                     "swept", "receding"):
             for y in range(line, fy + 1):          # sideburns
                 g[y][round(cx - frx)] = hair
                 g[y][mirror(round(cx - frx))] = hair
-        if style in ("long", "curly", "braid", "bob", "pigtails", "bangs"):
+        if style in ("long", "curly", "braid", "bob", "pigtails", "bangs",
+                     "sidebob"):
             for y in range(line, fy + 6):          # hair framing the face
                 for x in (round(cx - frx) - 1, round(cx - frx),
                           round(cx - frx) + 1):
@@ -2306,6 +2342,27 @@ def portrait(look, expr="neutral"):
         elif style in ("messy", "spiky", "curly"):
             for x in range(10, 22, 2):
                 prect(g, x, line, x, line + 1 + (x // 2) % 2, hair)
+        elif style == "sidebob":                   # a fringe swept aside
+            prect(g, 9, line, 22, line, hair)
+            for x in range(9, 20):
+                g[line + 1][x] = hair
+                if x < 15:
+                    g[line + 2][x] = hair
+            g[line + 1][19] = g[line + 2][14] = hd
+        elif style == "swept":                     # combed back
+            for x in range(10, 22, 3):
+                g[line - 1][x] = hd
+                g[line - 2][x + 1] = hd
+        elif style == "receding":                  # thin on top
+            for y in range(line - 7, line + 1):
+                for x in range(PW):
+                    if g[y][x] == hair and abs(x - cx) < 6.5 - (
+                            line - y) * 0.3:
+                        g[y][x] = shade(skin, 1.04) if y < line - 3 \
+                            else skin
+            for x in (13, 16, 19):                 # a few strands left
+                g[line - 5][x] = hair
+            g[line - 4][14] = g[line - 4][17] = hair
         elif style in ("long", "ponytail", "bun"):
             # a side parting
             prect(g, 9, line, 14, line + 1, hair)
@@ -2314,6 +2371,18 @@ def portrait(look, expr="neutral"):
         else:
             prect(g, 9, line, 22, line, hair)
             prect(g, 9, line, 12, line + 1, hair)
+        if look.get("temples"):                    # greying at the sides
+            for y in range(line, fy + 1):
+                for x in (round(cx - frx), round(cx - frx) + 1):
+                    for xx in (x, mirror(x)):
+                        if g[y][xx] in (hair, hd):
+                            g[y][xx] = look["temples"]
+        if look.get("streak"):                     # strands of another shade
+            for x in (10, 14, 18, 21):
+                for i in range(4):
+                    y, xx = top + 1 + i, x - i // 2
+                    if g[y][xx] == hair:
+                        g[y][xx] = look["streak"]
         # shine
         for x in range(10, 15):
             if g[top + 2][x] == hair:
@@ -2393,6 +2462,11 @@ def portrait(look, expr="neutral"):
             g[fy - 1 - (10 - x) // 2][x] = "#141414"
         for x in range(15, 27):
             g[fy - 1 - (x - 15) // 3][x] = "#141414"
+    if "earring" in extras and look.get("drop"):   # hanging below the hair
+        ec = look.get("earringc", "#f0d040")
+        for y, c in ((fy + 5, shade(ec, 0.8)), (fy + 6, ec)):
+            g[y][round(cx - frx - 0.5)] = c
+            g[y][mirror(round(cx - frx - 0.5))] = c
     return g
 
 # ── The people of Apple Blossom Village ─────────────────────────────────────
@@ -5679,6 +5753,756 @@ VILLAGERS = {
                              (1800, "workshop.3"), (2300, "workshop.2")]},
         "shop": ("workshop.1", "workshop"),
     },
+    "colm": {
+        "name": "Colm Brannigan", "short": "Colm", "romance": False,
+        "job": "the editor of the Valley GAZETTE. Editor, printer, reporter "
+               "and paperboy. It's a small paper",
+        "look": {"face": "M", "body": "M", "skin": 1, "rosy": True,
+                 "hair": "#b8b4ae", "style": "swept", "streak": "#7a7068",
+                 "eyes": "#6a8aa8", "shirt": "#f2d4d8", "checkc": "#dca4b0",
+                 "collar": "#fbeef0", "pants": "#4a4a5a", "bg": "#d0dcc8",
+                 "extras": ("glasses", "check"), "glassc": "#2a2228"},
+        "birthday": (2, 20), "home": "brannigan", "rest": 6,
+        "loves": ["tea", "book of poems", "stew"],
+        "likes": ["bread", "pancakes", "apple pie", "baked potato", "cheese",
+                  "kind:fish"],
+        "dislikes": ["energy tonic", "coral"],
+        "hates": ["eel", "wobbly jelly"],
+        "intro": "Ah, the new farmer! Colm Brannigan, the Valley Gazette. "
+                 "Can I quote you on that? You haven't said anything yet. "
+                 "I'll make something up.",
+        "greet": [["Morning. Any news?", "Ah. The farmer. Hello."],
+                  ["(happy){name}! Just the person. Anything happen to you "
+                   "this week? Anything at all?",
+                   "(happy)There you are. The Gazette's short a story."],
+                  ["(laugh){name}! Sit down, I'll put the kettle on. Tomoko, "
+                   "put the kettle on!",
+                   "(happy)My favourite source. Don't tell the others."],
+                  ["(happy){name}. You've become the best story this valley's "
+                   "had in years."]],
+        "chat": [["The Gazette comes out every Friday. Unless there's no news. "
+                  "Then it comes out every Friday with a very long weather "
+                  "report.",
+                  "Tomoko says I talk too much. I say she listens too well. "
+                  "We've been having that argument for twenty-six years.",
+                  "(laugh)Last week's front page was Mabel's cat. It sold "
+                  "out. The cat's very popular."],
+                 ["Amy sets the CROSSWORD. Nobody's finished one in six "
+                  "years. I get angry letters. I print the angry letters. "
+                  "They sell well too.",
+                  "(happy)My grandmother told STORIES by the fire every "
+                  "night. Half of them were true. She never said which half. "
+                  "I've been chasing the true half ever since.",
+                  "The PRESS in our front room is older than me. It clanks. "
+                  "Tomoko named it. She won't tell me what the name means."],
+                 ["(sad)I came over the sea with nothing but a typewriter and "
+                  "a bad coat. Tomoko made me buy a good coat. I kept the "
+                  "typewriter.",
+                  "(happy)John Carvalho's the only man I know who laughs "
+                  "louder than me. It's very annoying. I've grown fond of it.",
+                  "The best story I never printed? Edmund's first speech as "
+                  "mayor. He thanked the sheep. I promised I'd never tell. "
+                  "...Oops."],
+                 ["(happy)If I ever write a book, {name}, you're in the first "
+                  "chapter. Disguised. Badly."]],
+        "season": ["Spring. Lambs, blossom, and Agnes's letters about the "
+                   "hedges. A busy week for the Gazette.",
+                   "(happy)Summer. Everyone's at the lake and nothing "
+                   "happens. I love it.",
+                   "Fall. The Harvest Fair. Edmund's speech gets longer every "
+                   "year. I print all of it. It's a big edition.",
+                   "(happy)Winter. Snow, soup, and the fiddles at the inn. "
+                   "I'd not trade it for anything."],
+        "rain": "(happy)Rain! Lovely. Reminds me of home. Everyone stays in "
+                "and reads the paper.",
+        "topics": {
+            "gazette": "Four pages, every Friday. News, weather, lost cats, "
+                       "Amy's crossword, and a recipe from Marisol she "
+                       "pretends isn't a secret.",
+            "press": "(laugh)The printing press. Iron, ink and temper. It "
+                     "takes two to work it and one to swear at it. Guess "
+                     "which one I am.",
+            "tomoko": "(happy)My wife. Cleverest woman in three valleys and "
+                      "the only critic I fear. She reads every page before "
+                      "it goes out. With a red pen.",
+            "crossword": "(laugh)People write in to say Amy's crossword is "
+                         "impossible. Amy writes back to say 'yes.'",
+            "stories": "(happy)Everyone in this valley has one story they've "
+                       "never told. My job is to wait. Then wait a bit "
+                       "longer. Then put the kettle on.",
+        },
+        "opinions": {
+            "tomoko": "(happy)Twenty-six years and she still surprises me. "
+                      "Last week she laughed at one of my jokes. I nearly "
+                      "fell over.",
+            "amy": "(happy)Amy's the Gazette's secret weapon. Nobody buys it "
+                   "for the news. They buy it to be beaten by her crossword.",
+            "edmund": "(laugh)Edmund reads the Gazette every Friday looking "
+                      "for his name. When it's not there, he writes a letter "
+                      "so it will be.",
+            "john": "(laugh)John Carvalho. Cuts stone all day and sings all "
+                    "night. Badly. Joyfully. Mostly badly.",
+            "jonathan": "Jonathan draws the maps in the Gazette. Lovely work. "
+                        "Takes him a month to draw a duck pond. Worth the "
+                        "wait.",
+        },
+        "gift": {"love": "(happy)Ah, now. That's front-page stuff, that is. "
+                         "Thank you.",
+                 "like": "(happy)Lovely. Very kind of you.",
+                 "neutral": "Thank you. I'll find a place for it.",
+                 "dislike": "Ah. Well. It's the thought, isn't it.",
+                 "hate": "(cross)Ach, no. Not that. Anything but that."},
+        "unknown": "No idea. But if you find out, tell me first. Exclusive.",
+        "scenes": {
+            2: ["*Colm is at the printing press in his front room, ink to the "
+                "elbows, the press jammed.",
+                "(cross)Friday's edition, three hours to go, and the old "
+                "beast's eaten a page. Again.",
+                ("?", "He holds out an inky rag.",
+                 [("Let me turn the handle.", 40,
+                   "(laugh)Steady... steady... there she goes! You've a "
+                   "printer's arm. I'm putting you on the masthead."),
+                  ("What's the front page?", 30,
+                   "(happy)Pip fell in the fountain. With the Mayor's hat. "
+                   "I'm calling it 'Splash Hit.' Tomoko says it's terrible. "
+                   "It is.")])],
+            5: ["*Colm sits on a bench by the square, an old letter in his "
+                "hand.",
+                "(sad)From my sister, back home, over the sea. Mam's not "
+                "well. She's asking when I'll visit. It's a long way. It's "
+                "always been a long way.",
+                ("?", "He folds the letter carefully.",
+                 [("Go. The Gazette can wait.", 50,
+                   "(happy)...It can, can't it. Tomoko said the same. She's "
+                   "already packed. She always knows before I do."),
+                  ("Write to her. Today.", 40,
+                   "(happy)I write about everyone else, every week. About "
+                   "time I wrote something for my mam. Thank you, "
+                   "{name}.")])],
+        },
+        "sched": {"day": [(600, "brannigan.5"), (800, "brannigan.1"),
+                          (1200, "inn.6"), (1330, "out.board"),
+                          (1430, "brannigan.1"), (1800, "brannigan.3"),
+                          (1930, "inn.7"), (2200, "brannigan.5")],
+                  "rest_s": [(600, "brannigan.5"), (900, "brannigan.3"),
+                             (1100, "out.bench1"), (1400, "out.fountain_w"),
+                             (1700, "brannigan.3"), (1930, "inn.7"),
+                             (2200, "brannigan.5")],
+                  "rain_s": [(600, "brannigan.5"), (800, "brannigan.1"),
+                             (1300, "brannigan.3"), (1500, "brannigan.1"),
+                             (1930, "inn.7"), (2200, "brannigan.5")]},
+        "shop": None,
+    },
+    "tomoko": {
+        "name": "Tomoko Brannigan", "short": "Tomoko", "romance": False,
+        "job": "a POTTER. Bowls, cups, plates. Mabel sells them at the "
+               "store. I also keep my husband from printing nonsense. That "
+               "is the harder job",
+        "look": {"face": "F", "body": "F", "skin": 0, "hair": "#6e3e2a",
+                 "style": "sidebob", "eyes": "#3a2a20", "shirt": "#a01c30",
+                 "coatc": "#a01c30", "pants": "#3a2a30", "bg": "#f0e2d4",
+                 "extras": ("earring", "coat", "highcollar"),
+                 "earringc": "#f6f2ea", "drop": True},
+        "birthday": (0, 21), "home": "brannigan", "rest": 2,
+        "loves": ["tea", "cherry", "pickled eggplant"],
+        "likes": ["salmon", "tuna", "peach", "sweet pea", "pumpkin soup",
+                  "kind:fish"],
+        "dislikes": ["coffee", "chocolate pudding"],
+        "hates": ["old bone", "wobbly jelly"],
+        "intro": "Hello. Tomoko Brannigan. You have met my husband? He will "
+                 "want to interview you. Say very little. He will print it "
+                 "anyway.",
+        "greet": [["Hello.", "Good morning. You are up early. Good."],
+                  ["(happy){name}. Come, sit. Mind the clay.",
+                   "(happy)Ah, {name}. You look well today."],
+                  ["(laugh){name}! Colm said you would come. I said no. You "
+                   "came. Now I owe him a cake.",
+                   "(happy)There you are. I made a cup. It is too small for "
+                   "anyone but you."],
+                  ["(happy){name}. You are family now. I have decided. Colm "
+                   "agrees, but he always agrees late."]],
+        "chat": [["Clay is honest. If you hurry it, it cracks. If you are "
+                  "angry, it knows. People are the same, but they hide it "
+                  "better.",
+                  "My husband talks. I listen. Between us we have one very "
+                  "good conversation.",
+                  "(laugh)Colm cannot make tea. Twenty-six years. Every "
+                  "morning I let him try. It is a kind of love."],
+                 ["(happy)Pippa comes to my workshop after school. She makes "
+                  "cups with no bottoms. She calls them 'sky cups.' I keep "
+                  "them all.",
+                  "My grandmother had a GARDEN with one maple and three "
+                  "stones. It took her forty years to place the stones. I am "
+                  "patient, but not that patient.",
+                  "Edmund ordered plates with his face on them. I made them. "
+                  "He is very pleased. I am a professional."],
+                 ["(sad)I left home very young. My mother said a potter must "
+                  "go where the clay is good. The clay is good here. The "
+                  "people are better.",
+                  "(happy)When a bowl breaks, at home we mend it with GOLD. "
+                  "The crack is part of its story. Colm says it is a "
+                  "metaphor. It is a bowl.",
+                  "(laugh)I met Colm on a ship. He was seasick. I gave him "
+                  "ginger. He wrote me a poem. The poem was bad. The ginger "
+                  "worked."],
+                 ["(happy)I am making you a bowl, {name}. I will give it to "
+                  "you when it is perfect. So, never. But it is yours."]],
+        "season": ["(happy)Spring. My cherry tree. For one week everything is "
+                   "pink and I forgive everyone everything.",
+                   "Summer. Too hot for the KILN. I throw pots at dawn and "
+                   "nap like a cat.",
+                   "Fall. The maple turns red. I sit and watch it. Colm "
+                   "thinks I am thinking. I am not. It is wonderful.",
+                   "Winter. The kiln keeps the house warm. Colm writes. I "
+                   "glaze. We do not talk. It is our best season."],
+        "rain": "Rain is good for clay. Slow drying, fewer cracks. Also good "
+                "for staying in with tea.",
+        "topics": {
+            "potter": "Wheel, clay, water, fire. Four things. A lifetime is "
+                      "not long enough to learn them.",
+            "garden": "(happy)A maple, a cherry, moss and stones. Nothing "
+                      "else. It is small. It took me eleven years.",
+            "colm": "(laugh)My husband. He is loud, he is untidy, and he "
+                    "cannot make tea. He is also kind to everyone, always. I "
+                    "chose well.",
+            "kiln": "(happy)Fire does what it likes. You prepare everything, "
+                    "and then you let go. Very good for the character.",
+            "gold": "We mend broken bowls with gold. A bowl that broke and "
+                    "was mended is worth more than one that never broke.",
+        },
+        "opinions": {
+            "colm": "(happy)He thinks I married him for his poems. I married "
+                    "him because he laughs at his own jokes before he "
+                    "finishes them.",
+            "pippa": "(happy)Pippa is my apprentice. She is seven. She is the "
+                     "best student I have ever had. Do not tell her. She "
+                     "will be unbearable.",
+            "mabel": "Mabel sells my bowls and tells everyone I am "
+                     "'mysterious.' I have lived here twenty years. I am "
+                     "mostly tired.",
+            "agnes": "(laugh)Agnes and I take tea on Wednesdays. We say rude "
+                     "things about everyone in very polite voices.",
+        },
+        "gift": {"love": "(happy)Oh. This is very good. You have a good eye. "
+                         "Thank you.",
+                 "like": "(happy)Thank you. That is kind.",
+                 "neutral": "Thank you.",
+                 "dislike": "...Thank you. Colm will like it. He likes "
+                            "everything.",
+                 "hate": "(cross)No. This, I cannot."},
+        "unknown": "I do not know. Colm will tell you he knows. He does not "
+                   "know either.",
+        "scenes": {
+            2: ["*Tomoko is at her wheel, a lump of clay spinning under her "
+                "wet hands.",
+                "Sit. Put your hands here. No, softer. You are holding it "
+                "like a hammer.",
+                ("?", "The clay wobbles wildly.",
+                 [("Like this?", 40,
+                   "(laugh)No. ...Yes! There. Feel that? It wants to be a "
+                   "bowl. You only stop it being anything else."),
+                  ("I'll ruin it.", 30,
+                   "(happy)Of course you will. Everyone ruins the first "
+                   "hundred. Then the clay forgives you.")])],
+            5: ["*Tomoko kneels in her garden, holding the two halves of a "
+                "cracked teacup.",
+                "(sad)My mother's. The last thing of hers I have. Thirty "
+                "years, and today I dropped it.",
+                ("?", "She turns the pieces over in her hands.",
+                 [("Mend it with gold.", 50,
+                   "(happy)...Yes. Of course. Like she taught me. It will be "
+                   "more beautiful. It will have our story in it."),
+                  ("Can I help?", 40,
+                   "(happy)You can sit with me while I do. That is help. "
+                   "That is the most help there is.")])],
+        },
+        "sched": {"day": [(600, "brannigan.6"), (800, "brannigan.2"),
+                          (1200, "brannigan.4"), (1300, "brannigan.2"),
+                          (1600, "store.3"), (1700, "out.eastgreen"),
+                          (1830, "brannigan.3"), (2130, "brannigan.6")],
+                  "rest_s": [(600, "brannigan.6"), (900, "brannigan.4"),
+                             (1100, "whitlock.4"), (1400, "out.orchard"),
+                             (1700, "brannigan.3"), (2130, "brannigan.6")],
+                  "rain_s": [(600, "brannigan.6"), (800, "brannigan.2"),
+                             (1300, "brannigan.4"), (1500, "brannigan.2"),
+                             (1830, "brannigan.3"), (2130, "brannigan.6")]},
+        "shop": None,
+    },
+    "john": {
+        "name": "John Carvalho", "short": "John", "romance": True,
+        "job": "a STONEMASON. I cut stone up at the QUARRY. Big rocks into "
+               "small rocks, small rocks into walls. Honest work, and loud",
+        "look": {"face": "M", "body": "M", "skin": 2, "hair": "#4a3426",
+                 "style": "swept", "temples": "#8a847e", "eyes": "#5a3a1e",
+                 "shirt": "#262c3a", "collar": "#1a1e28", "pants": "#3a3a44",
+                 "bg": "#cfdbe6", "extras": ("stubble",),
+                 "beardc": "#3a2a22"},
+        "birthday": (1, 14), "home": "carvalho", "rest": 6,
+        "loves": ["fire-roasted corn", "coffee", "grilled fish"],
+        "likes": ["stone", "bread", "stew", "orange", "pancakes",
+                  "kind:fish"],
+        "dislikes": ["salad", "meringues"],
+        "hates": ["energy tonic", "eggplant"],
+        "intro": "(laugh)Hello, hello! You're the new farmer! John Carvalho. "
+                 "I cut stone at the quarry. That small red whirlwind is my "
+                 "daughter, Pippa. Say hello, Pippa! ...She's gone. She "
+                 "does that.",
+        "greet": [["(happy)Hello! Good day for it, eh?",
+                   "Morning! Watch your feet, there's dust everywhere."],
+                  ["(laugh){name}! There you are!",
+                   "(happy)Ah, {name}. Pippa's been asking about you. Every "
+                   "day. Every hour."],
+                  ["(laugh){name}! Come round Sunday. I'm grilling. I'm "
+                   "always grilling.",
+                   "(happy)My favourite neighbour. Don't tell the "
+                   "neighbours."],
+                  ["(blush){name}. ...Sorry. I had something clever to say. "
+                   "You've made me forget it."]],
+        "chat": [["My mother sang while she cooked. My father sang while he "
+                  "worked. I sing while I do both. Everyone else leaves the "
+                  "room.",
+                  "(laugh)Pippa wants to be a dragon tamer. I told her there "
+                  "are no dragons. She said 'not YET.' I believe her.",
+                  "Stone doesn't argue. You read the grain, you hit it once, "
+                  "right there, and it opens like a book."],
+                 ["(happy)Sunday is GRILL day. Corn, fish, whatever's going. "
+                  "The whole east quarter smells of smoke. Nobody complains. "
+                  "They just turn up with plates.",
+                  "I play the GUITAR. Wren says I play it 'with great "
+                  "enthusiasm.' That's a polite way of saying loudly.",
+                  "(laugh)Gus says he can beat me at arm-wrestling. I let him "
+                  "win. He knows. We don't talk about it."],
+                 ["(sad)Pippa's mother went back to the city when Pippa was "
+                  "three. She writes. She sends ribbons. Pippa keeps them all "
+                  "in a box under her bed.",
+                  "(happy)My grandfather came from the cold north and married "
+                  "a woman from the warm south. I got his shoulders and her "
+                  "laugh. Good trade.",
+                  "Some nights, after Pippa's asleep, I sit on the step and "
+                  "listen to the quarry cool down. Stone ticks as it cools. "
+                  "Did you know that?"],
+                 ["(happy)You know what, {name}? When you're around, I don't "
+                  "sing because I'm working. I sing because I'm happy."]],
+        "season": ["(happy)Spring! Good stone weather. Not too hot, not too "
+                   "wet. And Pippa can play outside again.",
+                   "(laugh)Summer! Too hot to cut stone after noon, so we go "
+                   "to the lake. Pippa swims like a fish. I swim like a "
+                   "rock.",
+                   "Fall. The quarry's busy. Everybody wants their walls "
+                   "mended before winter.",
+                   "Winter. Stone's brittle in the cold. Pippa and I build "
+                   "snow castles instead. Hers are better."],
+        "rain": "(laugh)Rain! No stone today. Pippa and I are building a fort "
+                "out of every cushion in the house.",
+        "topics": {
+            "stonemason": "You find the line in the stone, set the chisel, "
+                          "and hit it once. Too hard and it shatters. Too "
+                          "soft and nothing happens. Like most things.",
+            "quarry": "(happy)Up past the old tower. Grey stone, good and "
+                      "hard. Half the walls in the valley came out of that "
+                      "hole.",
+            "pippa": "(happy)My daughter. Seven years old. Red hair, loud "
+                     "voice, big heart. She's the boss of our house. I'm the "
+                     "assistant.",
+            "grill": "(laugh)Charcoal, salt, patience. My mother's family "
+                     "grilled for whole villages. I only grill for half a "
+                     "valley. I'm working up to it.",
+            "guitar": "(laugh)Six strings. I know four chords. I play all "
+                      "four in every song.",
+        },
+        "opinions": {
+            "pippa": "(happy)My Pippa! She's braver than me, cleverer than "
+                     "me, and she knows it. Gets that from her grandmother.",
+            "tomoko": "(happy)Tomoko's teaching Pippa pottery. Pippa comes "
+                      "home covered in clay and very proud. The pots are... "
+                      "interesting.",
+            "colm": "(laugh)Colm put me in the Gazette. 'Local Man Sings.' "
+                    "That was the whole story. It sold out.",
+            "jonathan": "Jonathan's a quiet one. Comes to the grill, eats "
+                        "three plates, says six words, all of them kind.",
+            "ivy": "(happy)Ivy buys my stone for her buildings. She argues "
+                   "the price every time. I always lose. She's very good.",
+        },
+        "gift": {"love": "(laugh)For me?! Oh, you've made my week! Thank you!",
+                 "like": "(happy)Ah, that's great! Thanks!",
+                 "neutral": "Oh, thanks! Very kind.",
+                 "dislike": "(laugh)Ha. Well. Pippa might like it.",
+                 "hate": "(cross)Ugh. No. Sorry. Not for me."},
+        "unknown": "No idea! Ask Pippa. She'll make something up, but she'll "
+                   "be very confident.",
+        "scenes": {
+            2: ["*John is at the quarry in his shirtsleeves, a great block of "
+                "stone in front of him.",
+                "Watch this. You find the line... set the chisel... and...",
+                ("?", "He raises the hammer.",
+                 [("Hit it!", 40,
+                   "(laugh)CRACK! Look at that! Clean as a loaf of bread! "
+                   "You saw! Tell Pippa you saw!"),
+                  ("Are you sure that's the line?", 30,
+                   "(laugh)...No. ...CRACK! Ha! It was! You made me nervous! "
+                   "Don't do that!")])],
+            4: ["*John sits on his front step at night, a letter in his big "
+                "hands.",
+                "(sad)From Pippa's mum. She's not coming for the summer "
+                "after all. I have to tell Pippa in the morning.",
+                ("?", "He turns the letter over and over.",
+                 [("Tell her together. I'll come.", 50,
+                   "(happy)...You'd do that? Thank you. She listens to you. "
+                   "She thinks you're very important."),
+                  ("You're a good dad, John.", 40,
+                   "(sad)Am I? ...I try. Every day I try. Thank you. I "
+                   "needed someone to say it.")])],
+            6: ["*John is grilling corn outside his house, singing badly. He "
+                "stops when he sees you.",
+                "(blush)Ah. You heard that. ...I was singing about you. Not "
+                "with your name in it. But it was about you.",
+                ("?", "The corn starts to smoke.",
+                 [("Sing it again.", 60,
+                   "(blush)...All of it? It's mostly the same four chords. "
+                   "...All right. For you."),
+                  ("Your corn's burning!", 40,
+                   "(laugh)AH! ...Burnt corn is a delicacy where my "
+                   "grandmother's from! ...It isn't.")])],
+            8: ["*John meets you at the top of the quarry at sunset, the "
+                "whole valley glowing below.",
+                "(blush)I carved something. It took me a month. Don't laugh.",
+                "*It's a small stone heart, smooth as an egg, with two "
+                "letters cut into it.",
+                "(blush)I love you, {name}. Pippa knows. Pippa's known for "
+                "weeks. She says I'm 'very slow.'"],
+        },
+        "date": ["*You and John sit on his step while Pippa sleeps inside, the "
+                 "quarry ticking as it cools.",
+                 "(happy)Listen. Stone, crickets, and Pippa snoring. Best "
+                 "song in the world.",
+                 "(blush)...Second best. Your laugh is first."],
+        "dating": ["(blush)Pippa asked if you're going to live with us. I "
+                   "said 'let's not get ahead of ourselves.' She said "
+                   "'you're slow.'",
+                   "(happy)I've started singing in tune. Wren noticed. She "
+                   "asked what happened. I said she'd never guess."],
+        "spouse": ["(happy)Morning! Coffee's on, corn's on, and Pippa's on "
+                   "her third question. Welcome to the family.",
+                   "(laugh)I built you a wall. Well, a garden wall. Well, half "
+                   "of one. It's a start.",
+                   "(blush)Coming home to you and Pippa. Best part of every "
+                   "day."],
+        "sched": {"day": [(600, "carvalho.1"), (730, "out.quarry"),
+                          (1200, "out.northlane"), (1300, "out.quarry"),
+                          (1700, "carvalho.1"), (1900, "carvalho.3"),
+                          (2030, "carvalho.4"), (2200, "carvalho.5")],
+                  "rest_s": [(600, "carvalho.5"), (900, "carvalho.1"),
+                             (1100, "out.northlane"), (1500, "out.beach2"),
+                             (1800, "carvalho.3"), (2200, "carvalho.5")],
+                  "rain_s": [(600, "carvalho.1"), (800, "carvalho.3"),
+                             (1200, "carvalho.4"), (1700, "carvalho.1"),
+                             (2200, "carvalho.5")]},
+        "shop": None,
+    },
+    "pippa": {
+        "name": "Pippa Carvalho", "short": "Pippa", "romance": False,
+        "job": "a DRAGON tamer. In training. There aren't any dragons yet. "
+               "I'm getting ready. Also I go to school. And I make POTS "
+               "with Tomoko",
+        "look": {"face": "F", "body": "C", "age": "child", "skin": 0,
+                 "hair": "#d0502a", "style": "pigtails", "eyes": "#3a8a4a",
+                 "shirt": "#e8c040", "pants": "#4a6a9a", "bg": "#f4e4c8",
+                 "extras": ("freckles", "hairbow"), "clipc": "#7ac0e8"},
+        "birthday": (3, 14), "home": "carvalho", "rest": 6,
+        "loves": ["ice cream", "strawberry", "feather"],
+        "likes": ["chocolate", "jam tarts", "seashell", "blackberry",
+                  "kind:fruit"],
+        "dislikes": ["coffee", "salad"],
+        "hates": ["eel", "pickled eggplant"],
+        "intro": "Hi! I'm Pippa! I'm SEVEN! I'm a dragon tamer! Have you got "
+                 "any dragons on your farm? Are you SURE? Can I check?",
+        "greet": [["Hi! Got any dragons yet?",
+                   "Hello! I found a beetle! Want to see? You can't hold it."],
+                  ["(laugh){name}! You came back!",
+                   "(happy)Hi, {name}! Dad says I'm not allowed to follow you "
+                   "home. I'm not following. I'm walking the same way."],
+                  ["(laugh){name}! You're my favourite grown-up! After Dad! "
+                   "And Tomoko! Same as Tomoko!",
+                   "(happy)I made you a cup! It hasn't got a bottom! It's a "
+                   "SKY cup!"],
+                  ["(happy){name}! When I tame a dragon, you can ride it "
+                   "first. Second. After me."]],
+        "chat": [["Pip says his name is better than mine because it's "
+                  "shorter. I said mine's got more letters so it's MORE "
+                  "name. He didn't have an answer.",
+                  "Benji says he's a knight. Knights fight dragons. I tame "
+                  "dragons. So we're enemies. We're also best friends. It's "
+                  "complicated.",
+                  "(laugh)Dad sings when he cooks. And when he works. And in "
+                  "the bath. Tomoko says the whole valley knows when Dad's "
+                  "having a bath."],
+                 ["(happy)Tomoko's teaching me pots. You have to be patient. "
+                  "I'm not patient. But I'm trying very hard to be patient "
+                  "very fast.",
+                  "I've got a box of RIBBONS from my mum. She lives in the "
+                  "city. She sends one every month. I've got thirty-one.",
+                  "Jonathan drew me a map of where the dragons would live if "
+                  "there were any. It's got a cave and a waterfall. I'm going "
+                  "to find it."],
+                 ["(sad)Sometimes Dad sits on the step at night and doesn't "
+                  "sing. I bring him a blanket. Then he sings a bit. "
+                  "Quietly.",
+                  "(happy)When I grow up I'm going to be a dragon tamer AND a "
+                  "potter. I'll make bowls for dragons. Very big bowls.",
+                  "Colm put me in the Gazette! 'Young Girl Finds Biggest "
+                  "Beetle.' It WAS the biggest. He measured it."],
+                 ["(happy)You're like my best friend but grown-up. That's "
+                  "the best kind. You can reach things."]],
+        "season": ["(laugh)Spring! Baby birds! I'm not allowed to touch them. "
+                   "I'm LOOKING. Looking is allowed.",
+                   "(laugh)Summer! The lake! Dad swims like a rock. I swim "
+                   "like a fish. A dragon fish.",
+                   "Fall. School. Juniper makes us do spelling. I can spell "
+                   "DRAGON. And DANGER. They're nearly the same.",
+                   "(laugh)Winter! Snow castles! Mine had a dragon on top! "
+                   "Benji's had a flag. Mine was better."],
+        "rain": "(laugh)Rain! Dad's building a fort! Out of EVERY cushion! "
+                "Even Tomoko's cushion! Don't tell Tomoko!",
+        "topics": {
+            "dragon": "(laugh)Dragons are real. They're just hiding. They're "
+                      "shy. I'd be shy too if everyone wanted to fight me. "
+                      "I'm going to be NICE to them.",
+            "dad": "(happy)My dad cuts rocks and sings and grills everything. "
+                   "He's the biggest dad in the valley. I checked.",
+            "pots": "(happy)Tomoko says the clay knows if you're cross. So I "
+                    "make pots when I'm happy. They still fall over. But "
+                    "happily.",
+            "ribbons": "(happy)Mum sends them from the city. Blue and green "
+                       "and gold. I wear a different one every day. Today's "
+                       "is the best one.",
+        },
+        "opinions": {
+            "john": "(happy)My dad! He's SO big! He can carry me AND the "
+                    "shopping! At the same time!",
+            "tomoko": "(happy)Tomoko's my teacher! She's very strict but she "
+                      "gives me biscuits. Strict biscuits.",
+            "pip": "(cross)Pip says I stole his name. I didn't steal it. I've "
+                   "got MORE of it.",
+            "benji": "(laugh)Benji's a knight. I'm a dragon tamer. We fight "
+                     "about it every day. Then we have lunch.",
+        },
+        "gift": {"love": "(laugh)FOR ME?! THANK YOU! You're the BEST!",
+                 "like": "(happy)Ooh! Thank you!",
+                 "neutral": "Oh. Thanks!",
+                 "dislike": "Hmm. ...Dragons might like it.",
+                 "hate": "(cross)EW! No! Even dragons wouldn't eat that!"},
+        "unknown": "I don't know! But I can find out! Wait here! ...Actually, "
+                   "ask Dad.",
+        "scenes": {
+            2: ["*Pippa is crouched by the lane, staring very hard at a hole "
+                "in the ground.",
+                "Shh! I think there's a dragon down there. A baby one. It "
+                "went in. Or it was a mouse. It was MOSTLY a dragon.",
+                ("?", "She looks at you, very serious.",
+                 [("Let's wait for it together.", 40,
+                   "(laugh)OK! ...Shh. ...SHHH. ...It's not coming. It's shy. "
+                   "You're a good dragon waiter."),
+                  ("I think it was a mouse.", 30,
+                   "(cross)It was MOSTLY a dragon! ...Fine. A dragon-mouse. "
+                   "That's still something.")])],
+            5: ["*Pippa sits alone on the beach, a box of ribbons on her "
+                "knees.",
+                "(sad)Mum isn't coming in the summer. Dad told me. He did a "
+                "sad face even though he was trying to do a happy face.",
+                ("?", "She takes out a blue ribbon and holds it up.",
+                 [("Shall I tie it in your hair?", 50,
+                   "(happy)...OK. Not too tight. ...Is it straight? Thank "
+                   "you. Dragon tamers have to look smart."),
+                  ("Your dad loves you very much.", 40,
+                   "(happy)I know. He's the biggest dad. ...I'm going to go "
+                   "and give him a hug. The biggest one.")])],
+        },
+        "sched": {"day": [(600, "carvalho.6"), (830, "library.4"),
+                          (1500, "out.northlane"), (1630, "brannigan.4"),
+                          (1830, "carvalho.3"), (2000, "carvalho.6")],
+                  "rest_s": [(600, "carvalho.6"), (900, "out.northlane"),
+                             (1100, "brannigan.4"), (1300, "out.beach"),
+                             (1600, "out.eastgreen"), (1800, "carvalho.3"),
+                             (2000, "carvalho.6")],
+                  "rain_s": [(600, "carvalho.6"), (830, "library.4"),
+                             (1500, "carvalho.4"), (2000, "carvalho.6")]},
+        "shop": None,
+    },
+    "jonathan": {
+        "name": "Jonathan Hale", "short": "Jonathan", "romance": True,
+        "job": "a MAPMAKER. I draw maps of the valley, the woods, the lake. "
+               "And I keep the WEATHER: the Gazette's forecast is mine",
+        "look": {"face": "M", "body": "M", "skin": 1, "rosy": True,
+                 "hair": "#a89e90", "style": "receding", "eyes": "#6a8aa8",
+                 "shirt": "#9cb4d4", "checkc": "#3e5e9c",
+                 "collar": "#e8eef8", "pants": "#5a5048", "bg": "#e6dcc6",
+                 "extras": ("glasses", "beard", "check"),
+                 "beardc": "#dcd8d0", "glassc": "#8a8a92",
+                 "lens": "#a08870"},
+        "birthday": (2, 11), "home": "hale", "rest": 0,
+        "loves": ["apple pie", "coffee", "pumpkin soup"],
+        "likes": ["pancakes", "pumpkin", "hazelnut", "cranberry",
+                  "sketchbook", "kind:artifact"],
+        "dislikes": ["tea", "wool"],
+        "hates": ["eel", "pickled eggplant"],
+        "intro": "Oh. Hello. You must be the new farmer. Jonathan Hale. I "
+                 "draw maps. ...Your farm's a blank on mine. I'd like to come "
+                 "and measure it sometime. That came out strangely.",
+        "greet": [["Oh. Hello.",
+                   "Morning. ...It is morning, isn't it? I lose track."],
+                  ["(happy){name}. Good to see you.",
+                   "(happy)Hello, {name}. I was just thinking about your "
+                   "farm. For the map."],
+                  ["(happy){name}! Come in, come in. Mind the barometers. "
+                   "All of them.",
+                   "(laugh)There you are. I've redrawn your farm three times "
+                   "this week. It keeps changing. In a good way."],
+                  ["(blush){name}. ...Hi. Every time I see you I forget "
+                   "which way is north. And I make maps."]],
+        "chat": [["Every map is a little bit wrong. That's the secret. Trees "
+                  "grow. Paths wander. A map is just a promise to try.",
+                  "(laugh)I've got forty-two barometers in my house. They all "
+                  "disagree about tomorrow. I go with the majority.",
+                  "I grow giant PUMPKINS. Last year's weighed more than "
+                  "Benji. He wanted to sit in it. I let him."],
+                 ["(happy)I draw the maps in the Gazette. Colm pays me in "
+                  "tea. I don't like tea. I've never told him. It's been four "
+                  "years.",
+                  "Where I grew up, everything was big. Big roads, big sky, "
+                  "big pancakes. Here everything's small and close. I prefer "
+                  "it. I didn't expect to.",
+                  "(laugh)John invited me to his grill. I said I'd stay ten "
+                  "minutes. I stayed five hours and learned four chords."],
+                 ["(sad)I live alone. I like it, mostly. The barometers "
+                  "are company. They tell me what's coming, but never who.",
+                  "(happy)There's a corner of the woods nobody's mapped. I "
+                  "leave it BLANK on purpose. Every map needs one mystery.",
+                  "My father made COMPASSES. He said a compass is just a "
+                  "heart that always knows the way home. I think about that "
+                  "a lot."],
+                 ["(happy)I've added a new landmark to my map of the valley, "
+                  "{name}. It's you. Don't ask how I drew it. Badly."]],
+        "season": ["Spring. The river floods its banks and I redraw the whole "
+                   "west side. Every year. I love it.",
+                   "(happy)Summer. Long light, good for surveying. I walk the "
+                   "valley with a measuring wheel. Children follow me. I "
+                   "don't know why.",
+                   "(laugh)Fall. Pumpkin season. One day I'll grow one bigger "
+                   "than my house.",
+                   "Winter. Snow makes everything one shape. I stay in and "
+                   "add up the year's rain. Very soothing."],
+        "rain": "(happy)Rain! I forecast this. Three days ago. Write that "
+                "down. ...I already did.",
+        "topics": {
+            "mapmaker": "(happy)A good map isn't about where things are. "
+                        "It's about how to get home. I try to remember that.",
+            "weather": "(laugh)A rain gauge, a wind vane, and forty-two "
+                       "barometers. I write tomorrow's forecast for the "
+                       "Gazette. When I'm wrong, Colm prints a correction. "
+                       "In very large letters.",
+            "compasses": "(happy)My father's trade. Brass, glass and a "
+                         "magnetised needle. I still have the last one he "
+                         "made. It doesn't work.",
+            "pumpkins": "(happy)The trick is one pumpkin per vine. Pinch off "
+                        "the rest, so all the love goes into one. ...That's "
+                        "probably a metaphor. Colm would know.",
+            "blank": "(blush)The blank corner of my map? ...All right. It's "
+                     "where I'd build a house. If I ever had someone to "
+                     "build one for.",
+        },
+        "opinions": {
+            "colm": "(laugh)Colm pays me for maps in tea. Bags and bags of "
+                    "it. I have a whole cupboard. I don't drink tea.",
+            "john": "(happy)John's the loudest man in the valley and the "
+                    "kindest. He waves at me every morning from the quarry. "
+                    "I wave back. It's a whole thing.",
+            "pippa": "(laugh)Pippa asked me to map where the dragons live. I "
+                     "said there aren't any. She said 'draw where they'd "
+                     "be.' So I did. It's my best map.",
+            "dmitri": "(happy)Dmitri maps the sky. I map the ground. We meet "
+                      "at the horizon and argue about it.",
+        },
+        "gift": {"love": "(happy)Oh! This is... wow. Thank you. Really.",
+                 "like": "(happy)That's great, thank you.",
+                 "neutral": "Oh, thanks. That's nice.",
+                 "dislike": "Ah. ...Thanks. I'll find somewhere for it. "
+                            "Somewhere.",
+                 "hate": "(cross)Oh. No. I'm sorry. No."},
+        "unknown": "Hm. I don't know. I have a map for most things, but not "
+                   "that.",
+        "scenes": {
+            2: ["*Jonathan is on the bluff with a measuring wheel and a sheet "
+                "of paper flapping in the wind.",
+                "(laugh)Hold this corner? The wind keeps trying to take the "
+                "lake.",
+                ("?", "He spreads the map out between you.",
+                 [("Is that my farm?", 40,
+                   "(happy)It is. Look, I drew your house. And the well. "
+                   "...And a tiny you. That's you. Waving."),
+                  ("Put a sea monster in the lake.", 30,
+                   "(laugh)Old maps had those. 'Here be monsters.' ...Gus "
+                   "swears there's a pike as big as a horse. I'll draw "
+                   "that.")])],
+            4: ["*Jonathan sits among his maps, holding an old brass "
+                "compass whose needle won't move.",
+                "(sad)My father's. The last one he made. The needle stuck the "
+                "day he died. I've never let anyone open it. Not even me.",
+                ("?", "He turns it over in his hands.",
+                 [("Open it. He'd want it pointing home.", 50,
+                   "(happy)...You're right. He would. ...Just a little dust. "
+                   "Look. It's swinging. North. Hello, Dad."),
+                  ("Some things can stay still.", 40,
+                   "(sad)...Yes. Maybe that's all right. Thank you for not "
+                   "telling me to fix it. Everyone tells me to fix it.")])],
+            6: ["*Jonathan is waiting at your farm gate with a rolled-up map "
+                "tied with string.",
+                "(blush)I made you something. It's the valley. But not like "
+                "the others.",
+                ("?", "Every place you've been is marked with a tiny drawing.",
+                 [("You remembered all of this?", 60,
+                   "(blush)I remember everywhere I've seen you. It's a "
+                   "mapmaker thing. ...It's not a mapmaker thing."),
+                  ("It's beautiful.", 50,
+                   "(blush)The blank corner's still blank. I'm saving it. "
+                   "For something.")])],
+            8: ["*Jonathan meets you in the corner of the woods he's never "
+                "mapped.",
+                "(blush)This is the place. I never drew it because I didn't "
+                "know what it was for. Now I do.",
+                "I love you, {name}. That's the landmark. That's what goes "
+                "here.",
+                "(happy)...Sorry. I practised that in front of forty-two "
+                "barometers. Every one of them said 'change.'"],
+        },
+        "date": ["*You and Jonathan walk the valley at dusk while he points "
+                 "out everything he's ever mapped.",
+                 "(happy)That tree's moved a foot since spring. Don't tell "
+                 "anyone. They'll think I'm mad.",
+                 "(blush)My favourite place on the map? Wherever you're "
+                 "standing. That's the place."],
+        "dating": ["(blush)I've started drawing you in the corners of my "
+                   "maps. Tiny. Waving. Colm noticed. He's printing one.",
+                   "(happy)All forty-two barometers say 'fair' today. For "
+                   "the first time ever. I don't know why. ...I know why."],
+        "spouse": ["(happy)Morning. I made pancakes. Big ones, the way they "
+                   "make them where I grew up.",
+                   "(laugh)I've mapped our house. Every room. The best room "
+                   "is wherever you are. That's not on the map. I just know.",
+                   "(blush)Today's forecast: you, with a good chance of "
+                   "pancakes. Same as every day."],
+        "sched": {"day": [(600, "hale.2"), (800, "hale.3"),
+                          (1100, "out.bluff"), (1400, "hale.1"),
+                          (1700, "out.halegarden"), (1900, "inn.8"),
+                          (2130, "hale.2")],
+                  "rest_s": [(600, "hale.2"), (900, "out.woods2"),
+                             (1300, "out.eastbench"),
+                             (1600, "out.halegarden"), (1900, "hale.4"),
+                             (2130, "hale.2")],
+                  "rain_s": [(600, "hale.2"), (800, "hale.1"),
+                             (1200, "hale.3"), (1600, "hale.4"),
+                             (2130, "hale.2")]},
+        "shop": None,
+    },
 }
 
 ROMANCE = [k for k, v in VILLAGERS.items() if v["romance"]]
@@ -5782,6 +6606,10 @@ BUILDINGS = {
     "observatory": (107, 45, 7, 5, "purple", "stone", "the Observatory"),
     "amy": (55, 9, 7, 5, "thatch", "wood", "Amy's Cottage"),
     "rusty": (76, 42, 7, 5, "purple", "white", "Rusty's Studio"),
+    # up the north lane, and down by the bluff
+    "brannigan": (99, 13, 7, 5, "green", "white", "the Brannigan House"),
+    "carvalho": (107, 13, 7, 5, "red", "log", "the Carvalho House"),
+    "hale": (115, 45, 7, 5, "slate", "wood", "Hale Cottage"),
 }
 ON_ORDER = {"coop", "barn", "greenhouse"}             # buildings that stand only once you've
                                 # paid for them
@@ -5803,6 +6631,7 @@ OUT_SPOTS = {
     "stargaze": (70, 56), "farm_gate": (42, 27), "farmyard": (14, 26),
     "eastgreen": (110, 30), "eastbench": (102, 30), "pasture": (118, 13),
     "pasture2": (110, 12), "bluff": (110, 54), "eastlane": (118, 42),
+    "quarry": (115, 8), "northlane": (106, 20), "halegarden": (114, 47),
     # maids with no room in the cabin wait outside it, in a row
     "maidwait1": (11, 28), "maidwait2": (12, 28), "maidwait3": (13, 28),
     "maidwait4": (14, 28), "maidwait5": (15, 28), "maidwait6": (16, 28),
@@ -5812,12 +6641,13 @@ FEST_SPOTS = {
     "square": [(71, 23), (74, 23), (77, 23), (80, 23), (71, 27), (79, 27),
                (72, 29), (78, 29), (74, 29), (76, 29), (70, 25), (80, 25),
                (69, 27), (81, 27), (70, 29), (80, 29), (69, 23), (81, 23),
-               (73, 21), (77, 21), (73, 30), (77, 30), (70, 20), (80, 20)],
+               (73, 21), (77, 21), (73, 30), (77, 30), (70, 20), (80, 20),
+               (72, 21), (78, 21), (71, 30), (79, 30), (75, 31)],
     "beach": [(50, 53), (53, 54), (56, 53), (59, 54), (62, 53), (65, 54),
               (68, 53), (71, 54), (74, 53), (77, 54), (84, 53), (87, 54),
               (90, 53), (47, 54), (93, 54), (96, 53), (99, 54), (102, 53),
               (105, 54), (108, 53), (111, 54), (114, 53), (117, 54),
-              (120, 53)],
+              (120, 53), (23, 53), (26, 54), (29, 53), (32, 54), (35, 53)],
 }
 
 
@@ -5903,6 +6733,8 @@ def make_valley(seed, built=()):
     fill(75, SQUARE[3] + 1, 76, 49, "path")
     fill(20, 50, VW - 3, 51, "path")
     fill(20, fy1, 20, 49, "path")
+    fill(99, 19, QUARRY_PATH - 1, 19, "path")      # the east quarter's north
+                                                    # lane, to the quarry path
     for (x0, x1, y0, y1) in ((RIVER[0], RIVER[1], 26, 27),
                              (RIVER[0], RIVER[1], 50, 51)):
         fill(x0, y0, x1, y1, "bridge")
@@ -6219,6 +7051,30 @@ ROOMS["jonah"] = ("logfloor", "l", (
     "l.hh......l",
     "lR..rrr..Pl",
     "lllllxlllll"))
+ROOMS["brannigan"] = ("boards", "W", (   # the press, and Tomoko's kiln
+    "WWwWWWWWwWW",
+    "WSS5D6.OC.W",
+    "W1.......2W",
+    "W.TT..3...W",
+    "W.hh...4.PW",
+    "WP..rrr..PW",
+    "WWWWWxWWWWW"))
+ROOMS["carvalho"] = ("logfloor", "l", (
+    "llwllllwlll",
+    "lB5.O..b6.l",
+    "l.1.....2.l",
+    "l.TT..3...l",
+    "l.hh..4.c.l",
+    "lR..rrr..Pl",
+    "lllllxlllll"))
+ROOMS["hale"] = ("floor", "W", (         # maps, and forty-two barometers
+    "WWwWWWWWwWW",
+    "WSSS.F..B.W",
+    "W.1....4.2W",
+    "W.E..3....W",
+    "W.TT......W",
+    "WP..rrr.MPW",
+    "WWWWWxWWWWW"))
 ROOMS["boathouse"] = ("boards", "W", (
     "WWwWWWWWwWW",
     "WNN.R..b..W",
@@ -21408,6 +22264,10 @@ ACCEPT = {
     "dmitri": "(blush)Yes. Statistically, this was the best possible outcome. "
               "Yes.",
     "jonah": "(blush)...Yes. Mm. Yes. ...Sorry. Yes!",
+    "john": "(laugh)Me? Really? YES! Wait till I tell Pippa! ...She'll say "
+            "'finally.'",
+    "jonathan": "(blush)...Yes. Yes. I'm going to have to redraw everything. "
+                "Yes.",
 }
 PROPOSAL = {
     "rowan": "(blush)...Yes. I'll make the rings. Iron and gold. They'll "
@@ -21430,6 +22290,10 @@ PROPOSAL = {
              "about you.",
     "dmitri": "(blush)Yes. I'll name the brightest star for our wedding day.",
     "jonah": "(blush)Yes. I'll bring the whole flock. They'll want to see.",
+    "john": "(blush)Yes! I'll make the rings myself. Not stone. Gold. Ivy "
+            "will help. Yes!",
+    "jonathan": "(blush)Yes. I'll mark this spot on every map I ever draw, "
+                "for the rest of my life.",
 }
 VOWS = {
     "rowan": "(blush)I'm not good with words. So: I'll make you things. "
@@ -21459,6 +22323,12 @@ VOWS = {
               "every one for this. I love you.",
     "jonah": "(blush)I'm not a talker. But I'll be here. Every day. Every "
              "season. Always.",
+    "john": "(blush)I'm not good with words. I'm good with stone. So here's "
+            "my promise: I'll build us a life that lasts. Pippa's in it. "
+            "You're in it. Always.",
+    "jonathan": "(blush)I've spent my life drawing the way home. I didn't "
+                "know it was you. I'll love you on every map, in every "
+                "season, always.",
 }
 SCENE_GIFTS = {("rose", 2): "apple pie", ("rose", 5): "wool scarf"}
 
@@ -21485,11 +22355,12 @@ def golden(px):
 
 
 STYLE_TO_F = {"short": "bob", "messy": "long", "spiky": "ponytail",
-              "curly": "curly", "bald": "bun"}
+              "curly": "curly", "bald": "bun", "swept": "long",
+              "receding": "bun"}
 STYLE_TO_M = {"long": "messy", "bangs": "messy", "bob": "short",
               "ponytail": "short",
               "pigtails": "spiky", "bun": "short", "braid": "messy",
-              "curly": "curly"}
+              "curly": "curly", "sidebob": "swept"}
 
 
 def swap_look(look):
@@ -22023,6 +22894,139 @@ MAID_SCENES = {   # a villager's heart scenes while she's your maid: the
                "feel about you."),
               ("You carved that?", 50,
                "(blush)I'm bad at saying things. So I carve them.")])],
+    },
+    "colm": {
+        2: ["*Colm is at your kitchen table in her maid's apron, a pen behind "
+            "her ear, writing up your week.",
+            "(laugh)'Farmer Plants Turnips.' Front page. I've nothing else "
+            "this week. You lead a quiet life.",
+            ("?", "She taps the pen on her teeth.",
+             [("Make something up.", 40,
+               "(laugh)'Farmer Wrestles Bear.' Page two. Page two's for "
+               "fiction."),
+              ("Write about your apron.", 30,
+               "(happy)'Editor Finds Calling.' ...Tomoko would frame "
+               "that.")])],
+        5: ["*Colm sits on your step at dusk, an old letter in her apron "
+            "pocket.",
+            "(sad)From my sister. Mam's not well, over the sea. It's always "
+            "been a long way.",
+            ("?", "She folds the letter carefully.",
+             [("Go. I'll manage the house.", 50,
+               "(happy)...You would, too. Thank you. Tomoko's already "
+               "packed. She always knows."),
+              ("Write to her tonight.", 40,
+               "(happy)I will. At your table, with your good pen. Thank you, "
+               "{name}.")])],
+    },
+    "tomoko": {
+        2: ["*Tomoko is at your kitchen counter in her maid's apron, "
+            "rearranging all your bowls.",
+            "These are in the wrong order. Everything is in the wrong order. "
+            "Sit. I will show you.",
+            ("?", "She holds up two bowls that look exactly the same.",
+             [("They're the same.", 30,
+               "(laugh)They are not. This one is for soup. This one is for "
+               "sadness. Very different."),
+              ("Show me.", 40,
+               "(happy)Good. Small things first. Then the house is calm. "
+               "Then you are calm.")])],
+        5: ["*Tomoko kneels by your fire in her apron, holding the two "
+            "halves of a cracked teacup.",
+            "(sad)My mother's. I brought it to make your tea, and I dropped "
+            "it. Thirty years, and today.",
+            ("?", "She turns the pieces over.",
+             [("Mend it with gold.", 50,
+               "(happy)Yes. Like she taught me. It will be more beautiful "
+               "here, in your house."),
+              ("I'll sit with you.", 40,
+               "(happy)That is the most help there is. Thank you.")])],
+    },
+    "john": {
+        2: ["*John is splitting your firewood in a frilly apron, singing very "
+            "loudly.",
+            "(laugh)Ha! Who knew an apron had so many pockets? I've a chisel "
+            "in one and a biscuit in the other!",
+            ("?", "She swings the axe again. CRACK.",
+             [("Mind the apron!", 40,
+               "(laugh)It's tougher than it looks! Like me! ...It's torn. "
+               "It's fine."),
+              ("That's a week's wood!", 30,
+               "(happy)You find the line, you hit it once. Wood's just soft "
+               "stone.")])],
+        4: ["*John sits on your step at night in her apron, a letter in her "
+            "big hands.",
+            "(sad)From Pippa's mum. She's not coming this summer. I have to "
+            "tell Pippa in the morning.",
+            ("?", "She turns the letter over and over.",
+             [("We'll tell her together.", 50,
+               "(happy)...Thank you. She thinks you hung the moon, you "
+               "know."),
+              ("You're a good parent, John.", 40,
+               "(happy)...I try. Every day. Thank you.")])],
+        6: ["*John is grilling corn in your yard, apron smudged with "
+            "charcoal, singing badly. She stops when she sees you.",
+            "(blush)Ah. You heard that. ...It was about you. Not with your "
+            "name in it. But it was.",
+            ("?", "The corn starts to smoke.",
+             [("Sing it again.", 60,
+               "(blush)All four chords of it? ...All right. For you."),
+              ("Your corn's burning!", 40,
+               "(laugh)AH! ...Burnt corn is a delicacy! ...It isn't.")])],
+        8: ["*John meets you at the quarry's edge at sunset, apron folded "
+            "over one arm.",
+            "(blush)I carved something. A month of evenings, after your "
+            "chores. Don't laugh.",
+            ("?", "She holds out a small stone heart with two letters on it.",
+             [("I love it. And you.", 60,
+               "(blush)You said it first! Pippa will be furious she missed "
+               "it. I love you, {name}."),
+              ("Did Pippa help?", 50,
+               "(laugh)She supervised. She says I'm 'very slow.' ...I love "
+               "you, {name}.")])],
+    },
+    "jonathan": {
+        2: ["*Jonathan is in your house in her maid's apron, measuring the "
+            "kitchen with a ruler.",
+            "(laugh)I'm mapping your house. The broom takes forty-one steps "
+            "to get round. I've got it down to thirty-eight.",
+            ("?", "She shows you a tiny, perfect floor plan.",
+             [("Where am I on it?", 40,
+               "(happy)Here. Waving. You're always waving on my maps."),
+              ("Thirty-eight? Impressive.", 30,
+               "(laugh)Thirty-seven if you move the chair. Can I move the "
+               "chair?")])],
+        4: ["*Jonathan sits by your fire in her apron, holding an old brass "
+            "compass whose needle won't move.",
+            "(sad)My father's. The needle stuck the day he died. I've never "
+            "opened it.",
+            ("?", "She turns it over in her hands.",
+             [("Open it. He'd want it pointing home.", 50,
+               "(happy)...Look. It's swinging. North. Hello, Dad."),
+              ("Some things can stay still.", 40,
+               "(happy)...Thank you for not telling me to fix it.")])],
+        6: ["*Jonathan leaves a rolled-up map on your pillow when she turns "
+            "the bed down.",
+            "*Every place you've been in the valley is marked on it with a "
+            "tiny drawing.",
+            "(blush)It's for you. I remember everywhere I've seen you. It's a "
+            "mapmaker thing. ...It isn't.",
+            ("?", "She lingers in the doorway.",
+             [("It's beautiful.", 60,
+               "(blush)The blank corner's still blank. I'm saving it."),
+              ("You drew me waving again.", 50,
+               "(laugh)You're always waving. It's how I know it's you.")])],
+        8: ["*Jonathan meets you in the unmapped corner of the woods, apron "
+            "folded in her pocket.",
+            "(blush)This is the place I never drew. I didn't know what it was "
+            "for. Now I do.",
+            ("?", "She takes a breath.",
+             [("What goes here?", 60,
+               "(happy)I love you, {name}. That's the landmark. That's what "
+               "goes here."),
+              ("Did you practise?", 50,
+               "(laugh)To forty-two barometers. They all said 'change.' I "
+               "love you, {name}.")])],
     },
 }
 MAID_SCENES.update({
@@ -22741,6 +23745,35 @@ SWAP_LINES = {   # liked it, hated it, glad to be back, sorry to be back
                 "customers? Please change me back.",
                 "(happy)Thank you! Now I'll cry from relief!",
                 "(sad)Oh. And I'd just found the perfect apron for it."),
+    "colm": ("(laugh)Well! Front page! 'Editor Has A Change Of Heart!' "
+             "Tomoko's going to laugh for a week!",
+             "(cross)Ach, what have you done? I've a paper to get out! "
+             "Change me back!",
+             "(happy)There I am. Grand. Thanks.",
+             "(sad)Already? I'd half written the column."),
+    "tomoko": ("(laugh)Oh! The shoulders are good for the wheel. And Colm "
+               "has never looked so worried.",
+               "(cross)This is not funny. Undo it. Now, please.",
+               "(happy)Good. Thank you.",
+               "(sad)Hm. I was beginning to like the shoulders."),
+    "john": ("(laugh)Ha! Look at me! Pippa's going to LOVE this! I'm "
+             "growing my hair out!",
+             "(cross)Hey! I've a quarry to run! I can't cut stone in a... is "
+             "this a skirt? Change me back!",
+             "(happy)Ah, there I am. Thanks, friend.",
+             "(sad)Oh. Pippa was going to braid my hair."),
+    "pippa": ("(laugh)WHOA! I'm a boy! Now I'm a dragon tamer AND a knight! "
+              "Benji's going to be SO cross!",
+              "(cross)Hey! Pip's going to say I'm copying him! Change me "
+              "back!",
+              "(happy)Phew! Ribbons fit better on me.",
+              "(sad)Aww! I was going to fight Benji with a stick!"),
+    "jonathan": ("(laugh)Huh. Well. The glasses still fit. Interesting "
+                 "data.",
+                 "(cross)This is... no. I'm very confused. Please change me "
+                 "back.",
+                 "(happy)Ah. A familiar face. Thank you.",
+                 "(sad)Oh. I'd only just got used to the mirror."),
 }
 TREE_HAPPY = ["The tree that is {who} rustles happily.",
               "{who}'s leaves shiver with delight, and a bird hops along a "
@@ -22798,6 +23831,15 @@ TREE_CHOPPED = {   # chopped out of being a tree
     "pip": "(sad)...",
     "bernard": "(sad)Oh my, oh my. I'm shaking. I can't stop shaking. Why "
                "would you do that to me?",
+    "colm": "(cross)You took an axe to me! I'll print your name in black "
+            "ink, so I will!",
+    "tomoko": "(cross)...An axe. You used an axe. We will not speak for some "
+              "time.",
+    "john": "(cross)An AXE?! I'm a stonemason, I know what a chisel's for, "
+            "and it isn't people!",
+    "pippa": "(sad)...",
+    "jonathan": "(sad)You chopped me down. I don't know what to say. I "
+                "thought we were friends.",
 }
 TREE_BACK = {   # uprooted: sorry to be walking again, glad of it
     "marisol": ("(laugh)I grew lemons! Real lemons! I'm making a tart!",
@@ -22879,6 +23921,22 @@ TREE_BACK = {   # uprooted: sorry to be walking again, glad of it
                 "bake them into something.",
                 "(sad)Oh dear, oh dear. Somebody tried to pick my leaves "
                 "for a salad."),
+    "colm": ("(laugh)Ha! Best seat for gossip in the valley! Everyone stops "
+             "under a tree!",
+             "(cross)A dog stopped under me. I'll say no more."),
+    "tomoko": ("(happy)Very peaceful. Very still. A good tree. I would do it "
+               "again.",
+               "(cross)A woodpecker. All day. All day."),
+    "john": ("(laugh)Ha! Strong roots! I could feel the stone under me! "
+             "Lovely!",
+             "(cross)Pippa climbed me and wouldn't come down! I couldn't "
+             "tell her off! I was a tree!"),
+    "pippa": ("(laugh)I was a TREE! Birds lived in me! Baby birds! I was "
+              "their mum!",
+              "(cross)Benji hung a flag on me! A KNIGHT flag!"),
+    "jonathan": ("(laugh)I finally know exactly where that spot is. I'll "
+                 "never get it wrong on a map again.",
+                 "(cross)A dog. A dog. I'll leave it there."),
 }
 GOSSIP = {   # what folk say about somebody the wand has changed
     "statue": ["(sad)Every time I pass the golden statue of {who}, I "
@@ -23023,6 +24081,8 @@ GOSSIP_KIN = {   # (speaker, about) -> what they call them
     ("otto", "rowan"): "my apprentice", ("rose", "edmund"): "dear Edmund",
     ("clara", "benji"): "my Benji", ("benji", "clara"): "my mum",
     ("agnes", "bea"): "my niece", ("bea", "agnes"): "Aunt Agnes",
+    ("colm", "tomoko"): "my wife", ("tomoko", "colm"): "my husband",
+    ("john", "pippa"): "my Pippa", ("pippa", "john"): "my dad",
 }
 LOO_BUSINESS = ["You do your business.",
                 "You do your business. Nature's call, answered.",
@@ -23368,6 +24428,21 @@ LOO_BACK = {   # turned back: sorry about it, glad of it
                 "the inn. I felt very proud.",
                 "(sad)Oh dear, oh dear. I can never unknow what I now "
                 "know about my regulars."),
+    "colm": ("(laugh)Ha! Everybody reads in the loo. I've never had so many "
+             "readers!",
+             "(cross)Edmund read his own speech in me. Out loud. Twice."),
+    "tomoko": ("(happy)Very quiet. Very clean. I kept it spotless. Of "
+               "course.",
+               "(cross)Colm visited. Colm sang. I will never forgive either "
+               "of you."),
+    "john": ("(laugh)Ha! Best acoustics in the valley! I wanted to sing all "
+             "day!",
+             "(cross)Pippa told everyone I was a loo! She drew a picture! "
+             "It's on the wall!"),
+    "jonathan": ("(laugh)I had a lot of time to think. I've redrawn the whole "
+                 "valley in my head.",
+                 "(cross)I've mapped everything in this valley. I am not "
+                 "mapping that."),
 }
 MAID_SPOTS = "2345"           # where maids wait in your cabin
 MAID_CHORES = {   # what you can tell a maid to do: menu, and in her words
@@ -23528,6 +24603,31 @@ MAID_LINES = {   # liked it, hated it, glad to be back, sorry to be back
                 "(happy)Oh, thank you! I'd better get back before Wren burns "
                 "the inn down.",
                 "(sad)Oh. I'd left a pie in your oven."),
+    "colm": ("(laugh)Ha! I'll dust and I'll listen at doors! Best job a "
+             "newsman ever had!",
+             "(cross)A frilly apron! On the editor of the Gazette! ...Fine. "
+             "Where's the duster.",
+             "(happy)Back to the press. Thank you.",
+             "(sad)Ah. I'd a whole column half written about your kitchen."),
+    "tomoko": ("(happy)A house to put in order. Good. Everything here is in "
+               "the wrong place. Sit.",
+               "(cross)I have my own house to keep. And a husband. This is "
+               "too many houses.",
+               "(happy)Good. My clay is waiting.",
+               "(sad)Hm. I had only just placed your stones."),
+    "john": ("(laugh)Ha! A maid! Pippa will think this is the best thing "
+             "ever! I'll scrub your floors till they shine like river "
+             "stone!",
+             "(cross)I've a quarry to run and a daughter to feed! ...Fine. "
+             "Give me the mop.",
+             "(happy)Back to the stone. Thanks, friend.",
+             "(sad)Oh. I'd only just found where you keep the good pan."),
+    "jonathan": ("(laugh)Oh! I'll map your whole house! The best route for "
+                 "the duster!",
+                 "(cross)I don't know how to iron. I'm going to learn, and "
+                 "I'm going to hate it.",
+                 "(happy)Back to the maps. Thank you.",
+                 "(sad)Oh. I'd got the dusting down to thirty-seven steps."),
 }
 # Love, in uniform: (she likes being a maid, she doesn't)
 MAID_ACCEPT = (
@@ -23768,6 +24868,19 @@ COW_BACK = {   # turned back: sorry to be human again, glad of it
               "The bell!",
               "(cross)No liner, no lipstick, and HOOVES. I can't even "
               "describe the trauma."),
+    "colm": ("(laugh)Ha! Four stomachs and a field of grass! I've never "
+             "eaten so well!",
+             "(cross)Tomoko MILKED me. My own wife. She said it was very "
+             "good milk."),
+    "tomoko": ("(happy)Grass, sun, and nobody asking me anything. Very "
+               "restful.",
+               "(cross)A cow. Me. Colm took notes."),
+    "john": ("(laugh)Ha! I was the biggest cow in the valley! Strong as an "
+             "ox!",
+             "(cross)Pippa tried to ride me. Like a dragon. I let her. I'm a "
+             "pushover."),
+    "jonathan": ("(laugh)I was very calm. Cows have it all worked out.",
+                 "(cross)I kept trying to mend the milk pail. With hooves."),
 }
 SHEEP_BACK = {   # turned back: sorry to be human again, glad of it
     "marisol": ("(laugh)So soft! I was a walking proving cloth! The dough "
@@ -23847,6 +24960,18 @@ SHEEP_BACK = {   # turned back: sorry to be human again, glad of it
               "my life!",
               "(cross)They SHEARED me, darling. Do you know how long it "
               "took to grow that?"),
+    "colm": ("(laugh)Ha! Warm as a stove! And Jonah's flock tell terrible "
+             "jokes!",
+             "(cross)Sheared! In front of the village! It'll be in the "
+             "paper! I AM the paper!"),
+    "tomoko": ("(happy)Very soft. Very warm. I would like a coat made of "
+               "me.",
+               "(cross)I was sheared. Colm wants to knit a scarf. Of me."),
+    "john": ("(laugh)Ha! Fluffiest sheep in three valleys! Pippa hugged me "
+             "all day!",
+             "(cross)Duchess the goat bossed me about. A goat! Bossed ME!"),
+    "jonathan": ("(laugh)Very warm. Very woolly. Very relaxing.",
+                 "(cross)I got lost. Me. A mapmaker. Lost in a field."),
 }
 CAT_BACK = {   # turned back: sorry to be human again, glad of it
     "marisol": ("(laugh)I slept on the warm oven ALL DAY. Heaven. Pure "
@@ -23931,6 +25056,23 @@ CAT_BACK = {   # turned back: sorry to be human again, glad of it
               "(cross)I shed on every costume in the wardrobe. Every one."),
     "pip": ("(laugh)I could jump SO high! I got on the library roof!",
             "(cross)Ivy made me wear a bell! So I couldn't sneak!"),
+    "colm": ("(laugh)I sat on the press all day and nobody could print a "
+             "thing! Best day off I've had in years!",
+             "(cross)Tomoko put me outside. Her own husband. Outside!"),
+    "tomoko": ("(happy)I slept in the sun on the kiln. All day. I see why "
+               "cats are so calm.",
+               "(cross)Colm tried to put me in the paper. 'Mystery Cat.' I "
+               "scratched him."),
+    "john": ("(laugh)Ha! I was a big ginger tom! I scared off every cat in "
+             "the east quarter!",
+             "(cross)Pippa put a ribbon on me. A big one. And a hat."),
+    "pippa": ("(laugh)I could climb EVERYTHING! I got on Jonathan's roof! He "
+              "drew me!",
+              "(cross)Dad tried to give me a bath! Cats DON'T have baths!"),
+    "jonathan": ("(laugh)I knocked every barometer off the shelf. It felt "
+                 "very, very good.",
+                 "(cross)I sat on tomorrow's forecast and it rained. "
+                 "Everyone blamed me."),
 }
 DOG_BACK = {   # turned back: sorry to be human again, glad of it
     "marisol": ("(laugh)I could SMELL the bread rising from across the "
@@ -24010,6 +25152,24 @@ DOG_BACK = {   # turned back: sorry to be human again, glad of it
     "pip": ("(laugh)I could run SO fast! Faster than Benji! Faster than "
             "anyone!",
             "(cross)Ivy gave me a bath! With SOAP!"),
+    "colm": ("(laugh)I could smell everyone's business from across the "
+             "square! A newsman's dream!",
+             "(cross)Edmund threw a stick. I fetched it. In front of the "
+             "whole village."),
+    "tomoko": ("(laugh)I ran across the whole valley. I have never been so "
+               "undignified. It was wonderful.",
+               "(cross)I barked at Colm. Colm barked back. We are not "
+               "discussing it."),
+    "john": ("(laugh)Ha! I could run all day! Up the quarry and back! "
+             "Twice!",
+             "(cross)Pippa taught me to sit. And roll over. I did it. Every "
+             "time."),
+    "pippa": ("(laugh)I was a PUPPY! Everyone gave me treats! EVERYONE!",
+              "(cross)Dad tried to put me on a lead! Like a DOG! ...I was a "
+              "dog."),
+    "jonathan": ("(laugh)I followed a trail across the whole valley by "
+                 "smell. Best survey I've ever done.",
+                 "(cross)I chased my own tail for an hour. I'm a grown man."),
 }
 BEASTS = {   # what cowify and sheepify make of somebody, and what they say
     "cow": {"spell": "cowify", "list": "cowified", "back": COW_BACK,
@@ -24144,6 +25304,24 @@ CHICKEN_BACK = {   # turned back: sorry to be human again, glad of it
                 "From a very personal angle.",
                 "(sad)Oh no, oh no. I was a chicken, in a kitchen! Do you "
                 "know how frightening that is?"),
+    "colm": ("(laugh)Ha! The best gossip in the valley is in that coop! I've "
+             "three stories already!",
+             "(cross)A chicken! Me! Edmund saw! It'll be in the Gazette! I'm "
+             "the Gazette!"),
+    "tomoko": ("(laugh)The hens have a very strict order. I approve. I was "
+               "near the top.",
+               "(cross)I laid an egg. I will never speak of it."),
+    "john": ("(laugh)Ha! I was a big chicken! The biggest! The others did "
+             "what I said!",
+             "(cross)Pippa tried to tame me. Like a dragon. With a stick."),
+    "pippa": ("(laugh)I was a CHICKEN! Chickens are just small dragons! I'm "
+              "SURE!",
+              "(cross)Benji tried to put me in a basket! I pecked him! "
+              "Good!"),
+    "jonathan": ("(laugh)I mapped the whole coop from the inside. "
+                 "Fascinating layout.",
+                 "(cross)I spent all day looking for my glasses. I didn't "
+                 "have hands."),
 }
 SWAP_GREET_LIKE = ["(happy)Hey! Check out the new me!",
                    "(happy)Like the new look? I do.",
@@ -24531,6 +25709,16 @@ UNSTATUE = {
     "pip": "(laugh)That was SO COOL! Do it again! Do Ivy! Do Ivy!",
     "bernard": "(surprised)Oh! Oh my. My stew! How long was I standing "
                "here? Is it burnt? It's burnt.",
+    "colm": "(surprised)Gold! I was gold? Was there a photograph? There'd "
+            "better have been a photograph.",
+    "tomoko": "(surprised)...I was a statue. How long? Is my clay dry? My "
+              "clay is dry.",
+    "john": "(surprised)Ha! Gold! I've cut a lot of stone, but I've never "
+            "BEEN stone. Well, gold. Same thing. Isn't it?",
+    "pippa": "(laugh)I was a GOLD STATUE?! Like a dragon's treasure! Do it "
+             "again! Do Benji!",
+    "jonathan": "(surprised)Huh. I lost... how many hours? Did I miss "
+                "tomorrow's forecast? Did it rain?",
 }
 
 
