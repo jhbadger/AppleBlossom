@@ -134,7 +134,7 @@ the tool would do something there.
 | Axe, on a tree | three swings fell it, for 8 wood and a stump to clear (6 more); it grows back after a season |
 | Fishing rod | ask Theo about FISHING; face water and cast |
 | Magic wand | casts a spell straight ahead (see below) |
-| Leash | from Mabel's: leads a chickenfied, cowified or sheepified villager, and lets her go again (see below) |
+| Leash | from Mabel's: leads a villager the wand made into a hen, cow, sheep, cat, dog or horse, and lets her go again (see below) |
 | Milk pail | from Mabel's: milks a cow in your barn once a day, a sheep every other day |
 | Shears | from Mabel's: shears a woolly sheep in your barn, every third day each |
 
@@ -318,6 +318,30 @@ in the farmyard: an old bone, something to forage, a purse of coins, and
 now and then an old coin worth a good deal or a lost silver ring. Villagers turned into cats and dogs can become pets too:
 see the magic wand.
 
+### Horses
+
+Ivy builds a **stable** west of the barn field for 3,000g, 100 wood and 30
+stone: three stalls, a hay rack and a feed trough. Once it's up, Mabel
+sells **horses** at 2,500g. Each comes with a name (Bramble, Pepper,
+Willow, Nutmeg, and others) and a coat: bay, chestnut, black, grey or
+palomino.
+
+- **Riding:** walk into a horse and choose *Ride*. From her stall you lead
+  her out of the stable door and swing up; out in the valley you climb on
+  where she stands. On horseback every step carries you two squares for the
+  time one takes on foot (tapping a square to walk there works too). Use
+  anything, or tap yourself, to **get down**: she stands where you leave
+  her, cropping the grass, and you can ride her again, pet her, or send her
+  home to the stable. Ride through a door (your cabin, a shop, the mine)
+  and you get down at it; she waits outside.
+- **Feeding:** horses eat like the cows: hay in the stable's trough, the
+  silo, or a day at grass in the pasture in front of the stable (the trough
+  opens the doors). They leave the odd pile behind them, out at grass or
+  under you, to scoop up for fertilizer.
+- **Out at night:** a horse left out after dark walks home to the stable by
+  herself in the night, and she likes you a little less for it. Pet her
+  each day and she grows happier, up to five hearts.
+
 ### Machines
 
 Nell at **Garrow's Workshop** builds machines that turn what your farm
@@ -442,12 +466,13 @@ for what it gives:
 | Sheepify | a sheep | wool every third day (with shears) |
 | Catify | a cat | a point of magic |
 | Dogify | a dog | 20 energy |
+| Horseify | a horse | a gallop round the cavern: 15 energy |
 | Looify | a working outhouse | go in and use it like any other (the almanac, the Gazette riddle and the carvings are all there); empty its pit with a hoe for fertilizer |
 
-With Mabel's **leash** you can **lead a hen, cow, sheep, cat or dog home**:
+With Mabel's **leash** you can **lead a hen, cow, sheep, cat, dog or horse home**:
 she follows a step behind you, up the ladders, out of the mine and across
 the valley (monsters leave her be). Lead her into your coop (a hen), barn
-(a cow or sheep) or cabin (a cat or dog, who then lives in the farmyard)
+(a cow or sheep), stable (a horse) or cabin (a cat or dog, who then lives in the farmyard)
 and she's one of your animals, named for what she was: Gobbles the
 goblin, Bones the skeleton, Sparky the imp... Walk into her on the way
 and you swap places; use a tool on her to let her go back to the mine,
@@ -630,6 +655,16 @@ gift.
   each day counts as a gift she likes. If she doesn't, she slips the leash
   and bolts back to her own routine. Cast the same spell again, at home or
   out, to bring her back. Other spells slide off her fur.
+- **Horseify** turns whoever it hits into a horse, in a coat to suit their
+  hair (black hair makes a black horse, brown a bay, red a chestnut, grey
+  a grey, and the rest palominos). Walk into her and she whinnies or
+  snorts, depending on whether this villager likes being a horse, and every
+  one of them has something to say about it when you turn them back. Put
+  the **leash** on her and lead her into your **stable**, and she's one of
+  your horses: ride her (she's delighted, or she grumbles, with friendship
+  to match, once a day), pet her, feed her. Horseify her again, in the
+  stable, to bring her back. The children are too small for it: the spell
+  won't stick, and they tell you what they think of that.
 - **Maidify** turns whoever it hits into a maid: a young woman in a black
   dress, a white apron and a frilled cap, whoever they were before. She
   moves into your cabin and stops keeping shop. Her heart scenes change
