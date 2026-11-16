@@ -9120,6 +9120,14 @@ class Sound:
             atexit.register(self.stop_music)
             self.dir = tempfile.mkdtemp(prefix="appleblossom-")
             atexit.register(shutil.rmtree, self.dir, True)
+
+    def begin(self):
+        """Make the effects and the music, on a thread of their own.  The
+        game calls this once its window is up: Python runs one thread at a
+        time, so making them while the game loads only slows the loading
+        (much, on a slow tablet), and until they're made nothing plays."""
+        if self.player and not getattr(self, "begun", False):
+            self.begun = True
             threading.Thread(target=self.synthesize, daemon=True).start()
 
     @staticmethod
@@ -10461,7 +10469,6 @@ class KivyScreen:
         self.cells = []
         self.last_tap = (0, -999, -999)
         self.labels = {}            # (text, font, ...) -> texture
-        self.rgba = {}              # "#rrggbb" -> 4 bytes
 
     def echo(self, x, y):
         """Whether a tap at x, y is the last one over again: the same
@@ -10496,23 +10503,16 @@ class KivyScreen:
 
     def pixel_bytes(self, rows):
         """Rows of colours, top first, as RGBA bytes from the bottom."""
-        rgba = self.rgba
-        out = bytearray()
-        for row in reversed(rows):
-            for c in row:
-                b = rgba.get(c)
-                if b is None:
-                    b = rgba[c] = bytes((int(c[1:3], 16), int(c[3:5], 16),
-                                         int(c[5:7], 16), 255)) if c \
-                        else b"\0\0\0\0"
-                out += b
-        return bytes(out)
+        return rows_rgba(rows)
 
     def make_image(self, rows, z=1):
-        w, h = len(rows[0]), len(rows)
+        return self.image_from_rgba(len(rows[0]), len(rows),
+                                    self.pixel_bytes(rows), z)
+
+    def image_from_rgba(self, w, h, pixels, z=1):
+        """An image of RGBA bytes, bottom row first."""
         tex = self.kv["Texture"].create(size=(w, h), colorfmt="rgba")
         tex.mag_filter = tex.min_filter = "nearest"
-        pixels = self.pixel_bytes(rows)
         tex.blit_buffer(pixels, colorfmt="rgba", bufferfmt="ubyte")
         return KivyImage(tex, pixels, w, h, z)
 
@@ -11166,6 +11166,7 @@ class Game:
             self.restore(saved["game"])
         except (KeyError, TypeError, ValueError, IndexError, AttributeError):
             self.shell.after(50, self.new_game)
+        self.shell.after(300, self.sound.begin)     # once the map's up
         self.music_tick()
         self.animate()
         self.pad = Gamepad()
@@ -11298,37 +11299,14 @@ class Game:
     def load_images(self):
         season = self.season() if self.p else 0
         self.season_drawn = season
-        self.base = {}
-        self.avg = {}
-        tints = {k: {} for k in SHADES}     # colour -> shaded, per light
-        for name, px in all_tiles(season).items():
-            sprite = name.split("@")[0] in SPRITES
-            for lvl, k in enumerate(SHADES):
-                shaded = tints[k]
-                if lvl and name.startswith(("v_", "s_", "vx_", "sx_",
-                                            "vm_", "sm_", "tv_", "lh_",
-                                            "shen_", "cow_", "scow_",
-                                            "sheep", "ssheep", "cat_",
-                                            "horse_", "shorse_", "ride_",
-                                            "scat_", "dog_", "sdog_",
-                                            "hen_", "mon_", "smon_",
-                                            "mmaid_", "mtree_", "mloo_")):
-                    continue
-                if k != 1.0:
-                    px_k = [[shaded.get(c) or shaded.setdefault(
-                        c, shade(c, k)) if c else c for c in r] for r in px]
-                else:
-                    px_k = px
-                self.base[("%d:" % lvl if lvl else "") + name] = \
-                    self.screen.make_image(px_k)
-            if not sprite:
-                tot = [0, 0, 0]
-                for r in px:
-                    for c in r:
-                        for i in range(3):
-                            tot[i] += int(c[1 + 2 * i:3 + 2 * i], 16)
-                self.avg[name] = "#%02x%02x%02x" % tuple(v // 256
-                                                        for v in tot)
+        if hasattr(self.screen, "image_from_rgba"):     # Kivy: the cache
+            rgba, self.avg = tile_rgba(season)
+            self.base = {key: self.screen.image_from_rgba(w, h, pixels)
+                         for key, (w, h, pixels) in rgba.items()}
+        else:
+            shaded, self.avg, _ = shaded_tiles(season)
+            self.base = {key: self.screen.make_image(px)
+                         for key, px in shaded.items()}
         self.loo_painted = {}
         self.maid_painted = {}
         if self.p:
@@ -26601,7 +26579,135 @@ def all_tiles(season=0):
     return tiles
 
 
-ART["drop_pat"] = ({"b": "#5a3e22", "B": "#3e2a16", "h": "#7a5632"}, (
+# The people and animals are drawn in daylight only; the rest at dusk and
+# at night too.
+DAY_ONLY = ("v_", "s_", "vx_", "sx_", "vm_", "sm_", "tv_", "lh_", "shen_",
+            "cow_", "scow_", "sheep", "ssheep", "cat_", "horse_", "shorse_",
+            "ride_", "scat_", "dog_", "sdog_", "hen_", "mon_", "smon_",
+            "mmaid_", "mtree_", "mloo_")
+
+
+def shaded_tiles(season):
+    """key -> pixel rows, for every tile in every light it's drawn in
+    ("name" by day, "1:name" at dusk, "2:name" at night); name -> the
+    average colour of each terrain tile; and the names that are sprites."""
+    shaded, avg = {}, {}
+    tints = {k: {} for k in SHADES}     # colour -> shaded, per light
+    tiles = all_tiles(season)
+    sprites = sorted(n for n in tiles if n.split("@")[0] in SPRITES)
+    for name, px in tiles.items():
+        for lvl, k in enumerate(SHADES):
+            tint = tints[k]
+            if lvl and name.startswith(DAY_ONLY):
+                continue
+            if k != 1.0:
+                px_k = [[tint.get(c) or tint.setdefault(c, shade(c, k))
+                         if c else c for c in r] for r in px]
+            else:
+                px_k = px
+            shaded[("%d:" % lvl if lvl else "") + name] = px_k
+        if name.split("@")[0] not in SPRITES:
+            tot = [0, 0, 0]
+            for r in px:
+                for c in r:
+                    for i in range(3):
+                        tot[i] += int(c[1 + 2 * i:3 + 2 * i], 16)
+            avg[name] = "#%02x%02x%02x" % tuple(v // 256 for v in tot)
+    return shaded, avg, sprites
+
+
+RGBA = {}                               # "#rrggbb" or None -> RGBA bytes
+
+
+def rows_rgba(rows):
+    """Rows of colours, top first, as RGBA bytes from the bottom (as a
+    Kivy texture has them)."""
+    out = bytearray()
+    for row in reversed(rows):
+        for c in row:
+            b = RGBA.get(c)
+            if b is None:
+                b = RGBA[c] = bytes((int(c[1:3], 16), int(c[3:5], 16),
+                                     int(c[5:7], 16), 255)) if c \
+                    else b"\0\0\0\0"
+            out += b
+    return bytes(out)
+
+
+# Drawing every tile, shading it for dusk and night, and turning it into
+# RGBA, pixel by pixel in Python, is most of the time a slow tablet takes
+# to start (and to turn the season), so the Kivy app keeps the RGBA in a
+# file for each season, named by a checksum of this script: editing the
+# art makes them again.
+
+TILE_CACHE_FORMAT = 1
+
+
+def tile_rgba(season):
+    """key -> (width, height, RGBA bytes from the bottom) for shaded_tiles(
+    season)'s tiles, and name -> average colour; from the cache if it's
+    there.  Like all_tiles(), it fills in SPRITES."""
+    path = None
+    try:
+        with open(os.path.abspath(globals()["__file__"]), "rb") as fh:
+            sig = zlib.crc32(fh.read())
+        path = os.path.join(MUSIC_CACHE, "tiles-%d-%08x-%d.bin" % (
+            TILE_CACHE_FORMAT, sig, season))
+        with open(path, "rb") as fh:
+            rgba, avg, sprites = unpack_tiles(fh.read())
+    except (KeyError, OSError, ValueError, TypeError, IndexError,
+            zlib.error):
+        shaded, avg, sprites = shaded_tiles(season)
+        rgba = {key: (len(px[0]), len(px), rows_rgba(px))
+                for key, px in shaded.items()}
+        if path:
+            save_tiles(path, rgba, avg, sprites)
+        return rgba, avg
+    SPRITES.update(n.split("@")[0] for n in sprites)
+    return rgba, avg
+
+
+def save_tiles(path, rgba, avg, sprites):
+    head = json.dumps({"avg": avg, "sprites": sprites,
+                       "tiles": [[k, w, h] for k, (w, h, _) in
+                                 rgba.items()]}).encode()
+    body = b"".join(px for _, _, px in rgba.values())
+    folder, mine = os.path.split(path)
+    try:
+        os.makedirs(folder, exist_ok=True)
+        stem = mine.rsplit("-", 1)[0] + "-"     # this script's, any season
+        for old in os.listdir(folder):
+            if old.startswith("tiles-") and old.endswith(".bin") and \
+                    not old.startswith(stem):
+                os.remove(os.path.join(folder, old))
+        tmp = path + ".tmp"
+        with open(tmp, "wb") as fh:
+            fh.write(zlib.compress(len(head).to_bytes(4, "big") + head +
+                                   body, 1))
+        os.replace(tmp, path)
+    except OSError:
+        pass
+
+
+def unpack_tiles(data):
+    data = zlib.decompress(data)
+    n = int.from_bytes(data[:4], "big")
+    pos = 4 + n
+    head = json.loads(data[4:pos])
+    rgba = {}
+    for key, w, h in head["tiles"]:
+        size = w * h * 4
+        px = data[pos:pos + size]
+        if len(px) != size:
+            raise ValueError("short tile cache")
+        pos += size
+        rgba[key] = (w, h, px)
+    if pos != len(data):
+        raise ValueError("long tile cache")
+    return rgba, head["avg"], head["sprites"]
+
+
+ART["drop_pat"] =({"b": "#5a3e22", "B": "#3e2a16", "h": "#7a5632"}, (
     "................", "................", "................",
     "................", "................", "................",
     "................", "................", "................",
