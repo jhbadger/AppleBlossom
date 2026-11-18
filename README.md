@@ -140,10 +140,11 @@ the tool would do something there.
 
 Watered crops grow a day each night, and rain waters them for you. When a crop
 is ripe, use anything on it to pick it. Some crops (strawberries, tomatoes,
-corn, blueberries, cranberries, eggplant) keep producing after picking. A crop
-dies if its season ends before you pick it. There are 14 crops: turnip, potato,
+corn, blueberries, cranberries, eggplant, hay) keep producing after picking. A crop
+dies if its season ends before you pick it. There are 15 crops: turnip, potato,
 strawberry, cauliflower and pea in spring; tomato, corn, melon, blueberry and
-sunflower in summer; and pumpkin, cranberry, yam, eggplant and corn in fall.
+sunflower in summer; pumpkin, cranberry, yam, eggplant and corn in fall; and
+hay in summer and fall.
 
 **Crop quality.** A crop that was watered every day it grew (rain counts)
 may come up **gold**, worth half as much again; one watered most days may
@@ -311,8 +312,12 @@ Animals need feeding every night, one of three ways:
   lasts. Walk into it to fork in your hay.
 
 Hay comes from cutting weeds with the scythe (half the time; straight
-into the silo if there's room) or from Mabel at 40g. Winter is when you'll
-need it most.
+into the silo if there's room) or from Mabel at 40g, or you can **grow
+it**: Mabel sells hay seeds (30g) in summer and fall. A bed of hay is ready
+to cut in 7 days and grows back every 3 after that, giving 3 hay a cut
+(sometimes 4) into your bag. Grown hay is plain hay, never silver or gold,
+and nobody eats it but the animals. Cut plenty before winter: that's when
+you'll need it most.
 
 ### Cats and dogs
 
