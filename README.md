@@ -206,6 +206,26 @@ Grandmother's apple trees fruit in the fall. Wild things to forage turn up in
 the woods, the meadows and on the beach every morning. Otto's **sprinklers**
 water the four squares around them each morning.
 
+### The cabin wing
+
+Once the **cabin extension** is up, Ivy will build a **cabin wing** for
+6,000g, 250 wood and 100 stone (ask her about the **WING**). Overnight she
+knocks through your bedroom's east wall into three new rooms, each opening
+into the next:
+
+| Room | What's in it |
+| --- | --- |
+| Parlour | a fireplace, a piano, a big rug and plants: plenty of floor to furnish |
+| Study | bookshelves (walk into them for something to read), an easel, a desk and chair |
+| Bathroom | a claw-footed tub, a flushing toilet, a washstand and a cabinet |
+
+Walk into the **tub** for a long hot bath: 30 energy, once a day, and half an
+hour gone. Walk into the **toilet** to do your business, as in an outhouse,
+and pull the chain: it all goes down the pipe, so there's no pit to empty
+and no fertilizer. Like the extension, the wing only grows the inside: from the farm
+your cabin is the same size it always was. The new rooms are good places to
+set down statues and chairified furniture.
+
 ### Chickens
 
 Ivy will build you a **chicken coop** beside your cabin for 1,500g and 80
@@ -831,7 +851,7 @@ gift.
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
 | Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, swords for the old mine, smelting ore and upgrading tools, fine gifts, the Blossom Pendant |
-| Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, the barn, a greenhouse, a silo, and the cabin extension |
+| Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, the barn, a greenhouse, a silo, the cabin extension and the cabin wing |
 | The dock | Theo Fairweather | fishing rods and lures, 10 till 3 |
 | The Library | Juniper Marsh | books, Pip's schoolroom, and the museum of artifacts from the old mine |
 | Mayor's House | Mayor Edmund Pell | festivals, history |

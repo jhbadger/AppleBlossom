@@ -1070,6 +1070,40 @@ def draw_terrain(name, frame=0, season=0):
         rect(g, 5, 6, 10, 9, "#e04040")
         rect(g, 7, 5, 8, 10, "#e04040")
         return g
+    if name == "bathtub":                       # claw-footed, steaming
+        g = planks(rng, "#c09060", "#9a7048")
+        rect(g, 1, 4, 14, 12, "#f4f4f0")
+        rect(g, 2, 5, 13, 9, "#8ac8e8")
+        rect(g, 2, 5, 13, 5, "#b8e0f4")
+        rect(g, 1, 12, 14, 12, "#c8c8c4")
+        for x in (2, 13):
+            rect(g, x, 13, x, 14, "#c0a040")
+        rect(g, 12, 2, 13, 4, "#c0a040")        # the taps
+        for x, y in ((5, 2), (6, 1), (9, 2), (10, 1)):
+            g[y][x] = "#e8eef4" if frame else "#d8e0e8"
+        return g
+    if name == "toilet":                        # a high cistern and chain
+        g = planks(rng, "#c09060", "#9a7048")
+        rect(g, 4, 0, 11, 3, "#f4f4f0")
+        rect(g, 4, 3, 11, 3, "#c8c8c4")
+        rect(g, 12, 1, 12, 7, "#c0a040")        # the chain
+        g[8][12] = "#8a5a30"
+        rect(g, 7, 4, 8, 6, "#c8c8c4")          # the pipe
+        disc(g, 7.5, 10.5, 4.5, "#f4f4f0")
+        disc(g, 7.5, 10.5, 3, "#8a5a30")        # a wooden seat
+        disc(g, 7.5, 10.5, 1.8, "#8ac8e8")
+        rect(g, 6, 14, 9, 15, "#e0e0dc")
+        return g
+    if name == "washstand":                     # a basin, jug and mirror
+        g = planks(rng, "#c09060", "#9a7048")
+        rect(g, 4, 0, 11, 4, "#8a5a30")
+        rect(g, 5, 1, 10, 3, "#c8e0ec")
+        rect(g, 2, 7, 13, 15, "#8a5a30")
+        rect(g, 2, 7, 13, 8, "#a87040")
+        disc(g, 7.5, 7.5, 3.5, "#f4f4f0")
+        disc(g, 7.5, 7.5, 2, "#8ac8e8")
+        rect(g, 7, 11, 8, 11, "#c0a040")
+        return g
     if name == "piano":
         g = grid_of("#2a1a14")
         rect(g, 1, 1, 14, 9, "#3a2418")
@@ -3352,7 +3386,12 @@ VILLAGERS = {
                    "either of those.",
             "cabin": "A cabin extension: proper bedroom, room for two. "
                      "3,000g and 150 wood. Ask to BUY when the workshop's "
-                     "open.",
+                     "open. After that, there's the WING.",
+            "wing": "(happy)Once you've the extension: a parlour, a study "
+                    "and a bathroom, out past your bedroom. 6,000g, 250 "
+                    "wood and 100 stone. Furnish it how you like. And no, "
+                    "the cabin won't look any bigger from outside. It's "
+                    "all in the joinery.",
             "bridge": "The old bridge washed out before I was born. My "
                       "PARENTS meant to rebuild it. I mean to finish what "
                       "they started.",
@@ -6539,7 +6578,7 @@ SHOP_STOCK = {
     "carpentry": [("wood", 50), ("chicken coop", 1500), ("barn", 4000),
                   ("greenhouse", 6000),
                   ("silo", 1000), ("stable", 3000),
-                  ("cabin extension", 3000)],
+                  ("cabin extension", 3000), ("cabin wing", 6000)],
     "tackle": [("fishing rod", 100), ("fishing lure", 120)],
     "workshop": [("mayonnaise jar", 600), ("preserves jar", 700),
                  ("beehive", 900), ("cheese press", 1200), ("loom", 1500)],
@@ -6551,6 +6590,7 @@ EXTRA_COST = {"sprinkler": {"stone": 5},
               "stable": {"wood": 100, "stone": 30},
               "greenhouse": {"wood": 100, "stone": 100},
               "cabin extension": {"wood": 150},
+              "cabin wing": {"wood": 250, "stone": 100},
               "mayonnaise jar": {"stone": 10},
               "preserves jar": {"wood": 10, "stone": 10},
               "beehive": {"wood": 30, "fiber": 20},
@@ -7158,6 +7198,26 @@ DROPPINGS = 16                  # at most this many lying in the pastures
 PET_LOVE = {"pet": 30, "bowl": 15, "maid": 10, "neglect": 20}
 LOO_GRUBBY, LOO_FILTHY = 3, 6   # how much use before an outhouse is so
 PIT_PER_FERT = 3                # visits to fill a sack of fertilizer
+BATH_LINES = ["You run a hot bath, right to the brim, and soak till your "
+              "fingers wrinkle.",
+              "You sink into the tub up to your nose. The steam smells of "
+              "the lavender somebody left on the side.",
+              "A long hot soak. Every ache from the fields floats off and "
+              "away.",
+              "You lie back in the bath and listen to the cabin creak. "
+              "Bliss."]
+FLUSH = ["You pull the chain. FWOOSH, gurgle, gone.",
+         "You pull the chain, and the cistern roars like a waterfall. "
+         "Very modern.",
+         "A tug on the chain, a rush of water, and a long, satisfied "
+         "gurgle from the pipes.",
+         "You pull the chain. The pipes knock all the way down the wall. "
+         "Ivy did say they'd settle."]
+WASHSTAND = ["You splash your face from the basin. Bracing!",
+             "Your reflection in the little mirror looks like it's been "
+             "farming all day. Fair enough.",
+             "A jug, a basin, a bar of soap that smells of apples. Very "
+             "civilised."]
 LOO_FLOWERS = ("daffodil", "sweet pea", "crocus", "rose", "sunflower",
                "dandelion")
 LOO_DECOR = {"flowers": "a jar of flowers", "wreath": "a holly wreath",
@@ -7181,6 +7241,18 @@ BIG_CABIN = ("logfloor", "l", (    # once Ivy's built the extension: the
     "l4.....rr.l8..F.9l",
     "lllllxllllllllllll"))
 MAID_SPOTS_BIG = "6789"         # the extension's maid spots
+WING_CABIN = ("logfloor", "l", tuple(   # once Ivy's built the wing too: a
+    old[:17] + ("." if y == 3 else old[17]) + new   # doorway east out of
+    for y, (old, new) in enumerate(zip(BIG_CABIN[2], (   # the bedroom
+        #  parlour   study  bathroom     into a parlour, a study and a
+        "llwlwl" "l" "lwll" "l" "lwll" "l",           # bathroom, each
+        "P.F..P" "l" "SS.E" "l" "Q.oJ" "l",           # opening into the
+        "......" "l" "...." "l" "...." "l",           # next
+        ".rrr.." "." "...." "." ".rr." "l",
+        ".rrr.." "l" "T..." "l" ".rr." "l",
+        "p....h" "l" "h..P" "l" "M..P" "l",
+        "llllll" "l" "llll" "l" "llll" "l")))))
+BATH_DAY_ENERGY = 30            # a hot bath, once a day
 EXTRA_ROOMS = {   # rooms that aren't buildings in the valley
     "loo": ("boards", "l", (     # inside whichever outhouse you're in
         "lllmlll",
@@ -7196,14 +7268,16 @@ ROOM_TILES = {"Y": "hay", "U": "churn", "H": "loohole", "j": "loobench",
               "K": "seeds", "O": "stove", "F": "fireplace", "X": "forge",
               "A": "anvil", "R": "barrel", "c": "crates", "P": "plant",
               "b": "cot", "M": "cabinet", "p": "piano", "E": "easel",
-              "N": "nets", "r": "rug", "t": "tile", ",": "boards"}
+              "N": "nets", "r": "rug", "t": "tile", ",": "boards",
+              "Q": "bathtub", "J": "washstand", "o": "toilet"}
 SPOT_CHARS = "123456789a"
 
 
 def make_room(key, big=False):
     """A room's grid, its spots, where you come in and the way out (big:
-    the cabin with Ivy's extension)."""
-    floor, wall, rows = BIG_CABIN if big and key == "cabin" else \
+    the cabin with Ivy's extension, 1 or True, or with her wing too, 2)."""
+    floor, wall, rows = WING_CABIN if big == 2 and key == "cabin" else \
+        BIG_CABIN if big and key == "cabin" else \
         ROOMS[key] if key in ROOMS else EXTRA_ROOMS[key]
     grid, spots, exit_ = [], {}, None
     for y, row in enumerate(rows):
@@ -9735,6 +9809,10 @@ Married a week, your bed offers to try for a baby; cuddle
 and play with your children once a day.
 Cook at your cabin stove from what's in the pantry beside
 it (and your bag); friends send recipes at 3 hearts.
+After the cabin extension, Ivy builds a wing on past the
+bedroom: a parlour, a study and a bathroom (a hot bath,
+once a day, for energy, and a flushing toilet).  Only the
+inside grows.
 Go to bed before 2 am.
 
 Someone in your way?  Talk to them: SQUEEZE PAST.
@@ -11764,6 +11842,32 @@ class Game:
                         if k not in ON_ORDER or k in built}
         self.npcs = {vid: Villager(vid) for vid in VILLAGERS}
 
+    def take_bath(self):
+        """A long hot bath in the wing's tub: energy back, once a day, and
+        half an hour gone."""
+        flags = self.flags_today()
+        if "bath" in flags:
+            self.say("The tub's still drying out from this morning. One "
+                     "long soak a day is plenty.", "info")
+            self.render()
+            return
+        flags.append("bath")
+        p = self.p
+        p["energy"] = min(p["max_energy"], p["energy"] + BATH_DAY_ENERGY)
+        self.sound.play("pick")
+        self.say(random.choice(BATH_LINES) + " (+%d energy)" %
+                 BATH_DAY_ENERGY, "good")
+        self.pass_time(30)
+        self.render()
+
+    def use_toilet(self):
+        """The wing's flushing toilet: business as in an outhouse, but
+        it all goes away down the pipe, so there's no pit to empty."""
+        self.sound.play(random.choice(("pour", "raspberry")))
+        self.say(random.choice(LOO_BUSINESS), "info")
+        self.say(random.choice(FLUSH), "info")
+        self.end_turn(5)
+
     def build_room(self, key, big_cabin=False):
         g, spots, entry, ex = make_room(key, big_cabin)
         a = Area(key, g, BUILDINGS[key][6])
@@ -11777,25 +11881,45 @@ class Game:
         return MAID_SPOTS + (MAID_SPOTS_BIG if self.p and
                              self.p.get("cabin_big") else "")
 
+    def cabin_size(self):
+        """0, the cabin as it came; 1, with Ivy's extension; 2, with her
+        wing as well.  Only the inside grows: from the farm, the cabin's
+        the size it always was."""
+        p = self.p or {}
+        return 2 if p.get("cabin_wing") else 1 if p.get("cabin_big") else 0
+
     def build_extension(self):
         """Overnight, once it's paid for: Ivy's crew knock through the
-        cabin's east wall and build a bedroom, and carry your bed in."""
+        cabin's east wall and build a bedroom, and carry your bed in; or,
+        later, knock through the bedroom's east wall for the wing."""
         p = self.p
-        if not p["extension"] or p.get("cabin_big"):
+        if p["extension"] and not p.get("cabin_big"):
+            p["cabin_big"] = True
+            news = ("Ivy and Pip worked through the night: there's a "
+                    "doorway in the cabin's east wall now, and through it a "
+                    "proper bedroom, with your bed moved in, a bookshelf, a "
+                    "fireplace, and room for four more maids.")
+        elif p.get("wing") and p.get("cabin_big") and \
+                not p.get("cabin_wing"):
+            p["cabin_wing"] = True
+            news = ("Ivy and Pip worked through the night again: there's a "
+                    "doorway in the bedroom's east wall now, and through it "
+                    "a whole new wing: a parlour with a piano and a "
+                    "fireplace, a study lined with books, and a bathroom "
+                    "with a big claw-footed tub. From outside, somehow, the "
+                    "cabin looks no bigger than it ever did. \"Good "
+                    "joinery,\" says Ivy.")
+        else:
             return
-        p["cabin_big"] = True
         old = self.areas["cabin"]
-        a = self.build_room("cabin", True)
+        a = self.build_room("cabin", self.cabin_size())
         if self.area is old:
             self.area = a
             bx, by = a.spots["1"]
             self.st["pos"] = [bx - 1, by]
             self.face(1, 0)
         self.clear_cabin_furniture()
-        self.say("Ivy and Pip worked through the night: there's a doorway "
-                 "in the cabin's east wall now, and through it a proper "
-                 "bedroom, with your bed moved in, a bookshelf, a fireplace, "
-                 "and room for four more maids.", "quest")
+        self.say(news, "quest")
 
     def new_game(self, who=None):
         if who is None:
@@ -11937,8 +12061,7 @@ class Game:
         st.setdefault("loo_in", None)
         if "magic wand" not in self.p["tools"]:
             self.p["tools"].append("magic wand")     # older saves
-        self.build_world(st["seed"], self.p["built"],
-                         self.p.get("cabin_big"))
+        self.build_world(st["seed"], self.p["built"], self.cabin_size())
         self.apply_felled()
         self.museum_cases()
         self.stock_quarry()             # (an older save has an empty one)
@@ -12445,6 +12568,15 @@ class Game:
             return True
         if t == "pantry" and a.key == "cabin":
             self.pantry_menu()
+            return True
+        if t == "bathtub" and a.key == "cabin":
+            self.take_bath()
+            return True
+        if t == "washstand":
+            self.say(random.choice(WASHSTAND), "info")
+            return True
+        if t == "toilet":
+            self.use_toilet()
             return True
         if t in ("shelf",):
             self.say(random.choice(SHELF_BOOKS), "info")
@@ -20926,6 +21058,9 @@ class Game:
                 continue
             if name == "cabin extension" and self.p["extension"]:
                 continue
+            if name == "cabin wing" and (not self.p.get("cabin_big") or
+                                         self.p.get("wing")):
+                continue
             if name == "chicken coop" and "coop" in self.built():
                 continue
             if name == "chicken" and ("coop" not in self.built() or len(
@@ -21131,6 +21266,12 @@ class Game:
             p["extension"] = True
             self.speak(vid, "(happy)Deal. I'll have it done by morning. A "
                             "proper bedroom, room for two. Just saying.")
+            return
+        elif name == "cabin wing":
+            p["wing"] = True
+            self.speak(vid, "(happy)A parlour, a study and a bathroom, by "
+                            "morning. Don't ask how it all fits inside. "
+                            "Trade secret.")
             return
         elif name == "checkup":
             self.flags_today().append("checkup")
@@ -27064,7 +27205,7 @@ TERRAIN = ["grass", "tallgrass", "meadow", "flowers", "path", "cobble",
            "cabinet", "piano", "easel", "nets", "toolrack", "straw", "nest",
            "trough", "loohole", "loobench", "hay", "churn", "moonwin",
            "loopaper", "loobend", "cave", "gbed", "gbed_w", "glasswall",
-           "butt", "pantry", "gravel"]
+           "butt", "pantry", "gravel", "bathtub", "washstand", "toilet"]
 TERRAIN += ["%s_%d" % (k, th) for th in range(len(MINE_THEMES))
             for k in ["mwall", "mfloor", "ladder_up", "ladder_down", "chest",
                       "chest_open"] + ["ore_" + m for m in METALS] +
@@ -27075,7 +27216,7 @@ TERRAIN += ["pedestal", "pedestal_key", "towerwall", "towertop", "towerdoor",
             "towerwin"]
 TERRAIN += ["roof_" + r for r in ROOFS] + ["eave_" + r for r in ROOFS]
 TERRAIN += [k + "_" + m for m in WALLS for k in ("wall", "win", "door")]
-ANIMATED_TERRAIN = {"water", "river", "pond", "fountain", "lamp",
+ANIMATED_TERRAIN = {"water", "river", "pond", "fountain", "lamp", "bathtub",
                     "fireplace", "forge"}
 
 
@@ -27578,15 +27719,19 @@ def selftest():
         if g[entry[1]][entry[0]] not in WALKABLE or ex is None:
             problems.append("room %s has no way in and out" % key)
     for key, (floor, wall, rows) in list(ROOMS.items()) + [
-            ("cabin+", BIG_CABIN)]:
-        big = key == "cabin+"
+            ("cabin+", BIG_CABIN), ("cabin++", WING_CABIN)]:
+        big = key.count("+")
         key = key.rstrip("+")
         if len({len(r) for r in rows}) != 1:
             problems.append("room %s rows differ" % key)
             continue
         g, spots, entry, ex = make_room(key, big)
+        if big == 2:
+            seen_t = {t for r in g for t in r}
+            if not {"bathtub", "washstand", "toilet", "piano"} <= seen_t:
+                problems.append("the cabin wing lacks its fixtures")
         if big:
-            small, s_spots, s_entry, _ = make_room(key)
+            small, s_spots, s_entry, _ = make_room(key, big - 1)
             if set(s_spots) - set(spots) or entry != s_entry or any(
                     small[y][x] in WALKABLE and g[y][x] not in WALKABLE
                     for y in range(len(small))
@@ -27613,6 +27758,10 @@ def selftest():
         for ch, pos in spots.items():
             if pos not in seen:
                 problems.append("room %s spot %s unreachable" % (key, ch))
+        if big == 2 and any(t in WALKABLE and (x, y) not in seen
+                            for y, r in enumerate(g)
+                            for x, t in enumerate(r)):
+            problems.append("part of the cabin wing can't be reached")
     grid, labels = make_valley(1, built=ON_ORDER)
     for key in BUILDINGS:
         dx, dy = door_of(key)
@@ -27696,7 +27845,7 @@ def selftest():
     for kind, stock in SHOP_STOCK.items():
         for entry in stock:
             if entry != "seeds" and entry[0] not in ITEMS and entry[0] not \
-                    in ("checkup", "cabin extension",
+                    in ("checkup", "cabin extension", "cabin wing",
                         "chicken", "chicken coop", "leash", "barn",
                         "greenhouse", "stable", "horse",
                         "cow", "milk pail", "sheep", "shears", "cat", "dog",
