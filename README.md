@@ -467,6 +467,7 @@ for what it gives:
 | Catify | a cat | a point of magic |
 | Dogify | a dog | 20 energy |
 | Horseify | a horse | a gallop round the cavern: 15 energy |
+| Chairify | a chair, armchair, rocking chair, table, lamp, bookcase or grandfather clock | what that piece of furniture does (see Chairify, below); or pick it up (8 energy) and set it on your farm or in your cabin, where it keeps on doing it |
 | Looify | a working outhouse | go in and use it like any other (the almanac, the Gazette riddle and the carvings are all there); empty its pit with a hoe for fertilizer |
 
 With Mabel's **leash** you can **lead a hen, cow, sheep, cat, dog or horse home**:
@@ -665,6 +666,35 @@ gift.
   to match, once a day), pet her, feed her. Horseify her again, in the
   stable, to bring her back. The children are too small for it: the spell
   won't stick, and they tell you what they think of that.
+- **Chairify** turns whoever it hits into a piece of furniture: a chair,
+  an armchair, a rocking chair, a table, a lamp, a bookcase or a
+  grandfather clock, with the wood grained a little like their hair, the
+  cushions (or lampshade, or tablecloth, or clock case) the colour of their
+  shirt, and their eyes and mouth still on it, blinking. It stays put, like
+  a statue, until you **pick it up** (8 energy): then it's in your bag, and
+  you can hold it and **set it down** on open ground on your farm or on the
+  floor of your cabin, to furnish the place how you like. Walk into a piece
+  for its good turn, once a day:
+
+  | Furniture | Once a day |
+  | --- | --- |
+  | Chair | sit down a minute: 10 energy |
+  | Armchair | sink into it: 20 energy |
+  | Rocking chair | rock a while: 15 energy |
+  | Table | a cup of tea at it: 15 energy |
+  | Lamp | read by its light: a point of magic |
+  | Bookcase | take down a book (with a flower pressed in it): a point of magic |
+  | Grandfather clock | wind it, and it chimes the hour: 10 energy (and you can look at the time whenever you like) |
+
+  A villager who likes being furniture creaks contentedly and likes you a
+  little more each time you use them; one who doesn't creaks crossly, wobbles
+  a leg at your shin, and likes you a little less. Friendship otherwise goes
+  up or down as with the other spells, and every one of them has something to
+  say when you chairify them again to stand them back up. Other spells soak
+  into the polish without effect, and chairify won't take on a statue, hen,
+  cow, sheep, cat, dog, horse, maid, tree or outhouse. The children won't sit
+  still long enough for it, and tell you so. In the mine, a chairified
+  monster is a piece of furniture for good: use it there, or carry it home.
 - **Maidify** turns whoever it hits into a maid: a young woman in a black
   dress, a white apron and a frilled cap, whoever they were before. She
   moves into your cabin and stops keeping shop. Her heart scenes change

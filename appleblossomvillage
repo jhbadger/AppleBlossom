@@ -1766,6 +1766,7 @@ SPELLS = {   # the wand's spells: what each one does, for the menu
     "catify": "turns someone into a cat, and back",
     "dogify": "turns someone into a dog, and back",
     "horseify": "turns someone into a horse, and back",
+    "chairify": "turns someone into a piece of furniture, and back",
 }
 CHOPPABLE = {"tree": 8, "pine": 8}   # trees you can fell, and their wood
 CHOPS = 3                       # swings to fell one
@@ -7282,6 +7283,10 @@ CHANGED = {   # spell: what the monster is now, what happens, what you do
                "to guard this tunnel. A lick from her perks you up.",
                "Pet her", "{who} licks your face all over. You feel much "
                "better. (+20 energy)"),
+    "chairify": ("furniture", "creaks, folds and settles into {a}, "
+                 "freshly polished, with its eyes still blinking. It'll do "
+                 "you a good turn once a day, or you could carry it home.",
+                 None, None),
     "horseify": ("horse", "becomes a sturdy little horse, who shakes out "
                  "her mane and stamps at the echoes. She'd give you a ride.",
                  "Ride her round the cavern",
@@ -8248,14 +8253,44 @@ def monster_maid_look(kind):
     return maid_look({"face": "F", "body": "F", "skin": 1, "hair": col,
                       "style": "bob", "eyes": "#1a1a1a", "shirt": col,
                       "pants": col, "bg": mix(col, "#f0e8f4", 0.6)})
-STATUE_OF = {}                  # a statue in your bag -> ("mon", kind) or
-for _k, _m in MONSTERS.items():  # ("vil", villager)
-    if "boss" not in _m.traits:
-        STATUE_OF["golden " + _m.name] = ("mon", _k)
+FURNITURE = {   # what chairify makes: what you do with it once a day, what
+    # that gives, and how it goes ({who} is the piece)
+    "chair": ("Sit down a minute", "energy", 10,
+              "You sit down on {who} a minute and take the weight off your "
+              "feet. (+10 energy)"),
+    "armchair": ("Sink into it", "energy", 20,
+                 "You sink deep into {who} and very nearly nod off. (+20 "
+                 "energy)"),
+    "rocking chair": ("Rock a while", "energy", 15,
+                      "You rock a while in {who}, creak, creak, creak, and "
+                      "the day slows right down. (+15 energy)"),
+    "table": ("Sit down to a cup of tea", "energy", 15,
+              "You set a cup of tea down on {who} and drink it at your "
+              "leisure. (+15 energy)"),
+    "lamp": ("Read by its light", "magic", 1,
+             "You read a while by the glow of {who}. There's a little "
+             "magic left in that light. (+1 magic)"),
+    "bookcase": ("Take down a book", "magic", 1,
+                 "You take a book down from {who}. Tucked inside it is a "
+                 "pressed flower that tingles. (+1 magic)"),
+    "grandfather clock": ("Wind it", "energy", 10,
+                          "You wind {who}, and it chimes the hour, deep and "
+                          "warm. It's {time}. (+10 energy)"),
+}
+FURN_HEFT = 8                   # energy it takes to pick furniture up
+STATUE_OF = {}                  # a statue (or piece of furniture) in your
+for _k, _m in MONSTERS.items():  # bag -> ("mon", kind, furniture or None)
+    if "boss" not in _m.traits:  # or ("vil", villager, furniture or None)
+        STATUE_OF["golden " + _m.name] = ("mon", _k, None)
+        for _f in FURNITURE:
+            STATUE_OF["%s %s" % (_m.name, _f)] = ("mon", _k, _f)
 for _v, _d in VILLAGERS.items():
-    STATUE_OF["statue of " + _d["short"]] = ("vil", _v)
-for _n in STATUE_OF:
-    ITEMS[_n] = (0, 0, "statue")
+    STATUE_OF["statue of " + _d["short"]] = ("vil", _v, None)
+    if _d["look"].get("age") != "child":
+        for _f in FURNITURE:
+            STATUE_OF["%s that is %s" % (_f, _d["short"])] = ("vil", _v, _f)
+for _n, _w in STATUE_OF.items():
+    ITEMS[_n] = (0, 0, "furniture" if _w[2] else "statue")
 CRYSTAL = "magic crystal"       # snapped off the mine's walls: +2 magic
 CRYSTAL_MAGIC = 2
 ITEMS[CRYSTAL] = (120, 0, "crystal")
@@ -9727,12 +9762,17 @@ you can use, clean, decorate and empty for fertilizer
 (read the almanac and the Gazette riddle while you're
 in there); cowify, into a cow; sheepify, into a sheep;
 catify and dogify, into a cat or a dog; horseify, into a
-horse (not the children: they're too small).  Cast the same
+horse (not the children: they're too small); chairify, into
+a chair, armchair, rocking chair, table, lamp, bookcase or
+grandfather clock (not the children either) that you can
+use once a day, pick up, and set down on your farm or in
+your cabin to furnish it.  Cast the same
 spell again to undo it.  Each spell costs a point of magic
 (5 a day, back when you sleep); magic crystals from the
 mine give 2 more.  In the mine, spells change monsters for
 good: walk into one once a day for gold, eggs, milk, wood,
-wool, magic or energy, and a looified one is an outhouse.
+wool, magic or energy, and a looified one is an outhouse;
+a chairified one is furniture you can carry home.
 Invite a maidified monster to your cabin to do a chore;
 chat, kiss and give her gifts and she can become your
 sweetheart and wife, like any maid.  Ask her to come with you and
@@ -12987,6 +13027,18 @@ class Game:
                      "all about you for a bit." % cap(the), "good")
             self.end_turn(TOOL_COST)
             return
+        if spell == "chairify":
+            furn = random.choice(list(FURNITURE))
+            self.floor_state(self.mine["floor"])["changed"][
+                "%d,%d" % (mob.x, mob.y)] = {
+                    "spell": spell, "kind": mob.kind, "day": -1, "pit": 0,
+                    "colour": None, "furn": furn}
+            self.gone(mob)
+            self.sound.play("door")
+            self.say("%s %s" % (cap(the), CHANGED[spell][1].replace(
+                "{a}", an(furn))), "gold")
+            self.end_turn(TOOL_COST)
+            return
         colours = {"chickenfy": HEN_COLOURS, "cowify": COW_COLOURS,
                    "sheepify": SHEEP_COLOURS, "catify": CAT_COLOURS,
                    "dogify": DOG_COLOURS,
@@ -13000,11 +13052,16 @@ class Game:
         self.end_turn(TOOL_COST)
 
     def changed_name(self, e):
+        if e["spell"] == "chairify":
+            return "the %s that was %s" % (e["furn"],
+                                           an(MONSTERS[e["kind"]].name))
         return "the %s that was %s" % (CHANGED[e["spell"]][0],
                                        an(MONSTERS[e["kind"]].name))
 
     def changed_tile(self, e):
         spell, kind, c = e["spell"], e["kind"], e["colour"]
+        if spell == "chairify":
+            return self.furn_tile("m" + kind, e["furn"], self.mon_look(kind))
         if spell == "sheepify":
             ready = self.st["day"] - e["day"] >= SHEAR_DAYS
             return ("sheepf_" if ready else "sheep_") + c
@@ -13021,6 +13078,10 @@ class Game:
         spell = e["spell"]
         name = self.changed_name(e)
         squeeze = ("Squeeze past", lambda: self.squeeze_by(x, y))
+        if spell == "chairify":
+            self.furn_menu(cap(name), e["furn"], name, e, None,
+                           lambda: self.lift_mine_furn(x, y), squeeze)
+            return
         if spell == "looify":
             rows = [("Go in", lambda: self.enter_mine_loo(x, y))]
             if e["pit"] >= PIT_PER_FERT:
@@ -13300,13 +13361,13 @@ class Game:
     # and the day you last chipped it); a villager is simply moved, and
     # is "carried" while in your bag.
 
-    def heave(self):
-        if self.p["energy"] < STATUE_HEFT:
+    def heave(self, heft=STATUE_HEFT):
+        if self.p["energy"] < heft:
             self.say("You strain and heave, but it's far too heavy for you "
                      "just now. Eat something first.", "bad")
             self.render()
             return False
-        self.p["energy"] -= STATUE_HEFT
+        self.p["energy"] -= heft
         self.sound.play("chop")
         return True
 
@@ -13319,6 +13380,17 @@ class Game:
         self.give(n)
         self.say("You heave the %s onto your back. Oof. (Hold it and set it "
                  "down on your farm, or in your cabin.)" % n, "good")
+        self.end_turn(TOOL_COST)
+
+    def lift_mine_furn(self, x, y):
+        e = self.changed_at(x, y)
+        if not e or not self.heave(FURN_HEFT):
+            return
+        del self.floor_state(self.mine["floor"])["changed"]["%d,%d" % (x, y)]
+        n = "%s %s" % (MONSTERS[e["kind"]].name, e["furn"])
+        self.give(n)
+        self.say("You hoist the %s onto your back. (Hold it and set it down "
+                 "on your farm, or in your cabin.)" % n, "good")
         self.end_turn(TOOL_COST)
 
     def lift_statue(self, n):
@@ -13352,34 +13424,60 @@ class Game:
         if a.outdoor and (self.grazer_at(x, y) or "%d,%d" % (x, y) in
                           self.st["soil"]):
             return False
-        if a.key == "cabin" and (x, y) in [tuple(v) for v in
-                                           a.spots.values()]:
-            return False
+        if a.key == "cabin" and ((x, y) in [tuple(v) for v in
+                                            a.spots.values()] or
+                                 a.grid[y][x] == "exit" or
+                                 (x, y) == tuple(a.entry)):
+            return False        # (nor in the doorway, or just inside it)
         return self.can_stand(x, y)
 
     def place_statue(self, x, y, item):
+        what, who, furn = STATUE_OF[item]
         if not self.statue_spot(x, y):
-            self.say("Set a statue down on open ground on your farm, or on "
-                     "the floor of your cabin.", "info")
+            self.say("Set %s down on open ground on your farm, or on the "
+                     "floor of your cabin." % ("furniture" if furn else
+                                               "a statue"), "info")
             self.render()
             return
-        what, who = STATUE_OF[item]
         self.take(item)
         if what == "mon":
-            self.decor()["%s:%d,%d" % (self.area.key, x, y)] = {
-                "kind": who, "day": -1}
+            self.decor()["%s:%d,%d" % (self.area.key, x, y)] = dict(
+                {"kind": who, "day": -1}, **({"furn": furn} if furn else {}))
         else:
             n = self.npcs[who]
             n.where, n.x, n.y = self.area.key, x, y
             n.goal, n.path, n.stuck = None, [], 0
         self.sound.play("chop")
         self.flash(x, y, "sparkle")
-        self.say("You set the %s down with a thump. It looks rather fine "
-                 "there." % item, "good")
+        if furn:
+            self.say("You set the %s down just so. %s" % (item, random.choice(
+                ("It looks as if it's always been there.",
+                 "That's the room tied together.",
+                 "It shuffles a little, getting comfortable.",
+                 "Very homely."))), "good")
+            if what == "vil":
+                self.say(random.choice(
+                    CREAK_HAPPY if self.likes_change(who, "chairify") else
+                    CREAK_ANGRY).replace("{who}", VILLAGERS[who]["short"])
+                    .replace("{what}", furn), "info")
+        else:
+            self.say("You set the %s down with a thump. It looks rather "
+                     "fine there." % item, "good")
         self.end_turn(TOOL_COST)
+
+    def decor_item(self, d):
+        """What a decoration is called, in your bag."""
+        if d.get("furn"):
+            return "%s %s" % (MONSTERS[d["kind"]].name, d["furn"])
+        return "golden " + MONSTERS[d["kind"]].name
 
     def decor_bump(self, x, y):
         d = self.decor_at(x, y)
+        if d.get("furn"):
+            self.furn_menu("The " + self.decor_item(d), d["furn"],
+                           "the " + self.decor_item(d), d, None,
+                           lambda: self.lift_decor(x, y))
+            return
         name = "golden " + MONSTERS[d["kind"]].name
         rows = []
         if d["day"] != self.st["day"]:
@@ -13400,10 +13498,11 @@ class Game:
         self.end_turn(TOOL_COST)
 
     def lift_decor(self, x, y):
-        if not self.heave():
+        d = self.decor_at(x, y)
+        if not self.heave(FURN_HEFT if d.get("furn") else STATUE_HEFT):
             return
-        d = self.decor().pop("%s:%d,%d" % (self.area.key, x, y))
-        n = "golden " + MONSTERS[d["kind"]].name
+        self.decor().pop("%s:%d,%d" % (self.area.key, x, y))
+        n = self.decor_item(d)
         self.give(n)
         self.say("You heave the %s onto your back." % n, "good")
         self.end_turn(TOOL_COST)
@@ -14230,7 +14329,7 @@ class Game:
             x, y = map(int, k[6:].split(","))
             if solid(x, y):
                 d = self.st["decor"].pop(k)
-                self.give("golden " + MONSTERS[d["kind"]].name)
+                self.give(self.decor_item(d))
         for c in self.st.get("pets", ()):
             if c["where"] == "cabin" and solid(c["x"], c["y"]):
                 spot = self.free_pet_square("cabin")
@@ -15014,9 +15113,14 @@ class Game:
     def loo(self, vid):
         return vid in self.st.setdefault("loos", [])
 
+    def furn(self, vid):
+        """What piece of furniture somebody is, or None."""
+        return self.st.setdefault("furniture", {}).get(vid)
+
     def rooted(self, vid):
-        """Statues, trees and outhouses stay where they are."""
-        return self.statue(vid) or self.tree(vid) or self.loo(vid)
+        """Statues, trees, outhouses and furniture stay where they are."""
+        return self.statue(vid) or self.tree(vid) or self.loo(vid) or \
+            bool(self.furn(vid))
 
     def wand_target(self, dx, dy):
         """The first person a spell cast that way would hit, or None.
@@ -15122,6 +15226,15 @@ class Game:
         name = VILLAGERS[vid]["short"]
         self.flash(n.x, n.y, "sparkle")
         spell = self.p.get("spell")
+        if spell == "chairify":
+            self.chairify(n)
+            return
+        if self.furn(vid):
+            self.say("The spell soaks into the %s that is %s like polish, "
+                     "and does nothing else. Furniture is furniture." % (
+                         self.furn(vid), name), "info")
+            self.end_turn(TOOL_COST)
+            return
         if spell == "looify":
             self.looify(n)
             return
@@ -15226,6 +15339,9 @@ class Game:
         gold = self.statue(vid)
         if self.loo(vid):
             return self.loo_tile(vid)
+        if self.furn(vid):
+            return self.furn_tile(vid, self.furn(vid),
+                                  VILLAGERS[vid]["look"])
         if self.tree(vid):
             t = self.st.get("fruitful", {}).get(vid)
             if t and t.get("fruit"):
@@ -15506,6 +15622,189 @@ class Game:
                      "heart" if pts > 0 else "bad")
         self.pass_time(TOOL_COST)
         self.talk_menu()
+
+    # ── Furniture ──
+    #
+    # Chairify turns a grown-up into a chair, an armchair, a rocking
+    # chair, a table, a lamp, a bookcase or a grandfather clock, in their
+    # colours and with their face still on it ("furniture": vid -> kind).
+    # Like a statue, it stays put till you pick it up, and you can set it
+    # down on your farm or in your cabin; a monster chairified in the mine
+    # is a piece of furniture for good, and in your home a decoration
+    # ("decor", with "furn").  Each piece does you a good turn once a day.
+
+    def mon_look(self, kind):
+        col = list(ART["mon_" + kind][0].values())[0]
+        return {"hair": col, "shirt": col}
+
+    def furn_tile(self, key, furn, look):
+        """The sprite of somebody (key: a villager, or "m" and a monster)
+        as a piece of furniture, drawn the first time it's wanted."""
+        n = "fn_%s_%s" % (key, furn.replace(" ", "_"))
+        if hasattr(self, "base") and n not in self.base:
+            self.paint_sprite(n, furniture_art(furn, look),
+                              hasattr(self, "img"))
+        return n
+
+    def chairify(self, n):
+        """The chairify spell: a piece of furniture, rooted where they
+        stood, till you pick it up and carry it home.  Some like it and
+        some don't.  Cast again to stand them back up."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        st = self.st
+        flags = st["flags"]
+        furn = self.furn(vid)
+        if not furn:
+            if VILLAGERS[vid]["look"].get("age") == "child":
+                self.refuse_child(n, {
+                    "child": "The spell bounces off %s with a twang, like a "
+                             "spring. Children won't sit still long enough "
+                             "to be furniture.", "refused": CHAIR_REFUSED})
+                return
+            why = ("The spell skids off the gold. Gold furniture is a bit "
+                   "much, even for you." if self.statue(vid) else
+                   "The spell slides off the hen's feathers. Hens are hens."
+                   if self.chicken(vid) else
+                   BEASTS[self.beast(vid)]["bounce"]
+                   if self.hoofed(vid) else
+                   "The spell glances off %s's starched apron. A maid "
+                   "stays a maid until the spell that made her is undone."
+                   % name if self.maid(vid) else
+                   "The spell sinks into %s's bark and is gone." % name
+                   if self.tree(vid) else
+                   "The spell splinters against the outhouse door."
+                   if self.loo(vid) else None)
+            if why:
+                self.say(why, "info")
+                self.end_turn(TOOL_COST)
+                return
+        if self.talk:
+            self.end_talk()
+        likes = self.likes_change(vid, "chairify")
+        if not furn:
+            furn = random.choice(list(FURNITURE))
+            st.setdefault("furniture", {})[vid] = furn
+            n.goal, n.path, n.stuck = None, [], 0
+            self.sound.play("door")
+            self.say("With a creak and a clunk, %s folds up, plumps out and "
+                     "settles, and where %s stood there's %s with %s face "
+                     "on it, %s." % (name, name, an(furn), "their",
+                                     "beaming" if likes else "scowling"),
+                     "quest")
+            if likes:
+                pts = 0 if "chairliked:" + vid in flags else 150
+                flags.append("chairliked:" + vid)
+            else:
+                pts = -200
+            if pts:
+                self.befriend(vid, pts, quiet=True)
+                self.say("(%s %s.)" % (name, "seems to enjoy being %s" %
+                                       an(furn) if pts > 0 else
+                                       "is upset with you"),
+                         "heart" if pts > 0 else "bad")
+            self.end_turn(TOOL_COST)
+            return
+        del st["furniture"][vid]
+        st.get("furn_day", {}).pop(vid, None)
+        n.goal, n.path, n.stuck = None, [], 0
+        self.sound.play("door")
+        self.say("The %s that is %s unfolds with a long creak, and %s "
+                 "stands up, stretching %s back." % (furn, name, name,
+                                                     "their"), "quest")
+        if likes:
+            pts = -80
+        else:
+            pts = 0 if "chairfixed:" + vid in flags else 120
+            flags.append("chairfixed:" + vid)
+        self.talk = {"v": vid, "mode": "kw", "expr": "surprised",
+                     "text": ""}
+        self.shell.show_entry()
+        self.friend(vid)["met"] = True
+        self.speak(vid, CHAIR_BACK[vid][0 if likes else 1])
+        if pts:
+            self.befriend(vid, pts)
+            self.say("(%s %s.)" % (name, "likes you more for it" if pts > 0
+                                   else "is upset with you"),
+                     "heart" if pts > 0 else "bad")
+        self.pass_time(TOOL_COST)
+        self.talk_menu()
+
+    def furn_bump(self, n):
+        """Walking into somebody who's furniture: use it, pick it up, or
+        squeeze past."""
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        furn = self.furn(vid)
+        self.say(random.choice(
+            CREAK_HAPPY if self.likes_change(vid, "chairify") else
+            CREAK_ANGRY).replace("{who}", name).replace("{what}", furn),
+            "info")
+
+        def squeeze():
+            if self.squeeze_past(n):
+                self.say("You squeeze past the %s that is %s." % (furn, name),
+                         "info")
+            self.end_turn(1)
+        state = self.st.setdefault("furn_day", {}).setdefault(
+            vid, {"day": -1})
+        self.furn_menu("The %s that is %s" % (furn, name), furn,
+                       "the %s that is %s" % (furn, name), state, vid,
+                       lambda: self.lift_furn(n), ("Squeeze past", squeeze))
+
+    def furn_menu(self, title, furn, name, state, vid, lift, squeeze=None):
+        """What you can do with a piece of furniture: its good turn, once
+        a day (state["day"] says when it last did one), and picking it
+        up."""
+        rows = []
+        if state.get("day") != self.st["day"]:
+            rows.append((FURNITURE[furn][0],
+                         lambda: self.furn_use(furn, name, state, vid)))
+        if furn == "grandfather clock":
+            rows.append(("Look at the time", lambda: (self.say(
+                "%s says it's %s, %s." % (cap(name), self.clock(),
+                                          self.date_text()), "info"),
+                self.render())))
+        rows.append(("Pick it up (%d energy)" % FURN_HEFT, lift))
+        if squeeze:
+            rows.append(squeeze)
+        self.open_menu(title, rows + [("Leave it", lambda: None)])
+
+    def furn_use(self, furn, name, state, vid=None):
+        p = self.p
+        state["day"] = self.st["day"]
+        _, stat, amt, text = FURNITURE[furn]
+        if stat == "energy":
+            p["energy"] = min(p["max_energy"], p["energy"] + amt)
+        else:
+            p["magic"] = min(p["max_magic"], p["magic"] + amt)
+        self.sound.play("pick")
+        self.say(cap(text.replace("{who}", name).replace(
+            "{time}", self.clock())), "good")
+        if vid:
+            if self.likes_change(vid, "chairify"):
+                self.befriend(vid, 30, quiet=True)
+                self.say(random.choice(CREAK_HAPPY).replace(
+                    "{who}", VILLAGERS[vid]["short"]).replace(
+                        "{what}", furn), "heart")
+            else:
+                self.befriend(vid, -10, quiet=True)
+                self.say(random.choice(CREAK_ANGRY).replace(
+                    "{who}", VILLAGERS[vid]["short"]).replace(
+                        "{what}", furn), "bad")
+        self.end_turn(TOOL_COST)
+
+    def lift_furn(self, n):
+        """Pick up a villager who's furniture."""
+        vid = n.vid
+        if not self.heave(FURN_HEFT):
+            return
+        n.where, n.goal, n.path = "carried", None, []
+        item = "%s that is %s" % (self.furn(vid), VILLAGERS[vid]["short"])
+        self.give(item)
+        self.say("You hoist the %s onto your back. (Hold it and set it down "
+                 "on your farm, or in your cabin.)" % item, "good")
+        self.end_turn(TOOL_COST)
 
     def looify(self, n):
         """The looify spell: an outhouse, with a moon on the door painted
@@ -15871,7 +16170,8 @@ class Game:
             if kind and kind not in ("loo", "swapped"):
                 lines.append("'%s IS A %s NOW?!' Somebody's drawn one." % (
                     VILLAGERS[vid]["short"].upper(), {
-                        "statue": "STATUE", "maid": "MAID"}.get(
+                        "statue": "STATUE", "maid": "MAID",
+                        "furniture": "CHAIR"}.get(
                         kind, kind.upper())))
         loo = st.get("loo_in")
         if loo:
@@ -19745,6 +20045,10 @@ class Game:
             self.walking = None
             self.loo_bump(n)
             return
+        if self.furn(vid):
+            self.walking = None
+            self.furn_bump(n)
+            return
         if self.is_cow(vid):
             self.walking = None
             self.say(random.choice(
@@ -20136,7 +20440,8 @@ class Game:
     def transformed(self, vid):
         """What the wand has made of somebody, most striking first, or
         None."""
-        for kind, test in (("loo", self.loo), ("tree", self.tree),
+        for kind, test in (("loo", self.loo), ("furniture", self.furn),
+                           ("tree", self.tree),
                            ("chicken", self.chicken), ("cow", self.is_cow),
                            ("sheep", self.is_sheep),
                            ("cat", lambda v: self.beast(v) == "cat"),
@@ -20163,7 +20468,7 @@ class Game:
                      "chickenfy", "maid": "maidify",
                      "cow": "cowify", "sheep": "sheepify",
                      "cat": "catify", "dog": "dogify",
-                     "horse": "horseify"}.get(
+                     "horse": "horseify", "furniture": "chairify"}.get(
                          kind, "genderswap")
             likes = self.likes_change(other, spell)
             line += " " + random.choice(GOSSIP_HINTS[kind][0 if likes
@@ -21736,7 +22041,10 @@ class Game:
                         mid = "drop_" + st["droppings"][k]
                     d = decor.get("%s:%d,%d" % (a.key, x, y))
                     if d:
-                        mid = "smon_" + d["kind"]
+                        mid = self.furn_tile(
+                            "m" + d["kind"], d["furn"],
+                            self.mon_look(d["kind"])) if d.get("furn") \
+                            else "smon_" + d["kind"]
                     if bowl == (x, y) and not mid:
                         mid = "bowl_full" if self.bowl_full(a.key) else \
                             "bowl"
@@ -22665,6 +22973,9 @@ def describe_item(n):
     if kind == "statue":
         bits.append("Heavy, golden and gleaming. Hold it and set it down on "
                     "your farm or in your cabin.")
+    if kind == "furniture":
+        bits.append("It blinks at you. Hold it and set it down on your farm "
+                    "or in your cabin.")
     if kind == "romance":
         bits.append({"blossom bouquet": "Give it to someone at 8 hearts to "
                                         "ask them to go steady.",
@@ -23072,6 +23383,144 @@ def loo_art(look, season):
            "d": door, "D": shade(door, 0.78), "m": "#f4e070",
            "k": "#3a2818"}
     return art_pixels(pal, LOO_SHAPE)
+
+
+FURN_SHAPES = {   # w wood, W its shadow, u cushion (their shirt), U its
+    # shadow, h its shine, e eyes, m mouth, k feet, l lamplight, c a
+    # clock's face, a b books, f g a flower in a vase
+    "chair": (
+        "................",
+        "....wwwwwwww....",
+        "....wuuuuuuw....",
+        "....wueuueuw....",
+        "....wuuuuuuw....",
+        "....wuummuuw....",
+        "....wuuuuuuw....",
+        "....wUUUUUUw....",
+        "...hhhhhhhhhh...",
+        "...uuuuuuuuuu...",
+        "...WWWWWWWWWW...",
+        "....W......W....",
+        "....W......W....",
+        "....W......W....",
+        "....W......W....",
+        "....k......k...."),
+    "armchair": (
+        "................",
+        "................",
+        "....UUUUUUUU....",
+        "...UhhhhhhhhU...",
+        "...UueuuuueuU...",
+        "...UuuuuuuuuU...",
+        "..UUuuummuuuUU..",
+        ".UhhUuuuuuuuUhhU",
+        ".UuuUhhhhhhhUuuU",
+        ".UuuUuuuuuuuUuuU",
+        ".UuuuuuuuuuuuuuU",
+        ".UUUUUUUUUUUUUUU",
+        ".UUUUUUUUUUUUUUU",
+        "..W...........W.",
+        "..k...........k.",
+        "................"),
+    "rocking chair": (
+        "................",
+        ".....wwwwww.....",
+        "....w.w..w.w....",
+        "....wewwwwew....",
+        "....w.w..w.w....",
+        "....w.wmmw.w....",
+        "....w.w..w.w....",
+        "....w.w..w.w....",
+        "...hhhhhhhhhh...",
+        "...uuuuuuuuuu...",
+        "...WWWWWWWWWW...",
+        "....W......W....",
+        "....W......W....",
+        "..k.W......W.k..",
+        "...kkkkkkkkkk...",
+        "................"),
+    "table": (
+        "................",
+        ".......ff.......",
+        "......fggf......",
+        ".......gg.......",
+        "......wwww......",
+        "..hhhhhhhhhhhh..",
+        ".uuuuuuuuuuuuuu.",
+        ".uuuueuuuueuuuu.",
+        ".UuuuuummuuuuuU.",
+        ".UUuUuUuUuUuUUU.",
+        "..W..........W..",
+        "..W..........W..",
+        "..W..........W..",
+        "..W..........W..",
+        "..W..........W..",
+        "..k..........k.."),
+    "lamp": (
+        "................",
+        "......UUUU......",
+        ".....Uhhhhu.....",
+        "....UueuueuU....",
+        "....UuuuuuuU....",
+        "...UuuummuuuU...",
+        "...UUUUUUUUUU...",
+        "......llll......",
+        ".......WW.......",
+        ".......WW.......",
+        ".......WW.......",
+        ".......WW.......",
+        ".......WW.......",
+        ".......WW.......",
+        ".....WWWWWW.....",
+        "....kkkkkkkk...."),
+    "bookcase": (
+        "..kkkkkkkkkkkk..",
+        "..wwwwwwwwwwww..",
+        "..wwewwwwwweww..",
+        "..wwwwwmmwwwww..",
+        "..wWWWWWWWWWWw..",
+        "..wWuaUbuaUbWw..",
+        "..wWuaUbuaUbWw..",
+        "..wWuaUbuaUbWw..",
+        "..wwwwwwwwwwww..",
+        "..wWbUauUbaUWw..",
+        "..wWbUauUbaUWw..",
+        "..wWbUauUbaUWw..",
+        "..wwwwwwwwwwww..",
+        "..wWWWWWWWWWWw..",
+        "..wwwwwwwwwwww..",
+        "..k..........k.."),
+    "grandfather clock": (
+        "......kkkk......",
+        ".....wwwwww.....",
+        "....wwccccww....",
+        "....wceccecw....",
+        "....wcckcccw....",
+        "....wccmmccw....",
+        "....wwccccww....",
+        "....wwwwwwww....",
+        ".....wuuuuw.....",
+        ".....wuuluw.....",
+        ".....wuuluw.....",
+        ".....wulllw.....",
+        ".....wUUUUw.....",
+        ".....wwwwww.....",
+        "....wwwwwwww....",
+        "....kkkkkkkk...."),
+}
+
+
+def furniture_art(kind, look):
+    """Somebody turned into furniture: wood with a hint of their hair in
+    the grain, cushions (or lampshade, or clock case) the colour of their
+    shirt, and their eyes and mouth still on it somewhere."""
+    wood = mix("#a0703e", look.get("hair", "#5a3a1e"), 0.25)
+    cloth = look.get("shirt", "#c04040")
+    pal = {"w": wood, "W": shade(wood, 0.72), "u": cloth,
+           "U": shade(cloth, 0.75), "h": shade(cloth, 1.2), "e": "#1a1410",
+           "m": "#7a2a2a", "k": "#3a2818", "l": "#f8e070", "c": "#f4f0e0",
+           "a": "#3a6ab0", "b": "#c8a040", "f": "#e05878", "g": "#4a8a3a"}
+    return art_pixels(pal, FURN_SHAPES[kind])
 
 
 def loo_special_art(look, season, filthy, decor, tipped):
@@ -25914,6 +26363,129 @@ BEASTS["horse"] = {
                "trots off about her day.",
     "unmade": "A last long whinny, the mane falls away like thistledown, "
               "and %s is back on two feet, rubbing their nose."}
+CHAIR_BACK = {   # turned back from furniture: sorry, or glad of it
+    "rowan": ("(blush)...Everyone who sat on me said 'oh, that's nice'. "
+              "Nobody ever says that to me.",
+              "(cross)Otto put his feet up on me. His forge boots. All "
+              "evening."),
+    "felix": ("(happy)Do you know, I've never sat still that long in my "
+              "life? Doctor's orders, I suppose.",
+              "(cross)People kept telling me their symptoms while they sat "
+              "on me. I couldn't even write a prescription."),
+    "theo": ("(laugh)Dude. Just sitting there. All day. That's basically "
+             "fishing without the fish!",
+             "(cross)Somebody put a wet bait bucket on me. A WET one."),
+    "juniper": ("(blush)Someone sat in me and read a whole novel. I read "
+                "it over their shoulder. It was wonderful.",
+                "(cross)They put a mug down on me with no coaster. No "
+                "COASTER."),
+    "wren": ("(laugh)I creaked in tune! A perfect B flat every time "
+             "someone sat down!",
+             "(cross)Somebody sat on me and sang flat. I couldn't even "
+             "wince."),
+    "ivy": ("(happy)Good joints, those. Dovetailed. I'd have made me "
+            "exactly the same.",
+            "(cross)I could feel a wobbly leg the whole time and couldn't "
+            "fix it. Torture."),
+    "edmund": ("(happy)A fine piece of civic furniture! Very stately! I "
+               "may commission a copy for the hall!",
+               "(cross)The Mayor of Apple Blossom Village, sat on. It "
+               "isn't dignified."),
+    "rose": ("(laugh)Oh, I was ever so comfy, dear. And I finally had a "
+             "proper rest. My knees thank you.",
+             "(cross)Nobody wiped their crumbs off me. Not once, dear."),
+    "mabel": ("(surprised)No customers, no stock-taking, no till. Just "
+              "being sat on. Restful, actually.",
+              "(cross)Lost earnings, dear. Days of them. I'll be sending "
+              "you a bill."),
+    "otto": ("(laugh)HA! Solid as an anvil! Nobody's ever broken me, and "
+             "nobody ever will!",
+             "(cross)Furniture can't hit things! I tried! For DAYS!"),
+    "bernard": ("(happy)I watched people sit about and enjoy themselves "
+                "all day. It's what I'd always wanted for the inn.",
+                "(cross)Somebody spilled cider on me and nobody mopped "
+                "it up. In MY trade!"),
+    "amy": ("(happy)Lovely and quiet. I did three crosswords in my head. "
+            "Seven across: SETTEE.",
+            "(cross)Someone did MY crossword sitting on me. In pen. "
+            "Wrong."),
+    "rusty": ("(laugh)Darling, the UPHOLSTERY! I've never looked so good! "
+              "I'm doing the whole shop in that fabric.",
+              "(cross)A loose thread, darling. All week. And no needle."),
+    "marisol": ("(laugh)Somebody set a cake down on me and I could smell "
+                "it all afternoon! Heavenly!",
+                "(cross)I could smell the bread burning and I couldn't "
+                "move a leg! Not a leg!"),
+    "silas": ("(happy)I was sat in the perfect light for days. I may "
+              "paint a still life. Of me.",
+              "(cross)Someone painted on me. A WATERCOLOUR. Badly."),
+    "dmitri": ("(happy)I faced the window all night. I could see "
+               "Cassiopeia rise. Very restful.",
+               "(cross)Someone turned me to face the wall. The WALL. All "
+               "night."),
+    "jonah": ("(happy)Nobody needed anything from me. Nice. Very nice. "
+              "I could do that again.",
+              "(cross)Duchess chewed my leg. My actual leg."),
+    "clara": ("(laugh)Benji had tea parties on me every afternoon! I was "
+              "the guest of honour!",
+              "(cross)Benji built a fort out of me. I was the WALL."),
+    "gus": ("(laugh)Ha! Best seat in the house, and I was it!",
+            "(cross)Theo sat on me in his wet oilskins. For an hour."),
+    "agnes": ("(happy)Well. I was a very good piece. Good posture, at "
+              "last, for everyone.",
+              "(cross)People SLOUCHED in me. All day. I couldn't say a "
+              "word."),
+    "bea": ("(laugh)A cat slept on me all afternoon! Purring! I could "
+            "have cried!",
+            "(cross)I couldn't see a single patient! Somebody's dog had "
+            "fleas ON me!"),
+    "nell": ("(happy)Brilliant joinery, it turns out. I counted every "
+             "peg. Not one squeak.",
+             "(cross)A squeak. In my left leg. Every time. And no oil "
+             "can."),
+    "colm": ("(laugh)People talk ever so freely when they think they're "
+             "sitting on a chair. I've got a week of Gazettes!",
+             "(cross)Somebody spread the Gazette on me to eat chips off. "
+             "My own paper!"),
+    "tomoko": ("(happy)I held a vase all week. My own vase. I was very "
+               "good at it.",
+               "(cross)A cup ring. On me. I will never get it out."),
+    "john": ("(laugh)Ha! I held up a whole dinner! Pippa danced on me "
+             "and I didn't wobble once!",
+             "(cross)Pippa painted dragons all over me. In jam."),
+    "jonathan": ("(happy)Perfectly level. I checked. All four legs, to a "
+                 "hair.",
+                 "(cross)Someone spread a map on me. Upside down. All "
+                 "afternoon."),
+}
+CHAIR_REFUSED = {   # a child the spell won't take, on being refused
+    "pip": "(cross)Aww! I'd be a THRONE! A pirate throne! ...Can I sit on "
+           "one, then?",
+    "benji": "(laugh)Ha! It tickles! ...Wait, I wanted to be a fort. Can I "
+             "be a fort?",
+    "pippa": "(sad)But I was going to be a dragon's treasure chest! "
+             "...Can I sit in the comfy one?",
+}
+CREAK_HAPPY = ["The {what} that is {who} creaks contentedly.",
+               "{who} the {what} gives a happy little wobble.",
+               "The {what} that is {who} blinks at you, smiling.",
+               "{who} the {what} settles a bit, cosily."]
+CREAK_ANGRY = ["The {what} that is {who} creaks at you, crossly.",
+               "{who} the {what} glares from somewhere about the middle.",
+               "The {what} that is {who} wobbles a leg at your shin.",
+               "{who} the {what} lets out a long, offended squeak."]
+GOSSIP["furniture"] = [
+    "(surprised)Is that chair really {who}? I sat on it before I knew! "
+    "Do you think they mind?",
+    "(sad)I put my cup down on {who}. Without a coaster. Do you think "
+    "they're happy?",
+    "Do you suppose {who} still thinks like a person? Or just about "
+    "cushions?"]
+GOSSIP_HINTS["furniture"] = (
+    ["I could swear they purred when I sat down.",
+     "They creaked ever so happily when I dusted them."],
+    ["They pinched me with a hinge. On purpose.",
+     "I heard them squeaking crossly in an empty room."])
 CHICKEN_BACK = {   # turned back: sorry to be human again, glad of it
     "marisol": ("(laugh)I laid an egg! A perfect egg! I'm putting it in a "
                 "cake!",
@@ -26973,10 +27545,10 @@ def selftest():
                 vid not in DOG_BACK or (
                     (vid not in MAID_LINES or vid not in LOO_BACK or
                      vid not in COW_BACK or vid not in SHEEP_BACK or
-                     vid not in HORSE_BACK) and
+                     vid not in HORSE_BACK or vid not in CHAIR_BACK) and
                     v["look"].get("age") != "child") or (
                     v["look"].get("age") == "child" and
-                    vid not in HORSE_REFUSED):
+                    (vid not in HORSE_REFUSED or vid not in CHAIR_REFUSED)):
             problems.append("%s lacks spell reactions" % vid)
         for expr in EXPRESSIONS:
             px = portrait(swap_look(v["look"]), expr)
@@ -26985,6 +27557,9 @@ def selftest():
             px = portrait(v["look"], expr)
             if len(px) != PW or any(len(r) != PW for r in px):
                 problems.append("portrait %s/%s" % (vid, expr))
+    for furn in FURNITURE:
+        for k in MONSTERS:
+            furniture_art(furn, {"hair": "#808080", "shirt": "#808080"})
     grid, labels = make_valley(1)
     if len(grid) != VH or any(len(r) != VW for r in grid):
         problems.append("valley size")
