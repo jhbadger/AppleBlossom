@@ -15876,7 +15876,8 @@ class Game:
                      "text": ""}
         self.shell.show_entry()
         self.friend(vid)["met"] = True
-        self.speak(vid, CHAIR_BACK[vid][0 if likes else 1])
+        self.speak(vid, CHAIR_BACK[vid][FURN_GROUP[furn]][
+            0 if likes else 1].replace("{what}", furn))
         if pts:
             self.befriend(vid, pts)
             self.say("(%s %s.)" % (name, "likes you more for it" if pts > 0
@@ -20638,7 +20639,9 @@ class Game:
             likes = self.likes_change(other, spell)
             line += " " + random.choice(GOSSIP_HINTS[kind][0 if likes
                                                           else 1])
-        return line.replace("{who}", who)
+        furn = self.furn(other) or ""
+        return line.replace("{who}", who).replace(
+            "{an}", an(furn) if furn else "").replace("{what}", furn)
 
     def news(self, vid):
         st = self.st
@@ -26542,100 +26545,537 @@ BEASTS["horse"] = {
                "trots off about her day.",
     "unmade": "A last long whinny, the mane falls away like thistledown, "
               "and %s is back on two feet, rubbing their nose."}
-CHAIR_BACK = {   # turned back from furniture: sorry, or glad of it
-    "rowan": ("(blush)...Everyone who sat on me said 'oh, that's nice'. "
-              "Nobody ever says that to me.",
-              "(cross)Otto put his feet up on me. His forge boots. All "
-              "evening."),
-    "felix": ("(happy)Do you know, I've never sat still that long in my "
-              "life? Doctor's orders, I suppose.",
-              "(cross)People kept telling me their symptoms while they sat "
-              "on me. I couldn't even write a prescription."),
-    "theo": ("(laugh)Dude. Just sitting there. All day. That's basically "
-             "fishing without the fish!",
-             "(cross)Somebody put a wet bait bucket on me. A WET one."),
-    "juniper": ("(blush)Someone sat in me and read a whole novel. I read "
-                "it over their shoulder. It was wonderful.",
-                "(cross)They put a mug down on me with no coaster. No "
-                "COASTER."),
-    "wren": ("(laugh)I creaked in tune! A perfect B flat every time "
-             "someone sat down!",
-             "(cross)Somebody sat on me and sang flat. I couldn't even "
-             "wince."),
-    "ivy": ("(happy)Good joints, those. Dovetailed. I'd have made me "
-            "exactly the same.",
-            "(cross)I could feel a wobbly leg the whole time and couldn't "
-            "fix it. Torture."),
-    "edmund": ("(happy)A fine piece of civic furniture! Very stately! I "
-               "may commission a copy for the hall!",
-               "(cross)The Mayor of Apple Blossom Village, sat on. It "
-               "isn't dignified."),
-    "rose": ("(laugh)Oh, I was ever so comfy, dear. And I finally had a "
-             "proper rest. My knees thank you.",
-             "(cross)Nobody wiped their crumbs off me. Not once, dear."),
-    "mabel": ("(surprised)No customers, no stock-taking, no till. Just "
-              "being sat on. Restful, actually.",
-              "(cross)Lost earnings, dear. Days of them. I'll be sending "
-              "you a bill."),
-    "otto": ("(laugh)HA! Solid as an anvil! Nobody's ever broken me, and "
-             "nobody ever will!",
-             "(cross)Furniture can't hit things! I tried! For DAYS!"),
-    "bernard": ("(happy)I watched people sit about and enjoy themselves "
-                "all day. It's what I'd always wanted for the inn.",
-                "(cross)Somebody spilled cider on me and nobody mopped "
-                "it up. In MY trade!"),
-    "amy": ("(happy)Lovely and quiet. I did three crosswords in my head. "
-            "Seven across: SETTEE.",
-            "(cross)Someone did MY crossword sitting on me. In pen. "
-            "Wrong."),
-    "rusty": ("(laugh)Darling, the UPHOLSTERY! I've never looked so good! "
-              "I'm doing the whole shop in that fabric.",
-              "(cross)A loose thread, darling. All week. And no needle."),
-    "marisol": ("(laugh)Somebody set a cake down on me and I could smell "
-                "it all afternoon! Heavenly!",
-                "(cross)I could smell the bread burning and I couldn't "
-                "move a leg! Not a leg!"),
-    "silas": ("(happy)I was sat in the perfect light for days. I may "
-              "paint a still life. Of me.",
-              "(cross)Someone painted on me. A WATERCOLOUR. Badly."),
-    "dmitri": ("(happy)I faced the window all night. I could see "
-               "Cassiopeia rise. Very restful.",
-               "(cross)Someone turned me to face the wall. The WALL. All "
-               "night."),
-    "jonah": ("(happy)Nobody needed anything from me. Nice. Very nice. "
-              "I could do that again.",
-              "(cross)Duchess chewed my leg. My actual leg."),
-    "clara": ("(laugh)Benji had tea parties on me every afternoon! I was "
-              "the guest of honour!",
-              "(cross)Benji built a fort out of me. I was the WALL."),
-    "gus": ("(laugh)Ha! Best seat in the house, and I was it!",
-            "(cross)Theo sat on me in his wet oilskins. For an hour."),
-    "agnes": ("(happy)Well. I was a very good piece. Good posture, at "
-              "last, for everyone.",
-              "(cross)People SLOUCHED in me. All day. I couldn't say a "
-              "word."),
-    "bea": ("(laugh)A cat slept on me all afternoon! Purring! I could "
-            "have cried!",
-            "(cross)I couldn't see a single patient! Somebody's dog had "
-            "fleas ON me!"),
-    "nell": ("(happy)Brilliant joinery, it turns out. I counted every "
-             "peg. Not one squeak.",
-             "(cross)A squeak. In my left leg. Every time. And no oil "
-             "can."),
-    "colm": ("(laugh)People talk ever so freely when they think they're "
-             "sitting on a chair. I've got a week of Gazettes!",
-             "(cross)Somebody spread the Gazette on me to eat chips off. "
-             "My own paper!"),
-    "tomoko": ("(happy)I held a vase all week. My own vase. I was very "
-               "good at it.",
-               "(cross)A cup ring. On me. I will never get it out."),
-    "john": ("(laugh)Ha! I held up a whole dinner! Pippa danced on me "
-             "and I didn't wobble once!",
-             "(cross)Pippa painted dragons all over me. In jam."),
-    "jonathan": ("(happy)Perfectly level. I checked. All four legs, to a "
+FURN_GROUP = {"chair": "seat", "armchair": "seat", "rocking chair": "seat",
+              "table": "table", "lamp": "lamp", "bookcase": "books",
+              "grandfather clock": "clock"}
+CHAIR_BACK = {   # turned back from furniture: glad of it, or sorry, by
+    # what they were ({what} is the piece, for the seats)
+    "rowan": {
+        "seat": ("(blush)...Everyone who sat in me said 'oh, that's nice'. "
+                 "Nobody ever says that to me.",
+                 "(cross)Otto put his feet up on me. His forge boots. All "
+                 "evening."),
+        "table": ("(blush)People ate their supper off me and said thanks. "
+                  "To the table. ...Still counts.",
+                  "(cross)Somebody dropped a horseshoe on me. Hot. I've got "
+                  "a scorch mark on my, er, top."),
+        "lamp": ("(blush)Turns out I like being the thing that's warm and "
+                 "glowing. Don't tell Otto.",
+                 "(cross)Moths. All night. Bumping into my face."),
+        "books": ("(blush)Someone read me a whole shelf. Poems. ...I "
+                  "didn't mind them.",
+                  "(cross)Somebody stuffed a forge manual in me upside down. "
+                  "I could FEEL it."),
+        "clock": ("(blush)Tick, tock. Steady as a hammer. I kept good time, "
+                  "didn't I?",
+                  "(cross)I struck midnight and Otto threw a boot at me."),
+    },
+    "felix": {
+        "seat": ("(happy)Do you know, I've never sat still that long in my "
+                 "life? Doctor's orders, I suppose.",
+                 "(cross)People kept telling me their symptoms while they "
+                 "sat on me. I couldn't even write a prescription."),
+        "table": ("(happy)An excellent examining table, I made. Very "
+                  "steady. Perfectly sanitary.",
+                  "(cross)Someone spilled cough syrup on me. Sticky for "
+                  "days. I could feel it in my knees."),
+        "lamp": ("(happy)Good light for reading charts. I've often wished "
+                 "the surgery had one. Now I know what it feels like.",
+                 "(cross)I gave myself a headache. Glowing all evening is "
+                 "terrible for the eyes. Doctor's orders: never again."),
+        "books": ("(happy)Someone kept a medical dictionary in me. I "
+                  "re-read it from the inside. Marvellous.",
+                  "(cross)Some fool put a book on 'natural cures' on my top "
+                  "shelf. I couldn't even take it down."),
+        "clock": ("(happy)I could hear my own heartbeat in the ticking. "
+                  "Sixty a minute. Very healthy.",
+                  "(cross)I ran slow all week and nobody noticed. I'm "
+                  "worried about my pendulum."),
+    },
+    "theo": {
+        "seat": ("(laugh)Dude. Just sitting there. All day. That's "
+                 "basically fishing without the fish!",
+                 "(cross)Somebody sat on me in wet waders. I'm still damp."),
+        "table": ("(laugh)Somebody gutted a trout on me! Smelled AMAZING!",
+                  "(cross)Somebody put a wet bait bucket on me. A WET one."),
+        "lamp": ("(laugh)Dude, I was a lantern! Like night fishing, but I "
+                 "was the light!",
+                 "(cross)All the bugs came to me and NO fish. Worst bait "
+                 "ever."),
+        "books": ("(laugh)There was a book about whales in me. WHALES, "
+                  "dude.",
+                  "(cross)No fishing books. Not one. What kind of bookcase "
+                  "is that?"),
+        "clock": ("(laugh)Tick, tock, like waiting for a bite. So chill.",
+                  "(cross)I chimed at five in the morning and missed the "
+                  "dawn rise. Bummer."),
+    },
+    "juniper": {
+        "seat": ("(blush)Someone curled up in me and read a whole novel. I "
+                 "read it over their shoulder. It was wonderful.",
+                 "(cross)Somebody fell asleep in me with a book open, face "
+                 "down. The SPINE."),
+        "table": ("(happy)Somebody did their homework on me. Long division. "
+                  "Every sum right!",
+                  "(cross)They put a mug down on me with no coaster. No "
+                  "COASTER."),
+        "lamp": ("(blush)People read by me until the small hours. That's "
+                 "the most useful I've ever been.",
+                 "(cross)Someone switched me off at the BEST bit of the "
+                 "chapter."),
+        "books": ("(blush)I was a library! A small one! I've never been so "
+                  "happy!",
+                  "(cross)Nobody put them back in order. A to Z, it's not "
+                  "difficult!"),
+        "clock": ("(happy)I chimed for story time. All three pupils came "
+                  "running.",
+                  "(cross)Somebody stopped me so they could stay up late "
+                  "reading. I suppose I can't really be angry."),
+    },
+    "wren": {
+        "seat": ("(laugh)I creaked in tune! A perfect B flat every time "
+                 "someone sat down!",
+                 "(cross)Somebody sat in me and sang flat. I couldn't even "
+                 "wince."),
+        "table": ("(laugh)Someone drummed on me with their fingers. Good "
+                  "rhythm, too!",
+                  "(cross)Somebody put a fiddle case on me and never opened "
+                  "it. Torture."),
+        "lamp": ("(laugh)I was a spotlight! I lit a little concert in the "
+                 "parlour!",
+                 "(cross)I hummed. Lamps hum, apparently. In E. Badly."),
+        "books": ("(happy)I held all the songbooks. I knew every tune by "
+                  "heart by the end.",
+                  "(cross)Someone filed the sheet music under 'misc'. "
+                  "MISC."),
+        "clock": ("(laugh)I chimed in harmony! Four notes, every quarter "
+                  "hour!",
+                  "(cross)My chime was a quarter tone sharp. All week. And "
+                  "I couldn't tune it."),
+    },
+    "ivy": {
+        "seat": ("(happy)Good joints, those. Dovetailed. I'd have made me "
+                 "exactly the same.",
+                 "(cross)I could feel a wobbly leg the whole time and "
+                 "couldn't fix it. Torture."),
+        "table": ("(happy)Solid oak top, mortise legs. Honest work. I was "
+                  "a credit to myself.",
+                  "(cross)Somebody put a level on me. Off by a hair. I "
+                  "couldn't plane it."),
+        "lamp": ("(happy)Turned base, I had. Lovely bit of lathe-work.",
+                 "(cross)Wiring's not my trade. I felt every bit of it."),
+        "books": ("(happy)Fixed shelves, good backboard, not a sag in "
+                  "them. I'd hire me.",
+                  "(cross)My middle shelf bowed. Bowed! I'd never let one "
+                  "out of the workshop like that."),
+        "clock": ("(happy)A fine case. Quartersawn. Nell did the insides, "
+                  "I suppose. Good team.",
+                  "(cross)Somebody leaned a broom on me. A clock case isn't "
+                  "a broom cupboard."),
+    },
+    "edmund": {
+        "seat": ("(happy)A fine piece of civic furniture! Very stately! I "
+                 "may commission a copy for the hall!",
+                 "(cross)The Mayor of Apple Blossom Village, sat on. It "
+                 "isn't dignified."),
+        "table": ("(happy)A council table! People held meetings at me! I "
+                  "chaired them, in a manner of speaking!",
+                  "(cross)They played cards on me. Gambling! On the mayor!"),
+        "lamp": ("(happy)A beacon of civic light! I shall propose street "
+                 "lamps at the next meeting!",
+                 "(cross)Someone put a hat on me. A lampshade is not a hat "
+                 "stand!"),
+        "books": ("(happy)I held the village records! Every bylaw! I "
+                  "re-read them all! Fascinating!",
+                  "(cross)Somebody kept penny dreadfuls in me. The "
+                  "Mayor's shelves!"),
+        "clock": ("(happy)I kept the village to time! Punctuality is the "
+                  "soul of good government!",
+                  "(cross)Nobody listens to a clock either. Rather like "
+                  "council meetings."),
+    },
+    "rose": {
+        "seat": ("(laugh)Oh, I was ever so comfy, dear. And I finally had "
+                 "a proper rest. My knees thank you.",
+                 "(cross)Nobody wiped their crumbs off me. Not once, dear."),
+        "table": ("(happy)Tea and scones on me every afternoon, dear. Just "
+                  "like the old days.",
+                  "(cross)No tablecloth, dear. Bare wood. In front of "
+                  "COMPANY."),
+        "lamp": ("(happy)I kept the room cosy, dear. Somebody knitted by "
+                 "me all evening.",
+                 "(cross)Somebody left me on all night, dear. Do you know "
+                 "what oil costs?"),
+        "books": ("(laugh)All my old recipe books, dear! I held them like "
+                  "babies!",
+                  "(cross)Dust, dear. On every shelf. Nobody DUSTED me."),
+        "clock": ("(happy)I struck the hours for tea, dear. Very "
+                  "civilised.",
+                  "(cross)My chimes kept waking me up, dear. At my age!"),
+    },
+    "mabel": {
+        "seat": ("(surprised)No customers, no stock-taking, no till. Just "
+                 "being sat in. Restful, actually.",
+                 "(cross)Lost earnings, dear. Days of them. I'll be sending "
+                 "you a bill."),
+        "table": ("(happy)People set things out on me to look at. Like a "
+                  "shop counter. Felt like home.",
+                  "(cross)Somebody put a sale sign on me. Half price! ME!"),
+        "lamp": ("(surprised)I lit up a whole room for nothing. No charge. "
+                 "First time in my life.",
+                 "(cross)Do you know what lamp oil costs, dear? I do. To "
+                 "the penny."),
+        "books": ("(happy)I held the ledgers. Every column added up. "
+                  "Lovely.",
+                  "(cross)Someone took a book off me and never brought it "
+                  "back. That's shoplifting."),
+        "clock": ("(happy)Opening time, closing time, all exactly right. "
+                  "Like a good shop.",
+                  "(cross)I struck nine and couldn't open the shop. Lost "
+                  "earnings, dear."),
+    },
+    "otto": {
+        "seat": ("(laugh)HA! Solid as an anvil! Nobody's ever broken me, "
+                 "and nobody ever will!",
+                 "(cross)Furniture can't hit things! I tried! For DAYS!"),
+        "table": ("(laugh)HA! A workbench! They could have hammered on me "
+                  "and I'd not have dented!",
+                  "(cross)Somebody put a DOILY on me. A DOILY. On OTTO."),
+        "lamp": ("(laugh)HA! Glowing like a forge! I was the hottest thing "
+                 "in the room!",
+                 "(cross)A LAMP! I couldn't lift a hammer! I couldn't lift "
+                 "ANYTHING!"),
+        "books": ("(laugh)HA! I held up a hundredweight of books and never "
+                  "bowed!",
+                  "(cross)Books! I don't even READ! Rowan does the "
+                  "reading!"),
+        "clock": ("(laugh)HA! BONG! I've never been so loud indoors!",
+                  "(cross)Tick, tock, tick, tock. No hammering. I nearly "
+                  "went mad."),
+    },
+    "bernard": {
+        "seat": ("(happy)I watched people sit about and enjoy themselves "
+                 "all day. It's what I'd always wanted for the inn.",
+                 "(cross)Somebody spilled cider in me and nobody mopped it "
+                 "up. In MY trade!"),
+        "table": ("(happy)A full table of an evening! Pies and cider and "
+                  "stories! Best seat in the house!",
+                  "(cross)Somebody spilled cider on me and nobody mopped "
+                  "it up. In MY trade!"),
+        "lamp": ("(happy)I kept the window lit so travellers could find "
+                 "their way. Just like the inn.",
+                 "(cross)They turned me down low and nobody called last "
+                 "orders. Shocking."),
+        "books": ("(happy)I held the guest book! All those names! All "
+                  "those stories!",
+                  "(cross)Someone kept their tankards on my shelves. "
+                  "UNWASHED."),
+        "clock": ("(happy)I rang last orders myself. BONG. Very "
+                  "satisfying.",
+                  "(cross)Somebody stopped me at closing time so they "
+                  "could stay. The cheek."),
+    },
+    "amy": {
+        "seat": ("(happy)Lovely and quiet. I did three crosswords in my "
+                 "head. Seven across: SETTEE.",
+                 "(cross)Someone did MY crossword sitting in me. In pen. "
+                 "Wrong."),
+        "table": ("(happy)Someone set a honeycomb down on me. I smelled "
+                  "clover all day.",
+                  "(cross)Someone did MY crossword on me. In pen. Wrong."),
+        "lamp": ("(happy)Bees love a warm light. Well, moths do. I made "
+                 "friends. Nine down: LANTERN.",
+                 "(cross)Moths! I'm a BEE person!"),
+        "books": ("(happy)Someone kept a dictionary in me. I learned four "
+                  "new words. Clue for one: ASTRAGAL.",
+                  "(cross)They'd shelved a thesaurus next to a dictionary. "
+                  "Redundant. Superfluous. Unnecessary."),
+        "clock": ("(happy)Tick, tock. Like a quiet hive. Eight letters: "
+                  "SOOTHING.",
+                  "(cross)Every hour, BONG. Couldn't think. Couldn't "
+                  "clue."),
+    },
+    "rusty": {
+        "seat": ("(laugh)Darling, the UPHOLSTERY! I've never looked so "
+                 "good! I'm doing the whole shop in that fabric.",
+                 "(cross)A loose thread, darling. All week. And no needle."),
+        "table": ("(laugh)Darling, someone cut a whole pattern out on me! "
+                  "A velvet waistcoat! I felt every snip!",
+                  "(cross)Bare wood, darling. Not even a runner. I felt "
+                  "naked."),
+        "lamp": ("(laugh)A silk shade, darling! Fringed! I was the "
+                 "prettiest thing in the room!",
+                 "(cross)The shade was crooked, darling. All week. Nobody "
+                 "straightened it."),
+        "books": ("(laugh)Pattern books, darling! Every season since "
+                  "forever! Bliss!",
+                  "(cross)Somebody shelved my fashion plates with the "
+                  "almanacs. The ALMANACS, darling."),
+        "clock": ("(laugh)Darling, I had a gilt face. GILT. Gorgeous.",
+                  "(cross)Somebody hung a coat on me, darling. A "
+                  "badly-cut one."),
+    },
+    "marisol": {
+        "seat": ("(laugh)Somebody ate a whole cake sitting in me! I could "
+                 "smell it all afternoon! Heavenly!",
+                 "(cross)I could smell the bread burning and I couldn't "
+                 "move a leg! Not a leg!"),
+        "table": ("(laugh)Somebody set a cake down on me and I could smell "
+                  "it all afternoon! Heavenly!",
+                  "(cross)Somebody kneaded dough on me. BADLY. I could feel "
+                  "every mistake."),
+        "lamp": ("(happy)Warm and golden, like an oven light! I proved a "
+                 "loaf just by glowing at it!",
+                 "(cross)I could smell the bread burning and I couldn't "
+                 "move! A lamp can't move!"),
+        "books": ("(laugh)Cookbooks! All of them! I learned three new "
+                  "tarts!",
+                  "(cross)Somebody put a cookbook in me with the cake page "
+                  "torn out. THE CAKE PAGE."),
+        "clock": ("(laugh)I knew exactly when every loaf was done! I'm the "
+                  "best kitchen timer!",
+                  "(cross)I struck six and I couldn't get the ovens lit! "
+                  "The whole morning batch!"),
+    },
+    "silas": {
+        "seat": ("(happy)I was sat in the perfect light for days. I may "
+                 "paint a still life. Of me.",
+                 "(cross)Someone painted on me. A WATERCOLOUR. Badly."),
+        "table": ("(happy)Someone set a bowl of fruit on me. I was a still "
+                  "life! At last!",
+                  "(cross)Someone used me to mix paints on. Muddy browns. "
+                  "No sense of colour."),
+        "lamp": ("(happy)I made the light! For once I didn't have to wait "
+                 "for it!",
+                 "(cross)Yellow light. Cheap yellow light. Every colour in "
+                 "the room was WRONG."),
+        "books": ("(happy)Art books! I saw every plate. I may paint a "
+                  "bookcase. Of me.",
+                  "(cross)Somebody painted a mural on me. Of a bookcase. "
+                  "On a bookcase."),
+        "clock": ("(happy)I watched the light move round the room for a "
+                  "whole day. I'll paint it hour by hour.",
+                  "(cross)Somebody painted my face. My CLOCK face. "
+                  "Numbers in the wrong font."),
+    },
+    "dmitri": {
+        "seat": ("(happy)I faced the window all night. I could see "
+                 "Cassiopeia rise. Very restful.",
+                 "(cross)Someone turned me to face the wall. The WALL. All "
+                 "night."),
+        "table": ("(happy)Someone spread a star chart on me! I read it "
+                  "upside down all night!",
+                  "(cross)Someone set a candle on me. Light pollution. On "
+                  "my own top."),
+        "lamp": ("(surprised)Being a light is very strange. I suppose this "
+                 "is how a star feels. Very lonely.",
+                 "(cross)I couldn't see a single star. I WAS the light "
+                 "pollution."),
+        "books": ("(happy)Someone kept an atlas of the heavens in me. Every "
+                  "constellation, right there!",
+                  "(cross)An astrology book. In ME. Horoscopes."),
+        "clock": ("(happy)I kept sidereal time all week. Nobody noticed. "
+                  "I did.",
+                  "(cross)Somebody set me to the wrong time and I couldn't "
+                  "correct it. Four minutes!"),
+    },
+    "jonah": {
+        "seat": ("(happy)Nobody needed anything from me. Nice. Very nice. "
+                 "I could do that again.",
+                 "(cross)Duchess chewed my leg. My actual leg."),
+        "table": ("(happy)Someone sheared a fleece on me. I liked the "
+                  "smell of it. Nice.",
+                  "(cross)Duchess slept under me and snored. All night."),
+        "lamp": ("(happy)Quiet. Warm. Just glowing. Nice.",
+                 "(cross)Duchess knocked me over. Twice."),
+        "books": ("(happy)Someone kept a book about sheepdogs in me. Nice.",
+                  "(cross)Duchess chewed the bottom shelf. And the books."),
+        "clock": ("(happy)Tick, tock. Like counting sheep. Very restful.",
+                  "(cross)Duchess barked at me every time I chimed."),
+    },
+    "clara": {
+        "seat": ("(laugh)Benji climbed in me and read comics every "
+                 "afternoon! I was his favourite seat!",
+                 "(cross)Benji built a fort out of me. I was the WALL."),
+        "table": ("(laugh)Benji had tea parties on me every afternoon! I "
+                  "was the guest of honour!",
+                  "(cross)Benji hid under me with the biscuit tin. I could "
+                  "hear him CRUNCHING."),
+        "lamp": ("(laugh)Benji read under me past his bedtime! I didn't "
+                 "tell!",
+                 "(cross)Benji put a sheet over me to make a ghost. A "
+                 "GHOST. Me."),
+        "books": ("(happy)Benji took a book off me every night. Every "
+                  "night! He's reading!",
+                  "(cross)Benji tried to CLIMB me. I'm a bookcase!"),
+        "clock": ("(laugh)Benji counted my chimes every hour. He can count "
+                  "to twelve now!",
+                  "(cross)Benji moved my hands to bedtime early. He "
+                  "learned that from me."),
+    },
+    "gus": {
+        "seat": ("(laugh)Ha! Best seat in the house, and I was it!",
+                 "(cross)Theo sat in me in his wet oilskins. For an hour."),
+        "table": ("(laugh)Ha! Somebody played dominoes on me all night! I "
+                  "won every game!",
+                  "(cross)Theo cleaned his catch on me. Mackerel. I still "
+                  "smell of it."),
+        "lamp": ("(laugh)Ha! Like a lighthouse, I was! I brought the boats "
+                 "home!",
+                 "(cross)Theo said I gave off a funny light. FUNNY!"),
+        "books": ("(laugh)Ha! Sea stories! Every one a lie, and I loved "
+                  "'em!",
+                  "(cross)Theo stuck a fishing rod in me. Like I was an "
+                  "umbrella stand."),
+        "clock": ("(laugh)Ha! I struck the tides! Nobody asked, but I "
+                  "knew!",
+                  "(cross)Theo asked me the time every ten minutes. I "
+                  "couldn't tell him to look himself!"),
+    },
+    "agnes": {
+        "seat": ("(happy)Well. I was a very good piece. Good posture, at "
+                 "last, for everyone.",
+                 "(cross)People SLOUCHED in me. All day. I couldn't say a "
+                 "word."),
+        "table": ("(happy)Well. Somebody laid me properly. Knives on the "
+                  "right. At LAST.",
+                  "(cross)Elbows. On me. All dinner long."),
+        "lamp": ("(happy)Well. Somebody did their lessons by my light. "
+                 "Neatly.",
+                 "(cross)They read by me in BED. Ruinous for the eyes. "
+                 "I'd have said so."),
+        "books": ("(happy)Well. I held the classics. In order. As it "
+                  "should be.",
+                  "(cross)Somebody dog-eared my Dickens. DOG-EARED."),
+        "clock": ("(happy)Well. Somebody was punctual, for once. I made "
+                  "sure of it.",
+                  "(cross)Late. Every one of them, late. And I could only "
+                  "tick at them."),
+    },
+    "bea": {
+        "seat": ("(laugh)A cat slept in me all afternoon! Purring! I could "
+                 "have cried!",
+                 "(cross)I couldn't see a single patient! Somebody's dog "
+                 "had fleas ON me!"),
+        "table": ("(laugh)Somebody bandaged a hedgehog on me! Very gently! "
+                  "I was a little operating table!",
+                  "(cross)I couldn't see a single patient! A dog with a "
+                  "thorn walked right under me!"),
+        "lamp": ("(laugh)A cat curled round my base for the warmth! "
+                 "Purring! I could have cried!",
+                 "(cross)Moths. I'm a vet. I couldn't even help them."),
+        "books": ("(happy)I held every animal book! I know the bones of a "
+                  "badger now, by heart!",
+                  "(cross)A mouse moved into my bottom shelf. I'd have "
+                  "helped her, but she ate the index."),
+        "clock": ("(laugh)A kitten batted my pendulum all afternoon! Best "
+                  "day ever!",
+                  "(cross)I kept time for appointments I couldn't keep. "
+                  "Awful."),
+    },
+    "nell": {
+        "seat": ("(happy)Brilliant joinery, it turns out. I counted every "
+                 "peg. Not one squeak.",
+                 "(cross)A squeak. In my left leg. Every time. And no oil "
+                 "can."),
+        "table": ("(happy)Someone took a clock apart on me! All the bits "
+                  "laid out neat! Lovely!",
+                  "(cross)Somebody lost a screw on me. I could FEEL it "
+                  "rolling about."),
+        "lamp": ("(happy)Brilliant wick mechanism, it turns out. I've got "
+                 "ideas.",
+                 "(cross)I flickered. All week. And nobody trimmed me."),
+        "books": ("(happy)Clock manuals! Horology! Every one I'd ever "
+                  "wanted!",
+                  "(cross)No tools. A whole shelf of books about tools and "
+                  "no tools."),
+        "clock": ("(laugh)I WAS a clock! Do you know how long I've wanted "
+                  "to see one from the inside? Brilliant!",
+                  "(cross)I lost two minutes a day. TWO. And I couldn't "
+                  "adjust my own escapement!"),
+    },
+    "colm": {
+        "seat": ("(laugh)People talk ever so freely when they think "
+                 "they're sitting in a chair. I've got a week of Gazettes!",
+                 "(cross)Somebody read the Gazette sitting in me and "
+                 "laughed at the wrong bits."),
+        "table": ("(laugh)People gossip ever so freely over a table. I've "
+                  "got a week of Gazettes!",
+                  "(cross)Somebody spread the Gazette on me to eat chips "
+                  "off. My own paper!"),
+        "lamp": ("(laugh)People confess all sorts by lamplight. I've got a "
+                 "front page!",
+                 "(cross)Somebody read a rival paper by my light. The CITY "
+                 "paper."),
+        "books": ("(laugh)I held every back issue! I re-read my own "
+                  "headlines! Masterful!",
+                  "(cross)Somebody used the Gazette to wedge my shelf "
+                  "level. My own paper!"),
+        "clock": ("(laugh)I heard everything said in that hall! Clocks hear "
+                  "everything! Scoop!",
+                  "(cross)I struck nine. Deadline. And I couldn't write a "
+                  "word."),
+    },
+    "tomoko": {
+        "seat": ("(happy)Somebody sat in me and held a teacup very "
+                 "properly. One of mine. I approved.",
+                 "(cross)Somebody sat in me with a muddy dog. I will never "
+                 "be clean again."),
+        "table": ("(happy)I held a vase all week. My own vase. I was very "
+                  "good at it.",
+                  "(cross)A cup ring. On me. I will never get it out."),
+        "lamp": ("(happy)My base was a pot. One of mine. Glazed. I was "
+                 "beautiful.",
+                 "(cross)A paper shade. PAPER. On my good glaze."),
+        "books": ("(happy)Somebody put three of my bowls on my top shelf. "
+                  "Displayed. As they should be.",
+                  "(cross)They kept Colm's back issues in me. All of them. "
+                  "I married that clutter."),
+        "clock": ("(happy)I kept perfect time. Somebody in this family "
+                  "should.",
+                  "(cross)Colm wound me every night and talked the whole "
+                  "time. To a CLOCK."),
+    },
+    "john": {
+        "seat": ("(laugh)Ha! Pippa climbed in me and bounced! I didn't "
+                 "wobble once!",
+                 "(cross)Pippa drew on me. Dragons. In jam."),
+        "table": ("(laugh)Ha! I held up a whole dinner! Pippa danced on me "
+                  "and I didn't wobble once!",
+                  "(cross)Pippa painted dragons all over me. In jam."),
+        "lamp": ("(laugh)Ha! Pippa made shadow dragons on the wall by my "
+                 "light!",
+                 "(cross)Pippa put a jam jar over my wick to see what would "
+                 "happen. It went out."),
+        "books": ("(laugh)Ha! A whole shelf of stone-cutting books! Heavy! "
+                  "I could take it!",
+                  "(cross)Pippa hid her dragon eggs in me. Pebbles. My "
+                  "shelves aren't for gravel."),
+        "clock": ("(laugh)Ha! BONG! Loud as the quarry! Pippa loved it!",
+                  "(cross)Pippa asked if I was hungry every time I struck. "
+                  "I WAS."),
+    },
+    "jonathan": {
+        "seat": ("(happy)Perfectly level. I checked. All four legs, to a "
                  "hair.",
-                 "(cross)Someone spread a map on me. Upside down. All "
-                 "afternoon."),
+                 "(cross)Someone sat in me facing north-north-east. I "
+                 "could tell. I couldn't turn."),
+        "table": ("(happy)Someone spread a map on me! The right way up! I "
+                  "checked all the contours!",
+                  "(cross)Someone spread a map on me. Upside down. All "
+                  "afternoon."),
+        "lamp": ("(happy)I lit the drawing board all night. Beautiful "
+                 "clean lines.",
+                 "(cross)My light was lopsided. The shadows on the map "
+                 "were WRONG."),
+        "books": ("(happy)Atlases! Every one! I found three mistakes. In "
+                  "other people's.",
+                  "(cross)Somebody filed the maps by colour. By COLOUR."),
+        "clock": ("(happy)I kept the time and felt the weather turning in "
+                  "my pendulum. Rain by Thursday.",
+                  "(cross)My barometer would have told them it was going to "
+                  "rain. I'm a CLOCK. Nobody asked."),
+    },
 }
 CHAIR_REFUSED = {   # a child the spell won't take, on being refused
     "pip": "(cross)Aww! I'd be a THRONE! A pirate throne! ...Can I sit on "
@@ -26654,14 +27094,13 @@ CREAK_ANGRY = ["The {what} that is {who} creaks at you, crossly.",
                "The {what} that is {who} wobbles a leg at your shin.",
                "{who} the {what} lets out a long, offended squeak."]
 GOSSIP["furniture"] = [
-    "(surprised)Is that chair really {who}? I sat on it before I knew! "
-    "Do you think they mind?",
-    "(sad)I put my cup down on {who}. Without a coaster. Do you think "
-    "they're happy?",
-    "Do you suppose {who} still thinks like a person? Or just about "
-    "cushions?"]
+    "(surprised)Is that {what} really {who}? I leaned on it before I "
+    "knew! Do you think they mind?",
+    "(sad)I bumped right into {who} the {what} and said sorry to it. Do "
+    "you think they're happy?",
+    "Do you suppose {who} still thinks like a person? Or just like {an}?"]
 GOSSIP_HINTS["furniture"] = (
-    ["I could swear they purred when I sat down.",
+    ["I could swear they purred when I walked past.",
      "They creaked ever so happily when I dusted them."],
     ["They pinched me with a hinge. On purpose.",
      "I heard them squeaking crossly in an empty room."])
@@ -27724,7 +28163,9 @@ def selftest():
                 vid not in DOG_BACK or (
                     (vid not in MAID_LINES or vid not in LOO_BACK or
                      vid not in COW_BACK or vid not in SHEEP_BACK or
-                     vid not in HORSE_BACK or vid not in CHAIR_BACK) and
+                     vid not in HORSE_BACK or
+                     set(CHAIR_BACK.get(vid, ())) !=
+                     set(FURN_GROUP.values())) and
                     v["look"].get("age") != "child") or (
                     v["look"].get("age") == "child" and
                     (vid not in HORSE_REFUSED or vid not in CHAIR_REFUSED)):
