@@ -21243,15 +21243,15 @@ class Game:
             self.show_diary()
         elif k == "m":
             self.toggle_map()
-        elif k in ("question", "slash", "h"):
+        elif k in ("question", "slash", "?", "/", "h", "H", "F1"):
             self.show_help()
         elif k == "v":
             self.toggle_mute()
         elif k == "b":
             self.toggle_music()
-        elif k in ("plus", "equal", "KP_Add"):
+        elif k in ("plus", "equal", "+", "=", "KP_Add"):
             self.zoom(1)
-        elif k in ("minus", "KP_Subtract"):
+        elif k in ("minus", "-", "KP_Subtract"):
             self.zoom(-1)
         elif k == "n":
             self.ask_new_game()
