@@ -157,7 +157,10 @@ in Nell's preserves jar.
 **any crop grows in any season**, out of the weather: no rain to water them,
 so fill your can at the water butt by the door, and no frost to kill them.
 Once it's up, Mabel sells every crop's seeds all year round. Maids on the
-watering and picking chores see to the greenhouse too.
+watering and picking chores see to the greenhouse too. You can also plant a
+**fruit tree** sapling in an empty bed, or replant a tree the wand made
+there (see Treeify): in the greenhouse a fruit tree is always in summer leaf
+and **bears all year round**, a fruit every morning.
 
 **Cooking.** Walk into Grandmother's **stove** in your cabin to cook. You
 start with her recipe book (fried egg, baked potato, salad), and friends
@@ -283,7 +286,13 @@ three. Walk into it to pick them, or to see how it's coming along; a maid
 told to pick the crops picks the trees too. Fruit sells (cherries 60g,
 peaches 110g, oranges 100g, pomegranates 140g), is good to eat, and makes
 jam in the preserves jar. The axe will chop a tree down, if you're sure,
-for wood. Trees stay put through every season, snow and all.
+for wood. Trees stay put through every season, snow and all. Plant a
+sapling in a bed in your greenhouse instead and it bears all year round.
+
+**Fertilizer** round a tree (hold it and use it on the tree) feeds it for a
+week: a young tree grows two days in every one, and a grown one bears two
+fruit a morning, up to five, instead of one. That goes for the trees the
+wand makes too, villagers and monsters (see Treeify).
 
 ### Happy, well-fed animals
 
@@ -486,7 +495,7 @@ for what it gives:
 | Petrify | a golden statue | chip a little gold off its toe; or pick it up (20 energy) and set it on your farm or in your cabin, where it still gives gold |
 | Maidify | a little maid in the monster's colours | the gold she's swept up; or invite her to your cabin (see below) |
 | Chickenfy | a hen | an egg |
-| Treeify | a tree, growing in the dark | wood |
+| Treeify | a tree, growing in the dark | wood; or dig it up (12 energy) and plant it on your farm or in your greenhouse, where it keeps giving wood (twice as much for a week after you fertilize it) |
 | Cowify | a cow | milk (with a pail) |
 | Sheepify | a sheep | wool every third day (with shears) |
 | Catify | a cat | a point of magic |
@@ -783,14 +792,21 @@ gift.
   the colour of their shirt in summer, red and gold in fall, snow in winter.
   It stays put, day and night, until you change it back. Walk into it and it
   rustles happily or creaks crossly, depending on whether this villager
-  likes being a tree (dealt each game); walk into it again to push through
-  the branches. About one time in three the spell makes a **fruit tree**
+  likes being a tree (dealt each game), and says what they think of it: each
+  villager has their own delight or disgust. Then you can push through the
+  branches, or **dig them up** (12 energy) and carry them in your bag to
+  **plant** on open ground on your farm or in an empty bed in your
+  greenhouse, where they'll tell you what they think of their new home. About one time in three the spell makes a **fruit tree**
   instead (cherry, peach, orange, apple or pomegranate): in that fruit's
   season it's hung with fruit, a little more each morning, and walking into
   it picks them. A villager who likes being a tree giggles that it tickles;
   one who doesn't creaks that those are *theirs*, and likes you a little
-  less for it. **Water** a tree once a day: one that likes it takes it as a
-  gift it likes, one that doesn't shakes the water off at you. You *can*
+  less for it. A fruit tree replanted in the greenhouse bears all year
+  round. **Water** a tree once a day: one that likes it takes it as a
+  gift it likes, one that doesn't shakes the water off at you. **Fertilize**
+  one and it's fed for a week (see Fruit trees); one that likes being a
+  tree, and doesn't mind manure, thanks you for it, and the rest are
+  disgusted. You *can*
   take the axe to one: it screams at every swing, and on the third it falls,
   you get the wood, and the villager tumbles out of the trunk, whole but
   shaking and covered in sawdust. That costs a great deal of friendship,

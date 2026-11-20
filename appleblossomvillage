@@ -1723,7 +1723,10 @@ HIVE_DAYS = 3                   # a beehive fills every third morning
 
 # Fruit trees: fruit -> (the season it bears, fruit colour, blossom colour,
 # sapling price).  A sapling grows into a young tree, and in FRUIT_TREE_DAYS
-# into one that bears a fruit each morning of its season, up to three.
+# into one that bears a fruit each morning of its season, up to three;
+# in the greenhouse, every morning of the year.  Fertilizer round a tree's
+# roots lasts TREE_FEED_DAYS: it grows two days in one, bears two fruit a
+# morning (up to TREE_FED_FRUIT), and a monster tree gives twice the wood.
 FRUIT_TREES = {"cherry": (0, "#c41830", "#ffe0ea", 1000),
                "peach": (1, "#f6a070", "#ffc8d0", 1200),
                "orange": (1, "#f08a20", "#ffffff", 1400),
@@ -1731,6 +1734,9 @@ FRUIT_TREES = {"cherry": (0, "#c41830", "#ffe0ea", 1000),
                "pomegranate": (2, "#b02040", "#f06060", 1400)}
 FRUIT_TREE_DAYS = 28
 FRUIT_TREEIFY = 0.35            # how often treeify makes a fruit tree
+TREE_FEED_DAYS = 7              # how long a sack of fertilizer feeds a tree
+TREE_FED_FRUIT = 5              # the most fruit a fed tree holds
+TREE_HEFT = 12                  # energy it takes to dig a tree up
 ITEMS.update({"cherry": (60, 10, "fruit"), "peach": (110, 15, "fruit"),
               "orange": (100, 15, "fruit"),
               "pomegranate": (140, 15, "fruit")})
@@ -8380,13 +8386,16 @@ for _k, _m in MONSTERS.items():  # bag -> ("mon", kind, furniture or None)
         STATUE_OF["golden " + _m.name] = ("mon", _k, None)
         for _f in FURNITURE:
             STATUE_OF["%s %s" % (_m.name, _f)] = ("mon", _k, _f)
+        STATUE_OF[_m.name + " tree"] = ("mon", _k, "tree")
 for _v, _d in VILLAGERS.items():
     STATUE_OF["statue of " + _d["short"]] = ("vil", _v, None)
     if _d["look"].get("age") != "child":
         for _f in FURNITURE:
             STATUE_OF["%s that is %s" % (_f, _d["short"])] = ("vil", _v, _f)
-for _n, _w in STATUE_OF.items():
-    ITEMS[_n] = (0, 0, "furniture" if _w[2] else "statue")
+    STATUE_OF["tree that is " + _d["short"]] = ("vil", _v, "tree")
+for _n, _w in STATUE_OF.items():    # (a tree dug up to plant elsewhere is
+    ITEMS[_n] = (0, 0, "tree" if _w[2] == "tree" else   # one of these too)
+                 "furniture" if _w[2] else "statue")
 CRYSTAL = "magic crystal"       # snapped off the mine's walls: +2 magic
 CRYSTAL_MAGIC = 2
 ITEMS[CRYSTAL] = (120, 0, "crystal")
@@ -9821,7 +9830,9 @@ The hoe tills, the can waters (fill it at water or the
 well), seeds go in tilled soil.  Watered crops grow a day
 each night.  Crops watered every day may come up silver
 or gold, worth more; fertilizer helps.  Ivy builds a
-greenhouse where anything grows, all year.  Pick ripe crops by using anything on them.
+greenhouse where anything grows, all year; fruit trees
+there bear all year round.  Fertilizer round a tree feeds
+it for a week.  Pick ripe crops by using anything on them.
 Put things in the shipping bin and you're paid overnight.
 Ivy builds chicken coops and Mabel sells hens; each hen
 lays an egg a night.  Walk into a hen to pet or rename her.
@@ -9856,8 +9867,9 @@ morning (whom you may KISS twice a day, and ask what to
 WEAR: a uniform in any colour, a bikini, a shawl, a sundress,
 a yukata, a pirate costume or a sailor school uniform);
 treeify, into a
-tree (sometimes a fruit tree) you can water (or chop, if
-you can bear the screaming);
+tree (sometimes a fruit tree) you can water, fertilize, dig
+up and plant on your farm or in your greenhouse (or chop,
+if you can bear the screaming);
 looify (outdoors, with room for a door), into an outhouse
 you can use, clean, decorate and empty for fertilizer
 (read the almanac and the Gazette riddle while you're
@@ -11470,7 +11482,8 @@ class Game:
 
     def paint_specials(self, scale=False):
         """Sprites made to order: each maid in a bikini, in her colour, and
-        each villager turned fruit tree, in fruit."""
+        each villager turned fruit tree, in fruit (in summer leaf, in the
+        greenhouse)."""
         frames = []
         for vid, b in self.st.get("bikinis", {}).items():
             px = art_pixels(*person_art(self.look_of(vid)))
@@ -11479,7 +11492,8 @@ class Game:
                        ("sb_" + vid, golden(px))]
         for vid, t in self.st.get("fruitful", {}).items():
             frames.append(("tvf_" + vid, tree_art(
-                VILLAGERS[vid]["look"], self.season(), t["kind"])))
+                VILLAGERS[vid]["look"], 1 if t.get("gh") else self.season(),
+                t["kind"])))
         for i, k in enumerate(self.st.get("kids", ())):
             px = art_pixels(*person_art(k["look"]))
             frames += [("kid_%d" % i, px),
@@ -11972,6 +11986,7 @@ class Game:
             "seed": seed, "day": 0, "minute": WAKE, "weather": "sun",
             "tomorrow": "sun", "soil": {}, "sprinklers": [], "machines": {}, "bikinis": {}, "wear": {}, "uniform": {},
             "orchard": {}, "fruitful": {}, "loo_state": {}, "bowls": {},
+            "gh_trees": {}, "vtrees": {},
             "hay": 0, "trough": {}, "grazing": {}, "large_eggs": [],
             "tastes": {},
             "droppings": {},
@@ -12071,6 +12086,8 @@ class Game:
         st.setdefault("uniform", {})
         st.setdefault("orchard", {})
         st.setdefault("fruitful", {})
+        st.setdefault("gh_trees", {})
+        st.setdefault("vtrees", {})
         st.setdefault("loo_state", {})
         st.setdefault("bowls", {})
         for k, v in (("hay", 0), ("trough", {}), ("grazing", {}),
@@ -12347,6 +12364,9 @@ class Game:
                 return False
         elif a.key == "coop" and self.chicken_at(x, y) is not None:
             return False
+        elif a.key == "greenhouse" and "%d,%d" % (x, y) in self.st.get(
+                "gh_trees", ()):
+            return False
         return True
 
     def face(self, dx, dy):
@@ -12436,6 +12456,10 @@ class Game:
         if self.decor_at(x, y):
             self.walking = None
             self.decor_bump(x, y)
+            return True
+        if a.key == "greenhouse" and "%d,%d" % (x, y) in self.st["gh_trees"]:
+            self.walking = None
+            self.fruit_tree_bump("%d,%d" % (x, y), self.st["gh_trees"])
             return True
         m = self.mmaid_at(x, y)
         if m:
@@ -13248,6 +13272,14 @@ class Game:
             return
         ready = self.st["day"] - e["day"] >= (
             SHEAR_DAYS if spell == "sheepify" else 1)
+        if spell == "treeify":
+            rows = [(CHANGED[spell][2], lambda: self.tend_changed(e, name))
+                    ] if ready else []
+            self.open_menu(cap(name), rows + [
+                ("Dig it up (%d energy)" % TREE_HEFT,
+                 lambda: self.lift_mine_tree(x, y)),
+                squeeze, ("Leave it", lambda: None)])
+            return
         if spell == "petrify":
             rows = [("Chip off a little gold", lambda: self.tend_changed(
                 e, name))] if ready else []
@@ -13588,6 +13620,9 @@ class Game:
 
     def place_statue(self, x, y, item):
         what, who, furn = STATUE_OF[item]
+        if furn == "tree":
+            self.plant_tree(x, y, item)
+            return
         if not self.statue_spot(x, y):
             self.say("Set %s down on open ground on your farm, or on the "
                      "floor of your cabin." % ("furniture" if furn else
@@ -13622,12 +13657,17 @@ class Game:
 
     def decor_item(self, d):
         """What a decoration is called, in your bag."""
+        if d.get("tree"):
+            return MONSTERS[d["kind"]].name + " tree"
         if d.get("furn"):
             return "%s %s" % (MONSTERS[d["kind"]].name, d["furn"])
         return "golden " + MONSTERS[d["kind"]].name
 
     def decor_bump(self, x, y):
         d = self.decor_at(x, y)
+        if d.get("tree"):
+            self.mtree_menu(x, y, d)
+            return
         if d.get("furn"):
             self.furn_menu("The " + self.decor_item(d), d["furn"],
                            "the " + self.decor_item(d), d, None,
@@ -13654,13 +13694,180 @@ class Game:
 
     def lift_decor(self, x, y):
         d = self.decor_at(x, y)
-        if not self.heave(FURN_HEFT if d.get("furn") else STATUE_HEFT):
+        if not self.heave(TREE_HEFT if d.get("tree") else FURN_HEFT
+                          if d.get("furn") else STATUE_HEFT):
             return
         self.decor().pop("%s:%d,%d" % (self.area.key, x, y))
         n = self.decor_item(d)
         self.give(n)
-        self.say("You heave the %s onto your back." % n, "good")
+        self.say("You dig the %s up, roots and all, and heave it onto your "
+                 "back." % n if d.get("tree") else
+                 "You heave the %s onto your back." % n, "good")
         self.end_turn(TOOL_COST)
+
+    # ── Trees you dig up and plant elsewhere ──
+    #
+    # Anyone the wand has made a tree, villager or monster, can be dug up,
+    # carried in your bag ("tree that is Rose", "slime tree") and planted
+    # on open ground on your farm or in an empty bed in your greenhouse.
+    # A monster tree there is a decoration ("decor", with "tree") that
+    # gives wood once a day; a villager is moved, and a fruit tree in the
+    # greenhouse ("gh" in its "fruitful") bears all year round.
+    # Fertilizer feeds a tree for TREE_FEED_DAYS ("fed": the day it was
+    # fed; a villager's is in "vtrees").
+
+    def vtree(self, vid):
+        """How a villager who's a tree is being looked after."""
+        return self.st.setdefault("vtrees", {}).setdefault(vid, {})
+
+    def tree_fed(self, care):
+        fed = care.get("fed")
+        return fed is not None and self.st["day"] - fed < TREE_FEED_DAYS
+
+    def tree_spot(self, x, y):
+        """Can a tree be planted here: open ground on your farm, or an
+        empty bed in your greenhouse?"""
+        a = self.area
+        if a.key == "valley":
+            return self.statue_spot(x, y)
+        if a.key != "greenhouse" or not a.inside(x, y) or \
+                a.grid[y][x] != "gbed":
+            return False
+        k = "%d,%d" % (x, y)
+        s = self.st.get("gh", {}).get(k)
+        return not (s and s[1]) and k not in self.st["gh_trees"] and \
+            (x, y) != self.pos() and not self.npc_at(x, y) and \
+            not self.decor_at(x, y)
+
+    def plant_tree(self, x, y, item):
+        what, who, _ = STATUE_OF[item]
+        if not self.tree_spot(x, y):
+            self.say("Plant a tree in open ground on your farm, or in an "
+                     "empty bed in your greenhouse.", "info")
+            self.render()
+            return
+        gh = self.area.key == "greenhouse"
+        self.take(item)
+        self.sound.play("pick")
+        self.flash(x, y, "sparkle")
+        self.say("You dig a good deep hole, lower the %s in and firm the "
+                 "earth round its roots.%s" % (
+                     item, " It's warm in here, and out of the weather: "
+                     "it'll be in leaf all year." if gh else ""), "good")
+        if what == "mon":
+            self.decor()["%s:%d,%d" % (self.area.key, x, y)] = {
+                "kind": who, "day": -1, "tree": True}
+            self.end_turn(TOOL_COST)
+            return
+        n = self.npcs[who]
+        n.where, n.x, n.y = self.area.key, x, y
+        n.goal, n.path, n.stuck = None, [], 0
+        t = self.st["fruitful"].get(who)
+        if t:
+            t["gh"] = gh
+            if gh:
+                self.say("In the greenhouse, %s will bear %s all year "
+                         "round." % (VILLAGERS[who]["short"],
+                                     plural(t["kind"], 2)), "good")
+            elif not self.fruit_season(t):
+                t["fruit"] = 0
+            self.paint_specials(scale=True)
+        glad = self.likes_change(who, "treeify")
+        self.tree_speaks(who, random.choice(
+            TREE_PLANTED["greenhouse" if gh else "farm"][0 if glad else 1]))
+        self.end_turn(TOOL_COST)
+
+    def lift_tree(self, n):
+        """Dig up a villager who's a tree, to plant somewhere else."""
+        vid = n.vid
+        if not self.heave(TREE_HEFT):
+            return
+        n.where, n.goal, n.path = "carried", None, []
+        item = "tree that is " + VILLAGERS[vid]["short"]
+        self.give(item)
+        self.say("You dig all round %s's roots and lift the tree out of the "
+                 "ground, earth and all. (Hold it and plant it on your farm, "
+                 "or in your greenhouse.)" % VILLAGERS[vid]["short"], "good")
+        self.tree_speaks(vid, random.choice(TREE_DUG[
+            0 if self.likes_change(vid, "treeify") else 1]))
+        self.end_turn(TOOL_COST)
+
+    def lift_mine_tree(self, x, y):
+        e = self.changed_at(x, y)
+        if not e or not self.heave(TREE_HEFT):
+            return
+        del self.floor_state(self.mine["floor"])["changed"]["%d,%d" % (x, y)]
+        n = MONSTERS[e["kind"]].name + " tree"
+        self.give(n)
+        self.say("You dig the %s up out of the cave floor, roots and all, "
+                 "and heave it onto your back. (Hold it and plant it on your "
+                 "farm, or in your greenhouse.)" % n, "good")
+        self.end_turn(TOOL_COST)
+
+    def tree_speaks(self, vid, line):
+        """Something a villager says while they're a tree."""
+        _, text = parse_line(fill_in(line, self))
+        self.say("%s (a tree): %s" % (VILLAGERS[vid]["short"], text), "talk")
+
+    def tree_remark(self, vid):
+        """What a villager-tree says when you come up to it: their own
+        thoughts on it, or a creak anyone might make."""
+        glad = self.likes_change(vid, "treeify")
+        if random.random() < 0.5:
+            return TREE_TALK[vid][0 if glad else 1]
+        return random.choice(TREE_SAYS[0 if glad else 1])
+
+    def mtree_menu(self, x, y, d):
+        """A monster tree planted at home: wood once a day, or dig it up."""
+        name = "the " + self.decor_item(d)
+        rows = []
+        if d["day"] != self.st["day"]:
+            rows.append(("Gather fallen wood",
+                         lambda: self.mtree_wood(d, name)))
+        self.open_menu(cap(name), rows + [
+            ("Dig it up (%d energy)" % TREE_HEFT,
+             lambda: self.lift_decor(x, y)),
+            ("Leave it", lambda: None)])
+
+    def mtree_wood(self, d, name):
+        d["day"] = self.st["day"]
+        n = 3 + self.lv("axe")
+        fed = self.tree_fed(d)
+        if fed:
+            n *= 2
+        self.give("wood", n)
+        self.sound.play("pick")
+        self.say("You gather up the branches %s has dropped%s. (+%d wood)" % (
+            name, ", thick and heavy from the fertilizer" if fed else "", n),
+            "good")
+        self.end_turn(TOOL_COST)
+
+    def feed_tree(self, care, name):
+        """Fertilizer round a tree's roots. False if it's still fed."""
+        if self.tree_fed(care):
+            self.say("The earth round %s is still rich from the last lot. "
+                     "Give it a week." % name, "info")
+            self.render()
+            return False
+        care["fed"] = self.st["day"]
+        self.take("fertilizer")
+        self.sound.play("pick")
+        self.say("You work fertilizer in round the roots of %s. A week of "
+                 "good growing." % name, "good")
+        return True
+
+    def feed_villager_tree(self, n):
+        vid = n.vid
+        name = VILLAGERS[vid]["short"]
+        if not self.feed_tree(self.vtree(vid), name):
+            return
+        glad = self.likes_change(vid, "treeify") and \
+            gift_taste(vid, "fertilizer") not in ("hate", "dislike")
+        self.tree_speaks(vid, random.choice(TREE_FED[0 if glad else 1]))
+        self.befriend(vid, 20 if glad else -20, quiet=True)
+        if not glad:
+            self.say("(%s is disgusted with you.)" % name, "bad")
+        self.end_turn(1)
 
     # ── Maids who were monsters ──
     #
@@ -14260,12 +14467,37 @@ class Game:
                          "info")
                 self.render()
             return
+        n = self.npc_at(x, y)
+        if n:
+            self.start_talk(n)
+            return
+        d = self.decor_at(x, y)
+        if d:
+            if d.get("tree") and h == "fertilizer":
+                if self.feed_tree(d, "the " + self.decor_item(d)):
+                    self.end_turn(1)
+                return
+            self.decor_bump(x, y)
+            return
+        ft = st["gh_trees"].get(k)
+        if ft:
+            if h == "fertilizer":
+                if self.feed_tree(ft, "your %s tree" % ft["kind"]):
+                    self.end_turn(1)
+            elif h == "axe":
+                self.fell_fruit_tree_menu(k, st["gh_trees"])
+            else:
+                self.fruit_tree_bump(k, st["gh_trees"])
+            return
         if t != "gbed":
             self.say("Not in here.", "info")
             self.render()
             return
         beds = st.setdefault("gh", {})
         s = beds.setdefault(k, [0, None, 0, 0])
+        if h and h.endswith(" sapling") and not s[1]:
+            self.plant_sapling(k, h[:-8], st["gh_trees"])
+            return
         if s[1] and self.ripe(s):
             self.harvest(x, y, beds, "gh:")
             return
@@ -14312,8 +14544,9 @@ class Game:
                      "overnight." % s[1], "good")
             self.end_turn(1)
             return
-        self.say("A bed of good dark soil. Plant seeds here: anything grows "
-                 "in the greenhouse, whatever the season." if not s[1] else
+        self.say("A bed of good dark soil. Plant seeds here, or a fruit tree: "
+                 "anything grows in the greenhouse, whatever the season, and "
+                 "a fruit tree bears all year round." if not s[1] else
                  "The %s is coming along nicely." % s[1], "info")
         self.render()
 
@@ -15170,12 +15403,28 @@ class Game:
             return self.wand_target(x - self.pos()[0],
                                     y - self.pos()[1]) is not None
         if h in STATUE_OF:
-            return self.statue_spot(x, y)
+            return self.tree_spot(x, y) if STATUE_OF[h][2] == "tree" else \
+                self.statue_spot(x, y)
         if a.key == "greenhouse" and a.inside(x, y):
             t = a.grid[y][x]
-            s = self.st.get("gh", {}).get("%d,%d" % (x, y))
+            k = "%d,%d" % (x, y)
+            s = self.st.get("gh", {}).get(k)
             if t == "butt":
                 return h == "watering can"
+            n = self.npc_at(x, y)
+            if n and self.tree(n.vid):
+                return h in ("axe", "watering can", "fertilizer")
+            d = self.decor_at(x, y)
+            if d and d.get("tree"):
+                return h == "fertilizer" and not self.tree_fed(d)
+            ft = self.st["gh_trees"].get(k)
+            if ft:
+                return bool(self.fruit_left(ft) or h == "axe" or (
+                    h == "fertilizer" and not self.tree_fed(ft)))
+            if n or d:
+                return False
+            if h and h.endswith(" sapling"):
+                return t == "gbed" and not (s and s[1])
             return t == "gbed" and bool(
                 (s and self.ripe(s)) or (h and h.endswith(" seeds") and not
                                           (s and s[1])) or
@@ -15188,7 +15437,11 @@ class Game:
             i = self.cow_at(x, y)
             return i is not None and self.shear_ready(self.st["cows"][i])
         n = self.npc_at(x, y)
-        if n and self.tree(n.vid) and h in ("axe", "watering can"):
+        if n and self.tree(n.vid) and h in ("axe", "watering can",
+                                            "fertilizer"):
+            return True
+        d = self.decor_at(x, y) if h == "fertilizer" else None
+        if d and d.get("tree"):
             return True
         if h == "watering can" and self.bowl_shown(a.key) and \
                 (x, y) == self.bowl_at(a.key) and not self.bowl_full(a.key):
@@ -15220,6 +15473,8 @@ class Game:
             return on_farm(x, y) and t in TILLABLE and not th
         if h and h.endswith(" seeds"):
             return t == "soil" and not th
+        if h == "fertilizer" and th and th[0] == "fruittree":
+            return not self.tree_fed(th[1])
         if h == "fertilizer":
             return bool(th and th[0] == "crop" and not th[1][3] and
                         not self.ripe(th[1]) and self.st["fertilized"].get(
@@ -15503,7 +15758,8 @@ class Game:
                 if "tvf_" + vid not in self.base:
                     self.paint_specials(scale=True)
                 return "tvf_" + vid
-            return "tv_" + vid
+            return ("tvg_" if self.npcs[vid].where == "greenhouse" else
+                    "tv_") + vid
         if self.chicken(vid):
             return ("shen_" if gold else "hen_") + self.hen_colour(vid)
         if self.is_cow(vid):
@@ -15756,6 +16012,7 @@ class Game:
             return
         st["trees"].remove(vid)
         st["fruitful"].pop(vid, None)
+        st["vtrees"].pop(vid, None)
         n.goal, n.path, n.stuck = None, [], 0
         self.say("The bark splits and falls away like old leaves, and %s "
                  "stumbles out, shaking twigs from %s hair." % (
@@ -16486,36 +16743,40 @@ class Game:
         return abs(n.x - x) <= 9 and abs(n.y - y) <= 7
 
     def tree_bump(self, n):
-        """Walking into a villager-tree: a rustle, glad or cross; walk into
-        it again straight away to push through the branches.  A fruit tree
-        in fruit, you pick first."""
+        """Walking into a villager-tree: a rustle, glad or cross, and a
+        word or two; then dig them up, push through the branches, or leave
+        them be.  A fruit tree in fruit, you pick first."""
         vid = n.vid
-        here = (vid, self.area.key, n.x, n.y, self.pos())
+        name = VILLAGERS[vid]["short"]
         t = self.st["fruitful"].get(vid)
         if t and t.get("fruit"):
             self.pick_villager_fruit(n, t)
-            self.last_statue = None
             return
-        if getattr(self, "last_statue", None) == here and \
-                self.squeeze_past(n):
-            self.last_statue = None
-            self.say("You push through %s's branches and out the other "
-                     "side, picking a leaf out of your collar." %
-                     VILLAGERS[vid]["short"], "info")
-        else:
-            self.last_statue = here
-            self.say(random.choice(
-                TREE_HAPPY if self.likes_change(vid, "treeify") else
-                TREE_CROSS).replace("{who}", VILLAGERS[vid]["short"]) +
-                " (Walk into it again to push past.)", "info")
-        self.end_turn(1)
+        glad = self.likes_change(vid, "treeify")
+        self.say(random.choice(TREE_HAPPY if glad else TREE_CROSS).replace(
+            "{who}", name), "info")
+        self.tree_speaks(vid, self.tree_remark(vid))
+
+        def push():
+            if self.squeeze_past(n):
+                self.say("You push through %s's branches and out the other "
+                         "side, picking a leaf out of your collar." % name,
+                         "info")
+            self.end_turn(1)
+        self.open_menu("The tree that is %s" % name, [
+            ("Dig it up (%d energy)" % TREE_HEFT, lambda: self.lift_tree(n)),
+            ("Push past", push), ("Leave it", lambda: None)])
 
     def tend_tree(self, n, tool):
-        """A watering can or an axe, used on somebody who's a tree."""
+        """A watering can, fertilizer or an axe, used on somebody who's a
+        tree."""
         vid = n.vid
         name = VILLAGERS[vid]["short"]
         if tool == "axe":
             self.chop_villager(n)
+            return
+        if tool == "fertilizer":
+            self.feed_villager_tree(n)
             return
         f = self.friend(vid)
         if f.get("watered") == self.st["day"]:
@@ -16631,6 +16892,7 @@ class Game:
         self.chops = {}
         self.st["trees"].remove(vid)
         self.st["fruitful"].pop(vid, None)
+        self.st["vtrees"].pop(vid, None)
         n.goal, n.path, n.stuck = None, [], 0
         self.give("wood", CHOPPABLE["tree"])
         self.flash(n.x, n.y, "puff")
@@ -16898,7 +17160,8 @@ class Game:
                         item, n = self.pick_crop(pre + k, s)
                         self.take(item, n)
                         got[item] = got.get(item, 0) + n
-            for t in st["orchard"].values():
+            for t in list(st["orchard"].values()) + list(
+                    st["gh_trees"].values()):
                 if t.get("fruit"):
                     got[t["kind"]] = got.get(t["kind"], 0) + t["fruit"]
                     st["stats"]["harvested"] += t["fruit"]
@@ -18849,7 +19112,8 @@ class Game:
     # ── Fruit trees ──
 
     def fruit_season(self, t):
-        return self.season() == FRUIT_TREES[t["kind"]][0]
+        """In the greenhouse ("gh"), it's always the season."""
+        return t.get("gh") or self.season() == FRUIT_TREES[t["kind"]][0]
 
     def tree_stage(self, t):
         age = self.st["day"] - t.get("planted", -999)
@@ -18862,25 +19126,33 @@ class Game:
         stage = self.tree_stage(t)
         if stage == "m" and self.fruit_left(t):
             stage = "f"
-        return "ft_%s_%s" % (t["kind"], stage)
+        return "ft%s_%s_%s" % ("g" if t.get("gh") else "", t["kind"], stage)
 
-    def plant_sapling(self, k, kind):
+    def plant_sapling(self, k, kind, beds=None):
+        """A sapling in the orchard, or in a greenhouse bed (beds)."""
         st = self.st
-        st["soil"].pop(k, None)
-        st["orchard"][k] = {"kind": kind, "planted": st["day"], "fruit": 0}
+        gh = beds is not None
+        if not gh:
+            beds = st["orchard"]
+            st["soil"].pop(k, None)
+        beds[k] = {"kind": kind, "planted": st["day"], "fruit": 0}
+        if gh:
+            beds[k]["gh"] = True
+            st["gh"].pop(k, None)
         self.take(kind + " sapling")
         self.sound.play("pick")
         self.say("You plant the %s sapling and firm the earth round it. "
-                 "In %d days it'll be grown, and every %s after that it'll "
+                 "In %d days it'll be grown, and %s after that it'll "
                  "bear %s." % (kind, FRUIT_TREE_DAYS,
+                               "every day" if gh else "every " +
                                SEASONS[FRUIT_TREES[kind][0]].lower(),
                                plural(kind, 2)), "good")
         self.end_turn(TOOL_COST)
 
-    def fruit_tree_bump(self, k):
+    def fruit_tree_bump(self, k, beds=None):
         """Walking into a fruit tree you planted: pick it, or see how it's
         coming along."""
-        t = self.st["orchard"].get(k)
+        t = (self.st["orchard"] if beds is None else beds).get(k)
         if not t:
             return
         self.walking = None
@@ -18897,13 +19169,16 @@ class Game:
             return
         stage = self.tree_stage(t)
         bears = SEASONS[FRUIT_TREES[kind][0]].lower()
+        fed = " The fertilizer's doing it good." if self.tree_fed(t) else ""
         if stage != "m":
             left = FRUIT_TREE_DAYS - (self.st["day"] - t["planted"])
             self.say("Your %s %s is coming along. Grown in %d day%s, then "
-                     "%s every %s." % (kind, "sapling" if stage == "s"
-                                      else "tree", left,
-                                      "" if left == 1 else "s",
-                                      plural(kind, 2), bears), "info")
+                     "%s %s.%s" % (kind, "sapling" if stage == "s"
+                                   else "tree", left,
+                                   "" if left == 1 else "s",
+                                   plural(kind, 2), "every day" if
+                                   t.get("gh") else "every " + bears, fed),
+                     "info")
         elif self.fruit_season(t):
             self.say("No %s left on this tree today. More tomorrow." %
                      plural(kind, 2), "info")
@@ -18919,17 +19194,18 @@ class Game:
                 kind, cap(plural(kind, 2)), bears), "info")
         self.render()
 
-    def fell_fruit_tree_menu(self, k):
-        t = self.st["orchard"].get(k)
+    def fell_fruit_tree_menu(self, k, beds=None):
+        beds = self.st["orchard"] if beds is None else beds
+        t = beds.get(k)
         if not t:
             return
         self.open_menu("Chop down your %s %s?" % (
             t["kind"], "sapling" if self.tree_stage(t) == "s" else "tree"),
-            [("Yes, chop it down", lambda: self.fell_fruit_tree(k)),
+            [("Yes, chop it down", lambda: self.fell_fruit_tree(k, beds)),
              ("No, leave it", lambda: None)])
 
-    def fell_fruit_tree(self, k):
-        t = self.st["orchard"].pop(k, None)
+    def fell_fruit_tree(self, k, beds=None):
+        t = (self.st["orchard"] if beds is None else beds).pop(k, None)
         if not t or not self.spend("axe"):
             return
         wood = {"s": 1, "y": 4, "m": 8}[self.tree_stage(t)]
@@ -19153,10 +19429,12 @@ class Game:
         if h in STATUE_OF:
             self.place_statue(x, y, h)
             return
-        if self.area.key == "greenhouse":
+        a = self.area
+        n = self.npc_at(x, y)
+        if a.key == "greenhouse" and not (n and self.tree(n.vid) and h in (
+                "watering can", "axe", "fertilizer")):
             self.gh_tool(x, y, h)
             return
-        a = self.area
         k = "%d,%d" % (x, y)
         if h == "milk pail" and a.key == "barn":
             i = self.cow_at(x, y)
@@ -19185,8 +19463,14 @@ class Game:
         if n and h == "leash":
             self.leash(n)
             return
-        if n and self.tree(n.vid) and h in ("watering can", "axe"):
+        if n and self.tree(n.vid) and h in ("watering can", "axe",
+                                            "fertilizer"):
             self.tend_tree(n, h)
+            return
+        d = self.decor_at(x, y) if h == "fertilizer" else None
+        if d and d.get("tree"):
+            if self.feed_tree(d, "the " + self.decor_item(d)):
+                self.end_turn(1)
             return
         if h == "watering can" and not n and self.bowl_shown(a.key) and \
                 (x, y) == self.bowl_at(a.key):
@@ -19334,10 +19618,15 @@ class Game:
                      "four squares around it every morning.", "good")
             self.end_turn(TOOL_COST)
             return
+        if h == "fertilizer" and th and th[0] == "fruittree":
+            if self.feed_tree(th[1], "your %s tree" % th[1]["kind"]):
+                self.end_turn(1)
+            return
         if h == "fertilizer":
             if not (th and th[0] == "crop") or th[1][3] or \
                     self.ripe(th[1]):
-                self.say("Fertilizer goes on a growing crop.", "info")
+                self.say("Fertilizer goes on a growing crop, or round a "
+                         "tree.", "info")
                 return
             if st["fertilized"].get(k) == st["day"]:
                 self.say("You've already fed that one today.", "info")
@@ -19837,10 +20126,17 @@ class Game:
                     k not in st["droppings"] and \
                     (x, y) != self.pos() and season != 3:
                 st["debris"][k] = "weed"
-        for t in list(st["orchard"].values()) + list(
-                st["fruitful"].values()):
+        for t, care in [(t, t) for t in list(st["orchard"].values()) +
+                        list(st["gh_trees"].values())] + [
+                            (t, self.vtree(vid))
+                            for vid, t in st["fruitful"].items()]:
+            fed = self.tree_fed(care)
+            if fed and self.tree_stage(t) != "m":
+                t["planted"] -= 1               # two days' growth in one
             if self.fruit_season(t) and self.tree_stage(t) == "m":
-                t["fruit"] = min(3, t.get("fruit", 0) + 1)
+                have, most = t.get("fruit", 0), TREE_FED_FRUIT if fed else 3
+                if have < most:         # (and what grew while fed stays)
+                    t["fruit"] = min(most, have + (2 if fed else 1))
             else:
                 t["fruit"] = 0
         if season == 2:
@@ -22211,13 +22507,19 @@ class Game:
                             base = "gbed_w"
                         if s and s[1]:
                             mid = self.stage(s)
+                        ft = st["gh_trees"].get(k)
+                        if ft:
+                            mid = self.fruit_tree_tile(ft)
                     if a.key in PENS and t == "trough" and \
                             st["trough"].get(a.key):
                         mid = "haypile"
                     if a.outdoor and not mid and k in st["droppings"]:
                         mid = "drop_" + st["droppings"][k]
                     d = decor.get("%s:%d,%d" % (a.key, x, y))
-                    if d:
+                    if d and d.get("tree"):
+                        mid = ("mtreeg_" if a.key == "greenhouse" else
+                               "mtree_") + d["kind"]
+                    elif d:
                         mid = self.furn_tile(
                             "m" + d["kind"], d["furn"],
                             self.mon_look(d["kind"])) if d.get("furn") \
@@ -24947,6 +25249,154 @@ SWAP_LINES = {   # liked it, hated it, glad to be back, sorry to be back
                  "(happy)Ah. A familiar face. Thank you.",
                  "(sad)Oh. I'd only just got used to the mirror."),
 }
+TREE_TALK = {   # a word from somebody who's a tree: glad of it, or not
+    "marisol": ("(happy)Mmm, the sun on my leaves is like a warm oven. I "
+                "could rise all day!",
+                "(cross)Do you know how long it takes bread to prove? "
+                "Neither do I, now. I've no hands to knead with!"),
+    "silas": ("(happy)Shh. The light's coming through my leaves in "
+              "ribbons. I'm the painting now.",
+              "(cross)I can see the most beautiful sunset and I can't paint "
+              "it. This is torture, {name}."),
+    "dmitri": ("(happy)Up here the night sky is mine and nobody draws the "
+               "curtains. Splendid.",
+               "(cross)Leaves. In front of my eyes. All night. I'm missing "
+               "a comet."),
+    "jonah": ("(happy)Good spot for a lamb to nap under. I'd like that.",
+              "(cross)Who's minding the flock? Not me. I'm a TREE."),
+    "clara": ("(happy)No letters, no parcels, no Edmund wanting a stamp. "
+              "Just birdsong.",
+              "(cross)The post is piling up. I can FEEL it piling up."),
+    "benji": ("(laugh)I'm a tree! Do I have a squirrel yet? I want a "
+              "squirrel!",
+              "(sad)I can't play tag. Trees are rubbish at tag."),
+    "gus": ("(laugh)Ha! Steady as a mainmast, me. Not a creak in a gale!",
+            "(cross)Rooted to the spot like a barnacle! A sailor needs to "
+            "MOVE, you lubber!"),
+    "agnes": ("(happy)My blossom's coming on beautifully. The roses will "
+              "be so jealous.",
+              "(cross)There is an APHID on me. Remove it at once."),
+    "bea": ("(laugh)There's a family of wrens in my branches! I'm a "
+            "nesting box!",
+            "(cross)Something's chewing my roots. I can't even look to see "
+            "what!"),
+    "nell": ("(happy)Water up, sugar down, all day. Like clockwork. I "
+             "rather admire it.",
+             "(cross)No hands. Do you know how many screws are waiting for "
+             "me at the workshop?"),
+    "amy": ("(happy)The bees are visiting me. Me! Nobody wants to talk. "
+            "Perfect.",
+            "(cross)I can't hold a pencil. The crossword won't set itself, "
+            "{name}."),
+    "rusty": ("(laugh)Look at this CANOPY! Fabulous volume! Not a leaf out "
+              "of place!",
+              "(cross)My hair is TWIGS. Twigs, {name}! Have you any idea "
+              "what this does to my image?"),
+    "rowan": ("(blush)...It's quiet, being a tree. Nobody asks me "
+              "anything. I like it.",
+              "(cross)Otto's going to laugh at me. He's going to laugh SO "
+              "hard."),
+    "felix": ("(happy)Fresh air, sunlight, plenty of water. Exactly what I "
+              "prescribe. I feel marvellous.",
+              "(cross)I think I've got leaf curl. Don't come too close, "
+              "it might be catching."),
+    "theo": ("(laugh)Dude. I'm SO chill. Like, maximum chill. Tree chill.",
+             "(cross)Can't fish. Can't even reach the water. This is "
+             "the worst, dude."),
+    "juniper": ("(blush)I feel like the oak in the old ballad. Rooted and "
+                "patient and full of stories.",
+                "(sad)Somebody will make me into paper one day, {name}. I "
+                "know they will."),
+    "wren": ("(laugh)Listen! When the wind blows I hum! I'm a WIND "
+             "instrument!",
+             "(cross)I tried to sing and only a woodpecker answered! A "
+             "WOODPECKER!"),
+    "ivy": ("(laugh)Lovely straight grain on me. I'd make a fine roof "
+            "beam. Not that I'm offering.",
+            "(cross)I can't build anything like this. I can't even hold a "
+            "hammer. Put me back."),
+    "edmund": ("(happy)A pillar of the community! Literally! I shall "
+               "commission a plaque.",
+               "(cross)This is NOT how a mayor conducts council business! "
+               "I demand to be un-treed!"),
+    "rose": ("(laugh)Oh, I feel young as a sapling. Lily would have "
+             "laughed and laughed.",
+             "(sad)My old roots ache, sweetheart. Trees weren't made for "
+             "grannies."),
+    "mabel": ("(happy)No customers, no stocktaking. I might take root for "
+              "good.",
+              "(cross)Who's minding the shop? Nobody's minding the shop! "
+              "I'm losing money by the MINUTE!"),
+    "otto": ("(laugh)HA! The mightiest oak in the valley! Look on my "
+             "branches and despair!",
+             "(cross)My beard's gone to MOSS. I'll forge you into a "
+             "hinge for this!"),
+    "pip": ("(laugh)I'm the MAINMAST! Arr! Somebody hoist the Jolly "
+            "Roger up me!",
+            "(cross)I can't run! I can't swing a cutlass! This is mutiny!"),
+    "bernard": ("(happy)Oh my, I think I'm growing walnuts. Walnut cake "
+                "for everyone!",
+                "(sad)Oh dear. Who's going to cook supper at the inn? Oh "
+                "dear, oh dear."),
+    "colm": ("(laugh)Best seat in the valley for gossip! Everyone talks "
+             "under a tree!",
+             "(cross)There's news happening and I can't print a word of "
+             "it! Not one!"),
+    "tomoko": ("(happy)Still. Patient. Like clay waiting for the wheel. "
+               "Very good.",
+               "(cross)My hands are branches. I cannot throw a pot with "
+               "branches."),
+    "john": ("(laugh)Solid! Not as solid as granite, mind, but solid!",
+             "(cross)Wood's for scaffolding, not for stonemasons! Turn me "
+             "back!"),
+    "pippa": ("(laugh)Dragons LOVE trees! A dragon might come and sleep "
+              "in me!",
+              "(sad)What if a dragon comes and I can't wave at it?"),
+    "jonathan": ("(happy)I'll have to mark myself on the map. A new tree, "
+                 "right here. How exciting.",
+                 "(cross)The map's wrong now. There's a tree here that "
+                 "shouldn't be. It's ME."),
+}
+TREE_SAYS = (   # a word from any tree, glad or cross
+    ["(happy)Hello again! Mind my roots.",
+     "(happy)A bird's built a nest in me. I'm ever so proud.",
+     "(laugh)Ooh, the breeze tickles.",
+     "(happy)Isn't it a lovely day for photosynthesis?"],
+    ["(cross)Oh, it's you. Come to gawp at the tree, have you?",
+     "(cross)If a dog comes near me I'm holding you responsible.",
+     "(cross)Bark. That's what I've got instead of skin. BARK.",
+     "(cross)Turn me back. Now. Please. NOW."])
+TREE_DUG = (    # being dug up, to be planted somewhere else
+    ["(laugh)Whee! I'm going on an outing!",
+     "(surprised)Ooh, careful with my roots! Where are we off to?",
+     "(happy)Somewhere new? How exciting!"],
+    ["(cross)Put me DOWN! My roots are dangling in the air!",
+     "(cross)First you make me a tree, and now you're carting me about "
+     "like a sack of turnips?",
+     "(cross)I had only just got comfortable!"])
+TREE_PLANTED = {   # planted again: glad of it, or cross
+    "farm": (["(happy)What a view of the fields! I'll watch the crops come "
+              "up.",
+              "(happy)Lovely soil here. Rich and crumbly."],
+             ["(cross)A farm. I'm a farm tree now. Wonderful.",
+              "(cross)If a cow scratches itself on me I'm leaving. "
+              "Somehow."]),
+    "greenhouse": (["(happy)Oh, it's lovely and warm in here! I could stay "
+                    "for ever.",
+                    "(laugh)A glass house all to myself! I feel like an "
+                    "orchid!"],
+                   ["(cross)It's like a sauna in here. I'm sweating sap.",
+                    "(cross)Under glass, like a pickled egg. Thank you so "
+                    "much."]),
+}
+TREE_FED = (    # fertilizer round their roots
+    ["(happy)Ooh! That's going right to my roots. I feel taller already!",
+     "(laugh)Mmm, a feast! Thank you!",
+     "(happy)I can feel my sap rising. Lovely."],
+    ["(cross)Is that... MANURE? On my ROOTS? You absolute beast!",
+     "(cross)Ugh! The SMELL! I can't even hold my nose!",
+     "(cross)You've just shovelled dung on my feet. I will remember "
+     "this."])
 TREE_HAPPY = ["The tree that is {who} rustles happily.",
               "{who}'s leaves shiver with delight, and a bird hops along a "
               "branch.",
@@ -27726,6 +28176,7 @@ def all_tiles(season=0):
         sprites["sx_" + vid] = golden(sprites["vx_" + vid])
         sprites["vm_" + vid] = art_pixels(*person_art(maid_look(v["look"])))
         sprites["tv_" + vid] = tree_art(v["look"], season)
+        sprites["tvg_" + vid] = tree_art(v["look"], 1)  # in the greenhouse
         sprites["lh_" + vid] = loo_art(v["look"], season)
         sprites["sm_" + vid] = golden(sprites["vm_" + vid])
     for k in MONSTERS:                   # monsters the wand has changed
@@ -27734,6 +28185,7 @@ def all_tiles(season=0):
         sprites["mmaid_" + k] = art_pixels(*person_art(monster_maid_look(k)))
         sprites["mtree_" + k] = tree_art({"hair": col, "shirt": col},
                                          season)
+        sprites["mtreeg_" + k] = tree_art({"hair": col, "shirt": col}, 1)
         sprites["mloo_" + k] = loo_art({"shirt": col}, season)
     for colour in HEN_COLOURS:
         sprites["hen_" + colour] = hen_art(colour)
@@ -27747,6 +28199,8 @@ def all_tiles(season=0):
         for stage in "symf":
             sprites["ft_%s_%s" % (kind, stage)] = fruit_tree_art(
                 kind, stage, season)
+            sprites["ftg_%s_%s" % (kind, stage)] = fruit_tree_art(
+                kind, stage, 1)                 # in the greenhouse
     for colour in CAT_COLOURS:
         sprites["cat_" + colour] = cat_art(colour)
         sprites["scat_" + colour] = golden(sprites["cat_" + colour])
@@ -27774,7 +28228,7 @@ def all_tiles(season=0):
 DAY_ONLY = ("v_", "s_", "vx_", "sx_", "vm_", "sm_", "tv_", "lh_", "shen_",
             "cow_", "scow_", "sheep", "ssheep", "cat_", "horse_", "shorse_",
             "ride_", "scat_", "dog_", "sdog_", "hen_", "mon_", "smon_",
-            "mmaid_", "mtree_", "mloo_")
+            "mmaid_", "mtree_", "mloo_", "tvg_", "mtreeg_", "ftg_")
 
 
 def shaded_tiles(season):
@@ -28159,7 +28613,7 @@ def selftest():
     for vid, v in VILLAGERS.items():
         if vid not in SWAP_LINES or vid not in UNSTATUE or \
                 vid not in CHICKEN_BACK or vid not in TREE_BACK or \
-                vid not in TREE_CHOPPED or vid not in CAT_BACK or \
+                vid not in TREE_TALK or vid not in TREE_CHOPPED or vid not in CAT_BACK or \
                 vid not in DOG_BACK or (
                     (vid not in MAID_LINES or vid not in LOO_BACK or
                      vid not in COW_BACK or vid not in SHEEP_BACK or
