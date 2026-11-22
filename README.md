@@ -770,12 +770,17 @@ gift.
   school uniform** (white blouse, sailor collar, red neckerchief and a
   pleated skirt), in which you're suddenly *senpai*, and everything's
   *kawaii* or *sugoi*: "Hai! Ohayou, senpai. The bread is oishii,
-  arigatou, senpai. Notice me~" Each new outfit comes in a colour of its own,
+  arigatou, senpai. Notice me~" Or a **cheerleading uniform** (a top
+  with a white chevron, a pleated skirt, a bow in her hair and a pom-pom
+  in each hand), in which she talks like a Valley Girl: things are
+  *totally awesome* or *grody*, your friends are her *besties*, and
+  there's an "Omigosh," a "like," or an "As if!" "Okay, so, the bread is,
+  like, totally awesome. Go team!" Each new outfit comes in a colour of its own,
   and shows on her sprite and her portrait alike. Every maid likes some
   outfits and not others (dealt each game): one she likes earns
   friendship the first time; one she doesn't costs a little each time,
   and she wears it anyway, saying what she thinks. In winter, a maid in a
-  bikini or a sundress will mention that it's awfully chilly, and greet
+  bikini, a sundress or a cheer skirt will mention that it's awfully chilly, and greet
   you with chattering teeth until you let her change; in summer, a shawl
   is sweltering. A maid you could
   have courted anyway still can: she'll take the bouquet and the pendant

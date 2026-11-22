@@ -2032,6 +2032,21 @@ def person_art(look):
         for x in range(7, 9):
             rows[8][x] = "K"
         rows[9][7] = "K"
+    if "cheer" in extras and sex == "F":
+        pal["Q"] = look.get("pompom", "#c62838")
+        pal["V"] = "#f8f6f0"
+        pal["u"] = shade(look.get("pants", "#c62838"), 0.75)
+        rows[8][6] = rows[8][9] = "V"                   # the chevron
+        rows[9][7] = rows[9][8] = "V"
+        for x in range(3, 13):                          # a pleated skirt
+            if rows[12][x] == "p" and x % 2:
+                rows[12][x] = "u"
+            if rows[13][x] == "p":
+                rows[13][x] = "k" if x in (5, 6, 9, 10) else "."
+        for (y, x) in ((8, 2), (8, 3), (9, 2), (9, 3), (10, 3),
+                       (8, 12), (8, 13), (9, 12), (9, 13), (10, 12)):
+            rows[y][x] = "Q"                            # pom-poms
+        rows[8][3] = rows[9][12] = "V"
     if "eyepatch" in extras:
         pal["P"] = "#141414"
         for x in range(16):
@@ -2531,6 +2546,22 @@ def portrait(look, expr="neutral"):
         for y in range(29, PW):
             g[y][15] = g[y][16] = shade(kc, 0.85)
         g[29][14] = g[29][17] = kc
+    if "cheer" in extras:
+        white = "#f8f6f0"
+        for y in range(24, PW):
+            for x in range(PW):
+                d = abs(x - cx)
+                if abs(d - (9 - (y - 24) * 1.3)) < 0.75 and \
+                        g[y][x] in (shirt, shade(shirt, 0.8)):
+                    g[y][x] = white                         # the chevron
+        pc = look.get("pompom", "#c62838")
+        for px in (4, 27):                                  # pom-poms
+            pdisc(g, px, 28, 4, 3.6, shade(pc, 0.8))
+            pdisc(g, px, 28, 3.3, 2.9, pc)
+            for k, (dx, dy) in enumerate(((-2, -1), (1, -2), (0, 1),
+                                          (2, 1), (-1, 2), (-3, 1))):
+                g[min(PW - 1, 28 + dy)][px + dx] = white if k % 2 else \
+                    shade(pc, 0.75)
     if "eyepatch" in extras:
         prect(g, 10, fy - 1, 14, fy + 1, "#141414")
         for x in range(4, 11):
@@ -10033,7 +10064,8 @@ other sex; chickenfy, into a hen; maidify, into a maid who
 lives in your cabin and does the CHORE you give her every
 morning (whom you may KISS twice a day, and ask what to
 WEAR: a uniform in any colour, a bikini, a shawl, a sundress,
-a yukata, a pirate costume or a sailor school uniform);
+a yukata, a pirate costume, a sailor school uniform or a
+cheerleading uniform);
 treeify, into a
 tree (sometimes a fruit tree) you can water, fertilize, dig
 up and plant on your farm or in your greenhouse (or chop,
@@ -17154,7 +17186,8 @@ class Game:
             "shawl": "shawl over her uniform", "sundress": "sundress",
             "yukata": "yukata",
             "pirate": "pirate coat, tricorn hat and eyepatch",
-            "sailor": "sailor school uniform"}[kind])
+            "sailor": "sailor school uniform",
+            "cheer": "cheerleading uniform, with pom-poms"}[kind])
         return ("an " if words[0] in "aeiou" else "a ") + words
 
     def maid_wear(self, vid):
@@ -17239,13 +17272,14 @@ class Game:
             st["wear"][vid] = [kind, random.choice(OUTFITS[kind][1])]
             likes = self.likes_change(vid, "wear_" + kind)
             lines = OUTFIT_LINES[kind][0 if likes else 1]
-            cold = kind == "sundress" and season == 3
+            cold = kind in ("sundress", "cheer") and season == 3
         self.say("%s goes behind the screen and comes back out in %s." % (
             name, self.outfit_words(vid)), "info")
         self.speak(vid, random.choice(lines))
         if cold:
             self.speak(vid, random.choice(BIKINI_WINTER).replace(
-                    "{outfit}", self.outfit(vid)))
+                    "{outfit}", CHILLY_WORD.get(self.outfit(vid),
+                                                self.outfit(vid))))
         elif kind == "shawl" and season == 1:
             self.speak(vid, random.choice(SHAWL_SUMMER))
         flag = "%sliked:%s" % (kind, vid)
@@ -20651,6 +20685,9 @@ class Game:
         elif self.maid(vid) and self.outfit(vid) == "sailor" and \
                 random.random() < 0.6:
             text = kawaiify(text, self.p["name"] if self.p else "")
+        elif self.maid(vid) and self.outfit(vid) == "cheer" and \
+                random.random() < 0.6:
+            text = valleyify(text)
         self.talk.update(expr=expr, text=text, narr=narr)
         if log:
             if narr:
@@ -20754,9 +20791,10 @@ class Game:
                 self.speak(vid, "(happy)It's my birthday today! Did you "
                                 "remember?")
             elif self.maid(vid) and self.season() == 3 and \
-                    self.outfit(vid) in ("bikini", "sundress"):
+                    self.outfit(vid) in ("bikini", "sundress", "cheer"):
                 self.speak(vid, random.choice(BIKINI_WINTER).replace(
-                    "{outfit}", self.outfit(vid)))
+                    "{outfit}", CHILLY_WORD.get(self.outfit(vid),
+                                                self.outfit(vid))))
             elif self.maid(vid) and self.season() == 1 and \
                     self.outfit(vid) == "shawl":
                 self.speak(vid, random.choice(SHAWL_SUMMER))
@@ -23630,6 +23668,61 @@ KAWAII_END = [", senpai!", ", senpai~", "~ ehehe", " Kawaii desu!",
               ", senpai. Notice me~"]
 
 
+VALLEY_WORDS = [   # phrase -> what a maid in a cheer uniform says instead
+    ("oh my goodness", "oh my gosh"), ("oh my", "omigosh"),
+    ("very", "totally"), ("really", "like, really"),
+    ("wonderful", "awesome"), ("marvellous", "awesome"),
+    ("lovely", "super cute"), ("amazing", "awesome"),
+    ("excellent", "awesome"), ("great", "awesome"),
+    ("disgusting", "grody"), ("horrid", "grody"),
+    ("terrible", "totally gross"),
+    ("boring", "lame"), ("dull", "lame"), ("friends", "besties"),
+    ("friend", "bestie"), ("I think", "I'm, like, pretty sure"),
+    ("of course", "duh, of course"), ("certainly", "totally"),
+    ("yes", "totally"), ("goodbye", "byeee"), ("excuse me", "um, hello?"),
+    ("strange", "weird"), ("I suppose", "I guess"),
+    ("absolutely", "for sure"), ("I mean", "I mean, like")]
+VALLEY_START = ["Omigosh, ", "Um, ", "So, like, ", "Okay, so, ",
+                "Like, ", "Ohmygod, "]
+VALLEY_END = [", like, totally!", " As if!", " Whatever!", " For sure!",
+              " Gag me with a spoon.", ", y'know?", " Go team!"]
+
+
+def valleyify(text):
+    """Say it like a Valley Girl in a cheer uniform: like, totally, and
+    things are awesome or grody, with an Omigosh or a Whatever."""
+    table = {k.lower(): v for k, v in VALLEY_WORDS}
+    # a "like," dropped in after a comma now and then
+    text = re.sub(r", ", lambda m: ", like, " if random.random() < 0.3
+                  else m.group(0), text)
+
+    def swap(m):
+        w = m.group(0)
+        new = table[w.lower()]
+        return new[:1].upper() + new[1:] if w[:1].isupper() else new
+    pattern = r"\b(%s)\b" % "|".join(
+        re.escape(a) for a, _ in sorted(VALLEY_WORDS, key=lambda p:
+                                        -len(p[0])))
+    text = re.sub(pattern, swap, text, flags=re.I)
+    text = re.sub(r"\b([Aa]) (?=awesome\b)", r"\1n ", text)
+    text = re.sub(r"(\w) like, ", r"\1, like, ", text)    # I, like, really
+    text = re.sub(r"\b(like, )+like, ", "like, ", text)
+    text = re.sub(r"\b(Like, )like, ", "Like, ", text)
+    if random.random() < 0.5 and not text.startswith(
+            ("Omigosh", "Oh my gosh", "Um", "Like", "Totally")):
+        keep = re.match(r"I\b", text) or text[1:2].isupper()
+        text = random.choice(VALLEY_START) + (
+            text if keep else text[:1].lower() + text[1:])
+    if random.random() < 0.5:
+        m = re.search(r"[.!?~]+$", text)
+        end = random.choice(VALLEY_END)
+        if end.startswith(","):                 # tucked in before the stop
+            text = (text[:m.start()] if m else text) + end
+        else:
+            text = text + ("" if m else ".") + end
+    return text
+
+
 def kawaiify(text, you):
     """Say it like an anime schoolgirl: you're senpai, things are kawaii
     and sugoi, and there's a Kyaa~! or a senpai at the end."""
@@ -25319,6 +25412,8 @@ OUTFITS = {   # what else a maid might WEAR: menu, and the colours it comes in
                                     "#5a2a5a")),
     "sailor": ("A sailor school uniform", ("#26305e", "#22222a",
                                            "#2a4a3a", "#5a2232")),
+    "cheer": ("A cheerleading uniform", ("#c62838", "#2c52b4", "#6c3aa2",
+                                         "#ec6aa0", "#1f8a78")),
 }
 COLOUR_NAMES = {"#b04444": "red", "#4a6aa8": "blue", "#c8a040": "mustard",
                 "#6a8a4a": "moss green", "#f0ece4": "cream",
@@ -25330,6 +25425,9 @@ COLOUR_NAMES = {"#b04444": "red", "#4a6aa8": "blue", "#c8a040": "mustard",
                 "#2e5a3a": "bottle green", "#5a2a5a": "plum",
                 "#26305e": "navy", "#22222a": "black",
                 "#2a4a3a": "dark green", "#5a2232": "maroon",
+                "#c62838": "scarlet", "#2c52b4": "royal blue",
+                "#6c3aa2": "violet", "#ec6aa0": "hot pink",
+                "#1f8a78": "jade",
                 "#f0a8b8": "blossom pink"}
 
 
@@ -25362,6 +25460,12 @@ def outfit_look(look, kind, colour):
                    collar=colour, sailorc=colour, shoes="#2a2028",
                    kerchief="#d03040" if colour != "#5a2232" else
                    "#f4c040")
+    elif kind == "cheer":
+        new["extras"] += ("cheer",) + (() if "hairbow" in new["extras"]
+                                       else ("hairbow",))
+        new.update(shirt=colour, pants=colour, trim="#f8f6f0",
+                   collar="#f8f6f0", shoes="#f8f6f0", pompom="#f2c84a",
+                   clipc=colour)
     elif kind == "pirate":
         new["extras"] += ("tricorn", "eyepatch")
         new.update(shirt=colour, pants="#2a2420", trim="#c8a040",
@@ -26612,6 +26716,14 @@ MAID_WIFE_GREET = (
      "(blush)You're home. Good. The apron's less annoying when you're "
      "here."])
 OUTFIT_LINES = {   # kind -> (she likes it, she doesn't)
+    "cheer": (["(laugh)Omigosh, pom-poms! Gimme an A! Gimme a B! Gimme a "
+               "V! Go, Apple Blossom!",
+               "(happy)Okay, this is, like, totally the cutest thing I've "
+               "ever worn. I'm gonna dust SO hard. Go team!"],
+              ["(cross)A cheer uniform. Like, seriously? I'm supposed to "
+               "scrub floors in this? As if.",
+               "(blush)Um, the skirt is, like, SO short. Whatever. I'm "
+               "fine. Totally fine."]),
     "sailor": (["(blush)Kyaa~! It's so kawaii! Do I look like a proper "
                 "student, senpai?",
                 "(laugh)Sugoi! I feel like I should be running late for "
@@ -26675,6 +26787,7 @@ BIKINI_OFF_HATE = [
     "(happy)Oh, thank goodness. Sleeves! I've missed sleeves!",
     "(blush)Much better. I felt like a scarecrow with no clothes on.",
     "(happy)Thank you. A maid should be properly dressed."]
+CHILLY_WORD = {"cheer": "cheer skirt"}
 BIKINI_WINTER = [
     "(surprised)Brr! Awfully chilly for a {outfit} this time of year.",
     "(sad)It's snowing outside. I'm in a {outfit}. Just noting it.",
