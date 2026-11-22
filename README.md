@@ -996,7 +996,16 @@ village has things to say about them, too.
 | Spring 13 | Apple Blossom Festival, in the square | ask someone with 4+ hearts to DANCE |
 | Summer 16 | Lakeside Picnic, on the beach | SHARE food with Bernard for everyone |
 | Fall 16 | Harvest Fair, in the square | ENTER your best crop with the Mayor |
+| Fall 27 | Lantern Night, in the square, 6 till 11 at night | LIGHT a lantern with a friend (2+ hearts), and ask for a STORY |
 | Winter 24 | Long Night Feast, in the square | give a GIFT to your secret friend |
+
+**Lantern Night.** The village sends paper lanterns up over the lake,
+and anyone your wand ever made into something else, and turned back,
+tells the crowd what it was like: the hen, the outhouse, the armchair,
+the golden statue. Each tells it glad or cross, as they took it, and
+ends with what they told you the day they changed back. Telling a cross
+story out loud lets a little of the grudge go. Everyone else gets the
+Mayor's tale of how the lanterns began.
 
 ## Keys
 

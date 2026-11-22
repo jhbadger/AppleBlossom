@@ -3586,15 +3586,17 @@ VILLAGERS = {
                    "I'm giving a speech. A long one.",
                    "Summer! The Lakeside Picnic on the 16th. Bring food to "
                    "share!",
-                   "(happy)Fall means the Harvest Fair on the 16th! Enter "
-                   "your best crop!",
+                   "(happy)Fall means the Harvest Fair on the 16th, and "
+                   "Lantern Night on the 27th! Enter your best crop, then "
+                   "bring a story!",
                    "Winter's Long Night Feast is on the 24th, in the "
                    "square. Lanterns and gifts!"],
         "rain": "Rain is good for crops and bad for speeches.",
         "topics": {
-            "festival": "Four a year! Apple Blossom, Spring 13th. Lakeside "
-                        "Picnic, Summer 16th. Harvest Fair, Fall 16th. Long "
-                        "Night Feast, Winter 24th. Mark your calendar!",
+            "festival": "Five a year! Apple Blossom, Spring 13th. Lakeside "
+                        "Picnic, Summer 16th. Harvest Fair, Fall 16th. "
+                        "Lantern Night, Fall 27th. Long Night Feast, Winter "
+                        "24th. Mark your calendar!",
             "history": "Founded by Josiah Applewood, your ancestor, who "
                        "planted the first apple tree right where the "
                        "fountain stands. It blossomed in the snow, they "
@@ -6645,6 +6647,9 @@ FESTIVALS = {   # (season, day): name, start, end, where, what you do
               "Give food to Bernard to SHARE with everyone."),
     (2, 16): ("Harvest Fair", 1000, 1500, "square",
               "ENTER your best crop with the Mayor."),
+    (2, 27): ("Lantern Night", 1800, 2300, "square",
+              "LIGHT a lantern with a friend, and ask anyone who was ever "
+              "something else for their STORY."),
     (3, 24): ("Long Night Feast", 1700, 2200, "square",
               "Find your secret friend and give them a GIFT."),
 }
@@ -6757,6 +6762,158 @@ FEST_SPOTS = {
               (105, 54), (108, 53), (111, 54), (114, 53), (117, 54),
               (120, 53), (23, 53), (26, 54), (29, 53), (32, 54), (35, 53)],
 }
+
+# ── Lantern Night ────────────────────────────────────────────────────────────
+#
+# On the last night but one of fall the village lights paper lanterns in the
+# square and lets them go over the lake, and anyone your wand ever made into
+# something else tells the story of it.  A story is told glad or cross (as
+# the spell's likes_change fell for them); a cross one, told out loud, lets
+# a little of the grudge go.
+
+FORM_SPELL = {"statue": "petrify", "chicken": "chickenfy", "tree": "treeify",
+              "loo": "looify", "furniture": "chairify", "maid": "maidify",
+              "swap": "genderswap", "cow": "cowify", "sheep": "sheepify",
+              "cat": "catify", "dog": "dogify", "horse": "horseify"}
+FLAG_FORM = {"chick": "chicken", "tree": "tree", "chair": "chair",
+             "loo": "loo", "maid": "maid", "swap": "swap", "cow": "cow",
+             "sheep": "sheep", "cat": "cat", "dog": "dog", "horse": "horse"}
+STORY_TALES = {   # form: (glad tellings, cross tellings)
+    "statue": (
+        ["(laugh)Gather round! I was solid gold. SOLID. Children polished "
+         "my nose for luck. I've never been so admired, and I didn't have "
+         "to say a word.",
+         "(happy)I stood in the gold for days, and do you know, I never "
+         "once worried about anything? Gold doesn't worry. I recommend it."],
+        ["(cross)I was a statue. Gold, all over. A pigeon sat on my head "
+         "for a whole afternoon and I couldn't so much as blink at it.",
+         "(sad)People walked right up and tapped me. Tapped me! To hear if "
+         "I was hollow. I am not hollow. I want that known."]),
+    "chicken": (
+        ["(laugh)I was a hen! A proper one! I laid an egg. I'm not going "
+         "to say any more about it, except that I was proud.",
+         "(happy)Do you know what a hen thinks about? Corn. Sun. Corn. More "
+         "sun. I haven't slept so well in years."],
+        ["(cross)I was a hen. A HEN. I spent a week trying to tell people "
+         "my name and all that came out was 'bok'.",
+         "(sad)Someone tried to buy me. At Mabel's prices! I was worth "
+         "more than that, I'll have you know."]),
+    "cow": (
+        ["(happy)I was a cow. It sounds silly, but the grass was lovely, "
+         "and nobody ever hurried me. Not once.",
+         "(laugh)Four stomachs! I could eat ALL DAY! Bernard, you'll never "
+         "keep up with me now."],
+        ["(cross)I was a cow, and people MILKED me. I'll say no more. I "
+         "will never say any more.",
+         "(sad)Every morning, a bell round my neck. Clank, clank, clank. I "
+         "still hear it when I'm falling asleep."]),
+    "sheep": (
+        ["(happy)I was a sheep, and I've never been so warm in my life. "
+         "Jonah says I was a very good sheep. I believe him.",
+         "(laugh)I followed the flock all day! No decisions at all! Just "
+         "baa and go where the others go!"],
+        ["(cross)I was a sheep, and they SHEARED me. In the middle of the "
+         "barn, in front of everybody.",
+         "(sad)A sheep can't read. I didn't read a word for a week. I "
+         "kept looking at the Gazette and just... chewing it."]),
+    "cat": (
+        ["(happy)I was a cat! I slept in a sunbeam for nine hours and "
+         "nobody said a word. Then someone scratched my ears. Heaven.",
+         "(laugh)I knocked a cup off a table, just to see. It was "
+         "WONDERFUL. I understand cats now."],
+        ["(cross)I was a cat. I sat on the warm windowsill and someone "
+         "moved me. MOVED me. Like a cushion.",
+         "(sad)Being a cat is very lonely, you know. Everyone thinks you "
+         "don't care. I cared."]),
+    "dog": (
+        ["(laugh)I was a dog, and everything was the BEST THING. The "
+         "stick! The other stick! The first stick again!",
+         "(happy)Everyone I met was my friend. Everyone. I wagged at the "
+         "Mayor. He patted me. We've never been closer."],
+        ["(cross)I was a dog, and nobody let me on the furniture. NOBODY.",
+         "(sad)I heard the postman every day and I could not stop barking "
+         "at him. I'm so sorry, Clara."]),
+    "horse": (
+        ["(happy)I was a horse! I galloped the whole length of the beach, "
+         "with the wind in my mane. My MANE.",
+         "(laugh)I could run faster than anyone in the valley. I still "
+         "think about it when I walk anywhere."],
+        ["(cross)I was a horse. Somebody RODE me. To the mine and back.",
+         "(sad)Hay. That's all I'll say. Hay, every day, for a fortnight."]),
+    "tree": (
+        ["(happy)I was a tree. I stood in one place and felt the whole "
+         "seasons go through me. Birds nested in my hair. It was very "
+         "slow, and very good.",
+         "(laugh)I grew FRUIT. Out of my own branches! I'm going to put "
+         "that on my headstone."],
+        ["(cross)I was a tree, and a dog... no. I won't tell that part. "
+         "There are children here.",
+         "(sad)A tree can't run, or call out, or wave. You just stand, and "
+         "the wind does what it likes with you."]),
+    "loo": (
+        ["(laugh)I was an outhouse. Laugh all you like! Everyone came to "
+         "see me, and everyone left happier than they came.",
+         "(happy)People sit in an outhouse and tell it things. I know a "
+         "great many secrets now. I'm keeping them."],
+        ["(cross)I was an outhouse. That's the story. That's the whole "
+         "story, and I'd rather you didn't ask about it.",
+         "(sad)Nobody ever comes to an outhouse for a nice chat. Except "
+         "the flies."]),
+    "furniture": (
+        ["(happy)I was {an}! People rested on me and said 'ah, "
+         "that's better'. I've never been so useful.",
+         "(laugh){An}! I stood in the corner all week and heard every "
+         "bit of gossip in the house. Oh, the things I heard."],
+        ["(cross)I was {an}. People put their CUPS on me. Their "
+         "elbows. Their feet.",
+         "(sad)Being {an} is very dull, you know. You only matter "
+         "when somebody's tired."]),
+    "maid": (
+        ["(happy)I kept house at the farm, in an apron, and I was good at "
+         "it! I still fold the towels in thirds.",
+         "(laugh)I was a maid! I dusted EVERYTHING. I dusted the cat. The "
+         "cat didn't mind."],
+        ["(cross)I scrubbed somebody else's floors in a frilly apron. I "
+         "have a job, thank you. I have my own floors.",
+         "(sad)A maid's always up before everyone and to bed after. I "
+         "didn't see a sunrise I wasn't working through."]),
+    "swap": (
+        ["(happy)I woke up as the other me. It was strange, and then it "
+         "was lovely. I learned a lot about myself.",
+         "(laugh)I was the other way round for a while! Rusty made me a "
+         "whole new wardrobe. I've kept some of it."],
+        ["(cross)One minute I was me, and the next my own mother wouldn't "
+         "have known me. Nobody asked.",
+         "(sad)My clothes didn't fit. My boots didn't fit. I didn't fit. "
+         "It's all right now, but I didn't fit."]),
+}
+LANTERN_CROWD = [   # {who}: someone else in the crowd
+    "*{who} laughs so hard the lantern bobs on its string.",
+    "*In the crowd, {who} says, 'I KNEW it! I knew that was you!'",
+    "*{who} gasps, then claps, and soon everyone round the lantern is "
+    "clapping.",
+    "*{who} wipes away a tear, and pretends it's the smoke from the "
+    "lanterns.",
+    "*Somebody near {who} whispers, 'Who did that to them?' Everyone looks "
+    "at you.",
+]
+LANTERN_LEGEND = (
+    "(happy)A story? Every Lantern Night, the old one! When Josiah "
+    "Applewood first came to the valley, the fog off the lake was so thick "
+    "he couldn't find his own door. So his neighbours lit lanterns and "
+    "sent them up over the water, and he followed the lights home. We've "
+    "lit them ever since, so nobody in Apple Blossom gets lost.")
+LANTERN_NONE = [
+    "(happy)A story? Oh, I'm just me, I'm afraid. Always have been! Ask "
+    "someone with a stranger tale.",
+    "(laugh)Me? Nothing's ever happened to me. Thank goodness, from what "
+    "I hear.",
+]
+LANTERN_LIGHT = [   # what they say as your lantern goes up
+    "(blush)Make a wish, {name}. ...No, don't tell me what it was.",
+    "(happy)Look at it go! Right out over the lake. That one's ours.",
+    "(happy)I always wonder where they end up. Somewhere nice, I hope.",
+]
 
 
 def put_building(g, labels, key):
@@ -12251,6 +12408,7 @@ class Game:
         """Minutes go by: people go about their day, and at two in the
         morning you drop where you stand."""
         st = self.st
+        self.note_forms()
         for _ in range(minutes):
             st["minute"] += 1
             if st["minute"] % 10 == 0 or minutes < 30:
@@ -20641,6 +20799,10 @@ class Game:
                 words.append("SHARE")
             elif "Harvest" in key and vid == "edmund":
                 words.append("ENTER")
+            elif "Lantern" in key:
+                words.append("LIGHT")
+                if vid == "edmund" or self.former_forms(vid):
+                    words.append("STORY")
         if f["status"] in ("dating", "engaged", "married") and \
                 f["dated"] != self.st["day"] and 1700 <= self.hhmm() < 2300:
             words.append("DATE")
@@ -20802,6 +20964,12 @@ class Game:
         elif w == "enter":
             self.enter_menu(vid)
             return
+        elif w in ("light", "lantern") and self.festival_on() and \
+                "Lantern" in self.festival_on()[0]:
+            self.light_lantern(vid)
+        elif w in ("story", "stories", "tale") and self.festival_on() and \
+                "Lantern" in self.festival_on()[0]:
+            self.tell_story(vid)
         elif w == "date":
             self.go_on_date(vid)
         elif w in ("request", "help"):
@@ -21636,6 +21804,138 @@ class Game:
 
     def fest_key(self):
         return "fest%d-%d" % (self.season(), self.year())
+
+    def forms_now(self, vid):
+        """What the wand has made of somebody right now."""
+        out = []
+        if self.statue(vid):
+            out.append("statue")
+        if self.chicken(vid):
+            out.append("chicken")
+        if self.beast(vid):
+            out.append(self.beast(vid))
+        if self.tree(vid):
+            out.append("tree")
+        if self.loo(vid):
+            out.append("loo")
+        if self.furn(vid):
+            out.append(self.furn(vid))
+        if self.maid(vid):
+            out.append("maid")
+        if self.swapped(vid):
+            out.append("swap")
+        return out
+
+    def note_forms(self):
+        """Remember what people have been and aren't any more, for the
+        stories they tell at Lantern Night."""
+        st = self.st
+        was = st.setdefault("was", {})
+        before = st.setdefault("forms_now", {})
+        for vid in VILLAGERS:
+            now = self.forms_now(vid)
+            for f in before.get(vid, ()):
+                if f not in now and f not in was.setdefault(vid, []):
+                    was[vid].append(f)
+            if now:
+                before[vid] = now
+            else:
+                before.pop(vid, None)
+
+    def former_forms(self, vid):
+        """Everything somebody has been turned into and back from:
+        what we saw, and what older saves' flags remember."""
+        out = list(self.st.get("was", {}).get(vid, ()))
+        now = self.forms_now(vid)
+        for flag in self.st["flags"]:
+            pre, _, who = flag.partition(":")
+            if who != vid:
+                continue
+            form = FLAG_FORM.get(pre[:-5] if pre.endswith("liked") else
+                                 pre[:-5] if pre.endswith("fixed") else None)
+            if form and form not in out and form not in now and not (
+                    form == "chair" and any(f in FURN_GROUP for f in out)):
+                out.append(form)
+        return [f for f in out if f not in now]
+
+    def tell_story(self, vid):
+        """Lantern Night: somebody tells what it was like to be what your
+        wand made them."""
+        st = self.st
+        year = self.year()
+        name = VILLAGERS[vid]["short"]
+        untold = [f for f in self.former_forms(vid) if "story%d:%s:%s" % (
+            year, vid, f) not in st["flags"]]
+        if not untold:
+            if vid == "edmund":
+                self.speak(vid, LANTERN_LEGEND)
+            elif self.former_forms(vid):
+                self.speak(vid, "(happy)That's all my stories for this "
+                                "year. Ask me again next Lantern Night!")
+            else:
+                self.speak(vid, random.choice(LANTERN_NONE))
+            return
+        form = untold[0]
+        st["flags"].append("story%d:%s:%s" % (year, vid, form))
+        piece = form if form in FURN_GROUP else "chair"             if form == "chair" else None
+        kind = "furniture" if piece else form
+        glad = self.likes_change(vid, FORM_SPELL[kind])
+        tale = random.choice(STORY_TALES[kind][0 if glad else 1])
+        if piece:
+            tale = tale.replace("{an}", an(piece)).replace(
+                "{An}", cap(an(piece))).replace("{what}", piece)
+        self.say("*Everyone gathers round the lantern by the fountain as "
+                 "%s begins." % name, "quest")
+        self.speak(vid, tale)
+        back = None
+        if piece and vid in CHAIR_BACK:
+            back = CHAIR_BACK[vid][FURN_GROUP.get(piece, "seat")][
+                0 if glad else 1].replace("{what}", piece)
+        elif kind in BEASTS:
+            back = BEASTS[kind]["back"].get(vid)
+            back = back and back[0 if glad else 1]
+        else:
+            table = {"chicken": CHICKEN_BACK, "tree": TREE_BACK,
+                     "loo": LOO_BACK}.get(kind)
+            back = table and table.get(vid) and table[vid][0 if glad else 1]
+        if back:
+            back = re.sub(r"^\(\w+\)", "", back).strip()
+            self.say("%s: \"And I'll tell you what I said the day I was "
+                     "turned back: '%s'\"" % (name, back), "you")
+        others = [v for v, n in self.npcs.items() if v != vid and
+                  n.where == "valley" and not self.forms_now(v)]
+        if others:
+            self.say(random.choice(LANTERN_CROWD).replace(
+                "{who}", VILLAGERS[random.choice(others)]["short"]), "info")
+        if glad:
+            self.befriend(vid, 80)
+        else:
+            self.say("*Told out loud, under the lanterns, it doesn't sound "
+                     "so bad. %s gives you a long look, then a small "
+                     "nod." % name, "heart")
+            self.befriend(vid, 120)
+        self.pass_time(20)
+
+    def light_lantern(self, vid):
+        st = self.st
+        k = "lantern%d" % self.year()
+        name = VILLAGERS[vid]["short"]
+        if k in st["flags"]:
+            self.speak(vid, "(happy)You've already sent yours up! Look, "
+                            "you can still see it, way out over the lake.")
+            return
+        if self.hearts(vid) < 2:
+            self.speak(vid, "(blush)Oh! That's for close friends, really. "
+                            "Maybe next year?")
+            return
+        st["flags"].append(k)
+        self.sound.play("quest")
+        self.say("You and %s light a paper lantern together and let it go. "
+                 "It rises over the square to join the others, a slow river "
+                 "of light drifting out across the lake." % name, "heart")
+        self.speak(vid, random.choice(LANTERN_LIGHT))
+        self.befriend(vid, 200 if VILLAGERS[vid]["romance"] else 120)
+        self.pass_time(20)
 
     def dance(self, vid):
         st = self.st
@@ -28861,6 +29161,13 @@ def selftest():
     for kind in FRUIT_TREES:
         if kind not in ITEMS or kind + " sapling" not in ITEMS:
             problems.append("fruit tree %s" % kind)
+    for form in FORM_SPELL:
+        tales = STORY_TALES.get(form)
+        if not tales or not tales[0] or not tales[1]:
+            problems.append("Lantern Night: no %s story" % form)
+    for form in FLAG_FORM.values():
+        if form not in FORM_SPELL and form != "chair":
+            problems.append("Lantern Night: flag form %s" % form)
     for c in JAM_FRUIT + PICKLE_VEG:
         if c not in ITEMS:
             problems.append("preserves: no %s" % c)
