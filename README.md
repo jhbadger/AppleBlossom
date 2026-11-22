@@ -138,13 +138,17 @@ the tool would do something there.
 | Milk pail | from Mabel's: milks a cow in your barn once a day, a sheep every other day |
 | Shears | from Mabel's: shears a woolly sheep in your barn, every third day each |
 
-Watered crops grow a day each night, and rain waters them for you. When a crop
+Watered crops grow a day each night, and rain waters them for you (so does
+snow, melting into the ground). When a crop
 is ripe, use anything on it to pick it. Some crops (strawberries, tomatoes,
-corn, blueberries, cranberries, eggplant, hay) keep producing after picking. A crop
-dies if its season ends before you pick it. There are 15 crops: turnip, potato,
+corn, blueberries, cranberries, eggplant, snow peas, frostberries, hay) keep
+producing after picking. A crop
+dies if its season ends before you pick it. There are 20 crops: turnip, potato,
 strawberry, cauliflower and pea in spring; tomato, corn, melon, blueberry and
-sunflower in summer; pumpkin, cranberry, yam, eggplant and corn in fall; and
-hay in summer and fall.
+sunflower in summer; pumpkin, cranberry, yam, eggplant and corn in fall;
+parsnip, kale, snow pea, red cabbage and frostberry in winter; and
+hay in summer and fall. Frostberries make jam, and the other winter crops
+pickle.
 
 **Crop quality.** A crop that was watered every day it grew (rain counts)
 may come up **gold**, worth half as much again; one watered most days may

@@ -1408,6 +1408,11 @@ CROPS = {
     "yam":         ((2,), 10, 0, 60, 160, 20, "#4a8a3a", "#c06a5a", "root"),
     "eggplant":    ((2,), 5, 5, 20, 40, 10, "#3a7a3a", "#6a3a8a", "pod"),
     "hay":         ((1, 2), 7, 3, 30, 10, 0, "#6aa848", "#e0c060", "hay"),
+    "parsnip":     ((3,), 5, 0, 25, 45, 10, "#4a8a3a", "#efe2b8", "root"),
+    "kale":        ((3,), 7, 0, 60, 120, 15, "#2e6a4a", "#3e8a68", "leafy"),
+    "snow pea":    ((3,), 7, 3, 50, 35, 8, "#5ab870", "#c8ecc0", "pod"),
+    "red cabbage": ((3,), 11, 0, 90, 210, 25, "#4a7a5a", "#8a3a7a", "head"),
+    "frostberry":  ((3,), 9, 4, 90, 55, 10, "#3a7a6a", "#9ad4f0", "berry"),
 }
 HAY_CUT = 3                     # hay a ripe bed of it gives when cut
 CROP_FIELDS = ("seasons", "days", "regrow", "seed", "price", "energy",
@@ -1485,6 +1490,12 @@ def crop_art(name, stage, season=0):
             rect(g, x, y, x + 1, y + 4, col)
             g[y][x] = hi
             g[y - 1][x + 1] = "#c0e080"
+    elif shape == "leafy":                      # curly kale
+        for (x, y, r) in ((5, 9, 2.6), (10, 9, 2.6), (7.5, 6, 2.8),
+                          (7.5, 10, 3)):
+            disc(g, x, y, r, col)
+        for (x, y) in ((4, 8), (6, 5), (9, 5), (11, 8), (7, 9), (8, 11)):
+            g[y][x] = hi
     elif shape == "flower":
         disc(g, 7.5, 3.5, 3.2, col)
         disc(g, 7.5, 3.5, 1.4, "#6a3a1a")
@@ -1744,10 +1755,10 @@ for _f in FRUIT_TREES:
     ITEMS[_f + " sapling"] = (0, 0, "sapling")
 JAM_FRUIT = ("strawberry", "blueberry", "cranberry", "melon", "apple",
              "salmonberry", "spice berry", "wild plum", "blackberry",
-             "wild grape", "cherry", "peach", "orange", "pomegranate")
+             "wild grape", "cherry", "peach", "orange", "pomegranate", "frostberry")
 PICKLE_VEG = ("turnip", "potato", "cauliflower", "pea", "corn", "eggplant",
               "pumpkin", "tomato", "yam", "wild leek", "winter root",
-              "snow yam")
+              "snow yam", "parsnip", "kale", "snow pea", "red cabbage")
 for _m in MACHINES:
     ITEMS[_m] = (0, 0, "machine")
 ITEMS["fertilizer"] = (5, 0, "material")
@@ -3537,7 +3548,7 @@ VILLAGERS = {
                  "beardc": "#c8c8c8"},
         "birthday": (0, 7), "home": "mayor", "rest": 6,
         "loves": ["apple pie", "cauliflower", "golden carp"],
-        "likes": ["bread", "tea", "potato", "pumpkin", "apple"],
+        "likes": ["bread", "tea", "potato", "pumpkin", "apple", "red cabbage"],
         "dislikes": ["dandelion", "fiber"],
         "hates": ["energy tonic"],
         "intro": "Ahem! Welcome, welcome, to Apple Blossom Village! I am "
@@ -3829,8 +3840,8 @@ VILLAGERS = {
                    "sunflowers! Buy now!",
                    "Fall seeds! Pumpkins, cranberries, yams, eggplant, "
                    "corn! Buy now!",
-                   "Winter. Nothing grows, nothing sells. I knit and "
-                   "complain."],
+                   "Winter seeds! Parsnips, kale, snow peas, red cabbage, "
+                   "frostberries! Hardy little things. Buy now!"],
         "rain": "Rain keeps the customers away. Except you. Good.",
         "topics": {
             "gossip": "(happy)Well! Apparently the doctor's been seen "
@@ -4135,7 +4146,7 @@ VILLAGERS = {
                  "extras": ("mustache", "apron"), "beardc": "#7a7070"},
         "birthday": (3, 11), "home": "inn", "rest": 7,
         "loves": ["tomato", "morel", "chanterelle"],
-        "likes": ["cheese", "eggplant", "potato", "yam", "kind:fish", "wild leek",
+        "likes": ["cheese", "eggplant", "potato", "yam", "kind:fish", "wild leek", "parsnip",
                   "egg"],
         "dislikes": ["chocolate", "fiber"],
         "hates": ["energy tonic"],
@@ -4869,7 +4880,7 @@ VILLAGERS = {
                  "extras": ("glasses", "coat"), "coatc": "#4a4a6a"},
         "birthday": (3, 27), "home": "observatory", "rest": 0,
         "loves": ["tea", "book of poems", "golden carp", "magic crystal"],
-        "likes": ["coffee", "blueberry", "snow yam", "winter root",
+        "likes": ["coffee", "blueberry", "snow yam", "winter root", "frostberry",
                   "chocolate"],
         "dislikes": ["daffodil", "salad"],
         "hates": ["energy tonic", "dandelion"],
@@ -5017,7 +5028,7 @@ VILLAGERS = {
                  "band": "#5a3a2a"},
         "birthday": (1, 8), "home": "jonah", "rest": 6,
         "loves": ["wool scarf", "apple pie", "corn"],
-        "likes": ["wool", "bread", "stew", "hazelnut", "pea", "kind:crop"],
+        "likes": ["wool", "bread", "stew", "hazelnut", "pea", "kale", "kind:crop"],
         "dislikes": ["coral", "sheet music"],
         "hates": ["eel", "energy tonic"],
         "intro": "Oh. Hello. Didn't hear you come up. Jonah Brooks. I keep "
@@ -7579,7 +7590,7 @@ MONSTER_ROMANCE = {   # each monster maid's heart: gifts she loves, likes
                    "a little heart in the shine"},
     "frost_slime": {
         "loves": ["melon", "snow yam", "cheese"],
-        "likes": ["salad", "blueberry", "milk"],
+        "likes": ["salad", "blueberry", "milk", "frostberry"],
         "hates": ["coffee", "stew"],
         "kiss": ["(blush)Oh! My cheeks have gone warm. That's never "
                  "happened before!",
@@ -17143,7 +17154,7 @@ class Game:
             gh = st.setdefault("gh", {})
             dry = [s for s in list(st["soil"].values()) + list(gh.values())
                    if s[1] and not s[3] and not s[0]]
-            if not dry or (st["weather"] in ("rain", "storm") and
+            if not dry or (st["weather"] in ("rain", "storm", "snow") and
                            not any(s[1] for s in gh.values())):
                 return None
             for s in list(st["soil"].values()) + list(gh.values()):
@@ -19571,10 +19582,11 @@ class Game:
             if self.season() == 3 and "winter_till" not in st["flags"]:
                 st["flags"].append("winter_till")
                 self.say("The ground's hard with frost, but you break it. "
-                         "Nothing will grow till spring.", "info")
+                         "Only winter seeds will take now.", "info")
             if not self.spend(h):
                 return
-            st["soil"][k] = [1 if st["weather"] in ("rain", "storm") else 0,
+            st["soil"][k] = [1 if st["weather"] in ("rain", "storm", "snow")
+                             else 0,
                              None, 0, 0]
             for nx, ny in self.row_ahead(x, y, h):
                 if not on_farm(nx, ny) or self.thing_at(nx, ny) or \
@@ -20099,7 +20111,7 @@ class Game:
             if dead:
                 self.say("%d crop%s didn't survive the change of season." % (
                     dead, "s" if dead > 1 else ""), "bad")
-        if st["weather"] in ("rain", "storm"):
+        if st["weather"] in ("rain", "storm", "snow"):    # snow melts in
             for s in st["soil"].values():
                 s[0] = 1
             st.setdefault("bowls", {})["valley"] = st["day"]
@@ -25769,8 +25781,9 @@ ALMANAC_TIPS = {
     1: ["Corn and tomatoes keep giving all summer.",
         "A sprinkler earns its keep in the long dry days."],
     2: ["Pumpkins and yams for fall, and pick apples while they last.",
-        "Store up for winter: nothing grows in the snow."],
-    3: ["Mend your tools and make friends; the fields rest.",
+        "Store up for winter: only the hardiest crops brave the snow."],
+    3: ["Parsnips are quick; red cabbage is slow but worth the wait.",
+        "Snow waters your winter crops for you as it melts.",
         "Winter roots and snow yams can be dug in the woods."],
 }
 RIDDLES = [   # Amy's Gazette riddles: (question, answer, wrong answers)
