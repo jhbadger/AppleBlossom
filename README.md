@@ -756,6 +756,7 @@ gift.
   | Chore | What she does |
   | --- | --- |
   | Pick ripe crops | picks everything ripe and puts it in your bag |
+  | Pick the fruit | picks every fruit tree on your farm and in the greenhouse: the trees you planted, Grandmother's apples, and anyone the wand made a fruit tree (who grumble, if they mind being picked) |
   | Clear the fields | clears up to a dozen weeds, stones and branches, and bags what they drop |
   | Water the crops | waters every crop (not needed when it rains) |
   | Collect the eggs | gathers the coop's eggs and pets every hen |

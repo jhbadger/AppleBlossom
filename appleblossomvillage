@@ -14169,7 +14169,7 @@ class Game:
         st = self.st
         if (st.get("companion") or {}).get("id") == m["id"]:
             return "away", -1, -1               # out with you
-        if m["chore"] in ("water", "harvest", "weed") and \
+        if m["chore"] in ("water", "harvest", "fruit", "weed") and \
                 st["weather"] not in ("rain", "storm", "snow") and \
                 600 <= self.hhmm() < 900:
             if m.get("out") != st["day"]:
@@ -17403,6 +17403,42 @@ class Game:
             return "picked %s and put %s in your bag" % (and_list(
                 ["%d %s" % (c, plural(n, c)) for n, c in sorted(got.items())]),
                 "it" if sum(got.values()) == 1 else "them")
+        if chore == "fruit":
+            got, cross = {}, []
+            for t in list(st["orchard"].values()) + list(
+                    st["gh_trees"].values()):
+                n = self.fruit_left(t)
+                if n:
+                    got[t["kind"]] = got.get(t["kind"], 0) + n
+                    t["fruit"] = 0
+            for k, n in st["apples"].items():       # Grandmother's trees
+                if n:
+                    got["apple"] = got.get("apple", 0) + n
+                    st["apples"][k] = 0
+            for who, t in sorted(st["fruitful"].items()):
+                tree = self.npcs.get(who)
+                if not tree or not t.get("fruit") or not self.tree(who) or \
+                        not (tree.where == "greenhouse" or
+                             tree.where == "valley" and
+                             on_farm(tree.x, tree.y)):
+                    continue
+                got[t["kind"]] = got.get(t["kind"], 0) + t["fruit"]
+                t["fruit"] = 0
+                if not self.likes_change(who, "treeify"):
+                    cross.append(VILLAGERS[who]["short"])
+                    self.befriend(who, -20, quiet=True)
+            if not got:
+                return None
+            for item, c in got.items():
+                self.give(item, c)
+            st["stats"]["harvested"] += sum(got.values())
+            self.paint_specials(scale=True)
+            return "picked %s%s and put %s in your bag" % (
+                and_list(["%d %s" % (c, plural(n, c))
+                          for n, c in sorted(got.items())]),
+                " (%s creaked crossly at being picked)" % and_list(cross)
+                if cross else "",
+                "it" if sum(got.values()) == 1 else "them")
         if chore == "weed":
             keys = [k for k in st["debris"]
                     if FARM[0] < int(k.split(",")[0]) < FARM[2] and
@@ -20454,7 +20490,7 @@ class Game:
         maids = self.st.get("maids", {})
         if vid in maids:
             home = self.maid_home(vid)
-            if maids[vid] in ("water", "harvest", "weed") and \
+            if maids[vid] in ("water", "harvest", "fruit", "weed") and \
                     self.st["weather"] not in ("rain", "storm", "snow"):
                 return [(600, "out.farmyard"), (900, home)]
             return [(600, home)]
@@ -26542,6 +26578,8 @@ LOO_BACK = {   # turned back: sorry about it, glad of it
 MAID_SPOTS = "2345"           # where maids wait in your cabin
 MAID_CHORES = {   # what you can tell a maid to do: menu, and in her words
     "harvest": ("Pick ripe crops", "pick whatever's ripe"),
+    "fruit": ("Pick the fruit", "pick every fruit tree on the farm and in "
+              "the greenhouse"),
     "weed": ("Clear the fields", "clear the weeds and stones and branches"),
     "water": ("Water the crops", "water the crops"),
     "eggs": ("Collect the eggs", "collect the eggs and see to the hens"),
