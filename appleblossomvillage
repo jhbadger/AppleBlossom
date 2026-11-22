@@ -4001,6 +4001,10 @@ VILLAGERS = {
             "story": "(laugh)So the cow kicks the anvil, the anvil hits the "
                      "mayor, the mayor lands in the fountain! Best Harvest "
                      "Fair in history!",
+            "armour": "(happy)Copper, iron or gold, made to fit, from five "
+                      "bars of the metal and a fair price. Copper turns a "
+                      "fifth of a blow, iron a third, gold half. Wear it "
+                      "and forget it.",
             "blacksmith": "My father was a smith, his father was a smith. "
                           "Rowan's a smith. The Brandt hands, they call "
                           "them. Look at these hands!",
@@ -6644,8 +6648,9 @@ SHOP_STOCK = {
                ("apple pie", 180), ("chocolate", 80)],
     "smithy": [("sprinkler", 400), ("fine tools", 350),
                ("silver ring", 500), ("short sword", 700),
-               ("broadsword", 2500), ("copper bar", 50), ("iron bar", 150),
-               ("gold bar", 400),
+               ("broadsword", 2500), ("copper armour", 1200),
+               ("iron armour", 3500), ("gold armour", 9000),
+               ("copper bar", 50), ("iron bar", 150), ("gold bar", 400),
                ("blossom pendant", 2000)],
     "carpentry": [("wood", 50), ("chicken coop", 1500), ("barn", 4000),
                   ("greenhouse", 6000),
@@ -7647,6 +7652,11 @@ MONSTERS = {   # traits: fast moves twice; slow every other turn; erratic
     "king": Monster("the Mine King", 45, 16, (400, 600), (10, 10), "boss",
                     "smites"),
 }
+ARMOUR = {   # what Otto makes you: its level, and the share of each blow
+    #          it takes
+    "copper armour": (1, 0.2), "iron armour": (2, 0.35),
+    "gold armour": (3, 0.5)}
+ARMOUR_BARS = 5                 # bars of its metal, on top of the price
 WEAPONS = {"broadsword": 6, "short sword": 4, "pickaxe": 2, "axe": 2,
            "hoe": 2, "scythe": 2}       # your best one is the one you use
 ARTIFACTS = [   # (name, price, the shallowest floor it's found on)
@@ -7677,6 +7687,7 @@ for _i, _m in enumerate(METALS):
     EXTRA_COST[_m + " bar"] = {_m + " ore": SMELT}
     for _t in UPGRADABLE:
         EXTRA_COST["%s %s" % (_m, _t)] = {_m + " bar": SMELT}
+    EXTRA_COST[_m + " armour"] = {_m + " bar": ARMOUR_BARS}
 MUSEUM_REWARDS = {   # artifacts given: what Juniper gives you
     3: ("gold", 500), 6: ("copper bar", SMELT), 9: ("iron bar", SMELT),
     12: ("gold bar", SMELT), len(ARTIFACTS) + 1: ("gold", 5000)}
@@ -13681,14 +13692,30 @@ class Game:
             return False
         p = self.p
         n = max(1, mob.m.dmg + random.randint(-1, 1))
+        blow = n
+        n = self.armoured(n)
         p["energy"] -= n
         self.sound.play("hurt")
         self.flash(*self.pos(), tile="ouch")
-        self.say("%s %s you! (-%d energy)" % (the, mob.m.verb, n), "bad")
+        self.say("%s %s you! (-%d energy%s)" % (
+            the, mob.m.verb, n, ", your armour took %d" % (blow - n)
+            if blow > n else ""), "bad")
         if p["energy"] <= 0:
             self.mine_rescue()
             return True
         return False
+
+    def armour_name(self):
+        lv = self.p.get("armour", 0)
+        return next((a for a, (l, _) in ARMOUR.items() if l == lv), None)
+
+    def armoured(self, n):
+        """A blow of n, after your armour has taken its share (but
+        never all of it)."""
+        a = self.armour_name()
+        if not a:
+            return n
+        return max(1, int(n * (1 - ARMOUR[a][1]) + 0.5))
 
     def mine_rescue(self):
         """Knocked out down the mine: carried to the Clinic, without your
@@ -21606,6 +21633,9 @@ class Game:
                 continue
             if name in WEAPONS and name in self.p["tools"]:
                 continue
+            if name in ARMOUR and ARMOUR[name][0] <= self.p.get("armour",
+                                                                0):
+                continue
             if name == "cabin extension" and self.p["extension"]:
                 continue
             if name == "cabin wing" and (not self.p.get("cabin_big") or
@@ -21711,6 +21741,25 @@ class Game:
                         "edge."))
             self.say("Otto makes your %s %s." % (tool, metal), "gold")
             return
+        if name in ARMOUR:
+            lv, cut = ARMOUR[name]
+            if lv <= p.get("armour", 0):
+                p["gold"] += price
+                for n, c in extra.items():
+                    self.give(n, c)
+                self.speak(vid, "You've got better than that on already!")
+                return
+            p["armour"] = lv
+            self.speak(vid, (
+                "(happy)There. Copper plates on good leather. It'll take the edge "
+                "off a rat bite, near enough." if lv == 1 else
+                "(happy)Iron. Heavier, but you'll be glad of it past the fifth "
+                "floor. Goblins don't like it one bit." if lv == 2 else
+                "(laugh)Gold! You'll shine like the Harvest Fair medal. And "
+                "it'll turn half of anything that hits you. Even a king."))
+            self.say("You put on your %s. Monsters' blows hurt %d%% less."
+                     % (name, round(cut * 100)), "gold")
+            return
         if name.endswith(" bar") and name.split()[0] in METALS:
             self.give(name)
             self.speak(vid, "(happy)Into the forge with it... There. One "
@@ -21732,7 +21781,8 @@ class Game:
                                 "suppose. My grandad worked it, before the "
                                 "things moved in. Mind your energy down "
                                 "there: get knocked flat and you'll come up "
-                                "with empty pockets.")
+                                "with empty pockets. And if you're going "
+                                "deep, ask me about ARMOUR.")
                 return
             if name == "shears":
                 self.speak(vid, "(happy)Good sharp shears. A sheep's ready "
@@ -21910,6 +21960,8 @@ class Game:
             elif self.former_forms(vid):
                 self.speak(vid, "(happy)That's all my stories for this "
                                 "year. Ask me again next Lantern Night!")
+            elif "story" in VILLAGERS[vid]["topics"]:
+                self.speak(vid, VILLAGERS[vid]["topics"]["story"])
             else:
                 self.speak(vid, random.choice(LANTERN_NONE))
             return
@@ -23306,8 +23358,12 @@ class Game:
                  "Energy  %s%s %d" % ("█" * bar, "░" * (10 - bar),
                                       e),
                  "Magic   %s%s %d" % ("✦" * p["magic"], "✧" * (
-                     p["max_magic"] - p["magic"]), p["magic"]), "",
-                 "Holding:", "  " + self.hand_name(), ""]
+                     p["max_magic"] - p["magic"]), p["magic"])] + (
+                     ["Armour  %s (-%d%%)" % (
+                         self.armour_name().split()[0],
+                         round(ARMOUR[self.armour_name()][1] * 100))]
+                     if self.armour_name() else []) + [
+                 "", "Holding:", "  " + self.hand_name(), ""]
         things = ["%s%s" % (n, " x%d" % v if v > 1 else "")
                   for n, v in sorted(p["items"].items()) if v]
         if things:
@@ -29209,7 +29265,7 @@ def selftest():
                         "greenhouse", "stable", "horse",
                         "cow", "milk pail", "sheep", "shears", "cat", "dog",
                         "fishing rod", "sprinkler", "short sword",
-                        "broadsword"):
+                        "broadsword") and entry[0] not in ARMOUR:
                 problems.append("shop %s sells unknown %s" % (kind, entry))
     for t in (MAID_ACCEPT, MAID_PROPOSAL, MAID_VOWS, MAID_COURTING,
               MAID_WIFE, MAID_WIFE_GREET):

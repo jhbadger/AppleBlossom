@@ -598,6 +598,17 @@ gold. A better tool costs less energy to use, and:
 | Scythe | more fiber from grass | | twice the fiber |
 | Swords | +1 damage | +2 | +3 |
 
+Otto also makes **armour**, to wear down the mine and up the Sky Tower.
+You put it on as soon as you buy it, and it takes a share of every blow
+a monster lands (but never the whole of it). Better armour replaces the
+old.
+
+| Armour | Price | Takes off each blow |
+| --- | --- | --- |
+| Copper armour | 1,200g and 5 copper bars | a fifth |
+| Iron armour | 3,500g and 5 iron bars | a third |
+| Gold armour | 9,000g and 5 gold bars | half |
+
 Upgrades cost 600g, 1,500g and 4,000g. (An old copper can counts as a
 copper watering can.)
 
@@ -880,7 +891,7 @@ gift.
 | Pike's General Store | Mabel Pike | seeds for the season, fruit tree saplings, hay, hens, cows, sheep, cats and dogs, a milk pail, shears, a leash, gifts, the Blossom Bouquet |
 | Blossom Inn | Bernard and Wren Calloway | meals that restore energy; Wren plays fiddle Friday and Saturday nights |
 | The Clinic | Dr. Felix Thorne | energy tonics and a daily checkup |
-| Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, swords for the old mine, smelting ore and upgrading tools, fine gifts, the Blossom Pendant |
+| Brandt Smithy | Otto Brandt and Rowan Hale | sprinklers, swords and armour for the old mine, smelting ore and upgrading tools, fine gifts, the Blossom Pendant |
 | Larkin Carpentry | Ivy Larkin (and her brother Pip) | wood, the chicken coop, the barn, a greenhouse, a silo, the cabin extension and the cabin wing |
 | The dock | Theo Fairweather | fishing rods and lures, 10 till 3 |
 | The Library | Juniper Marsh | books, Pip's schoolroom, and the museum of artifacts from the old mine |
