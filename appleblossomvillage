@@ -18543,8 +18543,9 @@ class Game:
                 return random.choice(names)
         return "Bunny"
 
-    def add_rabbit(self, colour=None, baby=False):
-        """A rabbit in the hutch: one from Mabel, or a newborn."""
+    def add_rabbit(self, colour=None, baby=False, mum=None):
+        """A rabbit in the hutch: one from Mabel, or a newborn (mum is
+        her mother's name)."""
         st = self.st
         x, y = self.free_hutch_square() or self.hutch_squares()[0]
         c = {"name": self.rabbit_name(), "kind": "rabbit",
@@ -18553,6 +18554,8 @@ class Game:
              "bred": st["day"]}
         if baby:
             c["baby"] = st["day"]
+        if mum:
+            c["mum"] = mum
         st["rabbits"].append(c)
         if not baby and self.area and self.area.key == "hutch":
             self.render()
@@ -18579,7 +18582,8 @@ class Game:
         name = c["name"]
         if self.is_baby(c):
             left = RABBIT_GROWS - (st["day"] - c["baby"])
-            what = "a baby; grown %s" % (
+            what = "%s; grown %s" % (
+                "%s's baby" % c["mum"] if c.get("mum") else "a baby",
                 "tonight" if left <= 1 else "in %d days" % left)
         else:
             left = RABBIT_LITTER - (st["day"] - c.get("bred", c["day"]))
@@ -18590,6 +18594,8 @@ class Game:
                 "babies due in %d days" % left,
                 ", %d more for her hearts" % bonus if bonus else "",
                 "; %d born so far" % c["babies"] if c.get("babies") else "")
+            if c.get("mum"):
+                what = "%s's daughter; %s" % (c["mum"], what)
         items = [("Pet %s" % name, lambda: self.pet_rabbit(i))]
         if not c.get("vid"):
             items.append(("Give her a new name",
@@ -18632,8 +18638,11 @@ class Game:
     def sell_rabbits_menu(self, herd):
         pay = sum(self.rabbit_price(c) for c in herd)
         if len(herd) == 1:
-            title = "Sell %s to Mabel for %dg? She'll find her a good " \
-                    "home." % (herd[0]["name"], pay)
+            mum = herd[0].get("mum")
+            title = "Sell %s%s to Mabel for %dg? She'll find her a good " \
+                    "home." % (herd[0]["name"], " (%s's %s)" % (
+                        mum, "baby" if self.is_baby(herd[0]) else
+                        "daughter") if mum else "", pay)
             yes = "Yes, sell %s" % herd[0]["name"]
         else:
             title = "Sell all %d babies to Mabel for %dg? She'll find " \
@@ -18722,7 +18731,8 @@ class Game:
             n = min(want, room)
             for _ in range(n):
                 self.add_rabbit(c["colour"] if random.random() < 0.7 else
-                                random.choice(RABBIT_COLOURS), baby=True)
+                                random.choice(RABBIT_COLOURS), baby=True,
+                                mum=c["name"])
             c["babies"] = c.get("babies", 0) + n
             litters.append((c["name"], n, bonus, n < want))
         if litters:
@@ -19729,6 +19739,10 @@ class Game:
         if i is not None and name:
             c = self.st[getattr(self, "naming_pen", "chickens")][i]
             old, c["name"] = c["name"], name
+            if getattr(self, "naming_pen", "") == "rabbits":
+                for k in self.st["rabbits"]:
+                    if k.get("mum") == old:
+                        k["mum"] = name
             if old != name:
                 self.say("%s is now called %s. %s seems to approve." % (
                     old, name, "He" if c.get("sex") == "M" else "She"),

@@ -394,7 +394,9 @@ Rabbits give nothing but more rabbits:
   night (and tries again the next), or if the hutch is full.
 - **Babies** are drawn half the size of a grown rabbit. They grow up in 20
   days, and ten days after that have litters of their own. Walk into a
-  rabbit to see how long she has to go.
+  rabbit to see how long she has to go, and whose she is: a rabbit born in
+  your hutch remembers her mother's name (renaming the mother updates it),
+  and it shows when you pet or sell her.
 - **Feeding:** like the hens: hay in the hutch's trough, the silo, or a day
   at grass in front of the hutch. Pet each one daily to raise her hearts.
 - **Selling:** walk into a rabbit and sell her to Mabel (250g grown, 100g a
