@@ -1839,6 +1839,7 @@ SPELLS = {   # the wand's spells: what each one does, for the menu
     "catify": "turns someone into a cat, and back",
     "dogify": "turns someone into a dog, and back",
     "horseify": "turns someone into a horse, and back",
+    "bunnify": "turns someone into a rabbit, and back",
     "chairify": "turns someone into a piece of furniture, and back",
 }
 CHOPPABLE = {"tree": 8, "pine": 8}   # trees you can fell, and their wood
@@ -3475,6 +3476,9 @@ VILLAGERS = {
             "stable": "(happy)A stable, west of where a barn would go: "
                       "3,000g, 100 wood and 30 stone. Three stalls. Mabel "
                       "sells the horses. Then you can RIDE, {name}.",
+            "hutch": "(happy)A rabbit hutch, between your well and your "
+                     "coop: 1,200g and 60 wood. Room for twenty. Mabel "
+                     "sells rabbits, and they'll do the rest, believe me.",
             "wood": "Bring me wood and I'll love you forever. Kidding. "
                     "Mostly. Branches, stumps, all of it.",
         },
@@ -6631,7 +6635,7 @@ ROMANCE = [k for k, v in VILLAGERS.items() if v["romance"]]
 SHOP_STOCK = {
     "store": ["seeds", ("chicken", 800), ("cow", 1500), ("milk pail", 300),
               ("sheep", 1000), ("shears", 300), ("cat", 600), ("dog", 800),
-              ("horse", 2500), ("hay", 40),
+              ("horse", 2500), ("rabbit", 400), ("hay", 40),
               ("cherry sapling", 1000), ("peach sapling", 1200),
               ("orange sapling", 1400), ("apple sapling", 1200),
               ("pomegranate sapling", 1400),
@@ -6655,6 +6659,7 @@ SHOP_STOCK = {
     "carpentry": [("wood", 50), ("chicken coop", 1500), ("barn", 4000),
                   ("greenhouse", 6000),
                   ("silo", 1000), ("stable", 3000),
+                  ("rabbit hutch", 1200),
                   ("cabin extension", 3000), ("cabin wing", 6000)],
     "tackle": [("fishing rod", 100), ("fishing lure", 120)],
     "workshop": [("mayonnaise jar", 600), ("preserves jar", 700),
@@ -6665,6 +6670,7 @@ EXTRA_COST = {"sprinkler": {"stone": 5},
               "chicken coop": {"wood": 80},
               "barn": {"wood": 150, "stone": 50},
               "stable": {"wood": 100, "stone": 30},
+              "rabbit hutch": {"wood": 60},
               "greenhouse": {"wood": 100, "stone": 100},
               "cabin extension": {"wood": 150},
               "cabin wing": {"wood": 250, "stone": 100},
@@ -6722,6 +6728,7 @@ BUILDINGS = {
     "barn": (26, 8, 8, 5, "red", "wood", "your barn"),
     "greenhouse": (31, 19, 9, 5, "glass", "glass", "your greenhouse"),
     "stable": (13, 7, 7, 5, "green", "wood", "your stable"),
+    "hutch": (18, 20, 5, 4, "thatch", "wood", "your rabbit hutch"),
     # the east quarter
     "bakery": (99, 21, 7, 5, "red", "brick", "Vega's Bakery"),
     "postoffice": (107, 21, 7, 5, "blue", "white", "the Post Office"),
@@ -6738,13 +6745,14 @@ BUILDINGS = {
     "carvalho": (107, 13, 7, 5, "red", "log", "the Carvalho House"),
     "hale": (115, 45, 7, 5, "slate", "wood", "Hale Cottage"),
 }
-ON_ORDER = {"coop", "barn", "greenhouse", "stable"}             # buildings that stand only once you've
+ON_ORDER = {"coop", "barn", "greenhouse", "stable", "hutch"}             # buildings that stand only once you've
                                 # paid for them
 
 
 MAP_NAMES = {"store": "General Store", "carpentry": "Carpentry",
              "inn": "Inn", "smithy": "Smithy", "bakery": "Bakery",
-             "workshop": "Workshop", "boathouse": "Boathouse", "coop": "Coop"}
+             "workshop": "Workshop", "boathouse": "Boathouse", "coop": "Coop",
+             "hutch": "Hutch"}
 
 
 def map_name(key):
@@ -6810,10 +6818,12 @@ FEST_SPOTS = {
 FORM_SPELL = {"statue": "petrify", "chicken": "chickenfy", "tree": "treeify",
               "loo": "looify", "furniture": "chairify", "maid": "maidify",
               "swap": "genderswap", "cow": "cowify", "sheep": "sheepify",
-              "cat": "catify", "dog": "dogify", "horse": "horseify"}
+              "cat": "catify", "dog": "dogify", "horse": "horseify",
+              "rabbit": "bunnify"}
 FLAG_FORM = {"chick": "chicken", "tree": "tree", "chair": "chair",
              "loo": "loo", "maid": "maid", "swap": "swap", "cow": "cow",
-             "sheep": "sheep", "cat": "cat", "dog": "dog", "horse": "horse"}
+             "sheep": "sheep", "cat": "cat", "dog": "dog", "horse": "horse",
+             "rabbit": "rabbit"}
 STORY_TALES = {   # form: (glad tellings, cross tellings)
     "statue": (
         ["(laugh)Gather round! I was solid gold. SOLID. Children polished "
@@ -6876,6 +6886,15 @@ STORY_TALES = {   # form: (glad tellings, cross tellings)
          "think about it when I walk anywhere."],
         ["(cross)I was a horse. Somebody RODE me. To the mine and back.",
          "(sad)Hay. That's all I'll say. Hay, every day, for a fortnight."]),
+    "rabbit": (
+        ["(happy)I was a rabbit! I sat in the clover with my nose going "
+         "and my ears up, and the whole world was soft and green.",
+         "(laugh)I could hop clean over the hutch door. I did, twice. "
+         "Nobody saw. I'm telling you now."],
+        ["(cross)I was a rabbit. Everybody wanted to pick me UP. By the "
+         "scruff. I have a NAME.",
+         "(sad)A rabbit is frightened of everything. A leaf fell on me and "
+         "I hid for an hour."]),
     "tree": (
         ["(happy)I was a tree. I stood in one place and felt the whole "
          "seasons go through me. Birds nested in my hair. It was very "
@@ -7417,7 +7436,20 @@ ROOMS["stable"] = ("straw", "l", (
     "l.......l",
     "llllxllll"))
 HORSE_ROOM = 3                  # horses a stable holds
-PENS = {"coop": "chickens", "barn": "cows", "stable": "horses"}
+ROOMS["hutch"] = ("straw", "l", (
+    "llwllllwll",
+    "l........l",
+    "l..q.....l",
+    "l........l",
+    "l.....Y..l",
+    "l........l",
+    "lllxllllll"))
+HUTCH_ROOM = 20                 # rabbits a hutch holds, babies and all
+RABBIT_LITTER = 10              # days between a doe's litters
+RABBIT_GROWS = 20               # days a baby, before she's grown
+RABBIT_SELL = (250, 100)        # what Mabel gives for a grown rabbit, a baby
+PENS = {"coop": "chickens", "barn": "cows", "stable": "horses",
+        "hutch": "rabbits"}
 SHEEP_MILK_DAYS = 2             # a sheep gives milk every other day
 SHEAR_DAYS = 3                  # and grows a fleece to shear in three
 PET_ROOM = 4                    # cats and dogs you can keep, together
@@ -7598,6 +7630,11 @@ CHANGED = {   # spell: what the monster is now, what happens, what you do
                  "Ride her round the cavern",
                  "You ride {who} round the cavern at a gallop, ducking the "
                  "stalactites. Your heart's racing. (+15 energy)"),
+    "bunnify": ("rabbit", "shrinks, and shrinks, into a fluffy rabbit, "
+                "who sits up and twitches her nose at the dark.",
+                "Stroke her ears",
+                "You sit a while with {who} in your lap, stroking her long "
+                "soft ears. You feel calmer. (+10 energy)"),
 }
 MINE_THEMES = (   # wall, its shadow and glints; floor and its speckles
     ("#523826", "#342216", "#8a6a48", "#957452", ("#856446", "#a68662")),
@@ -8448,7 +8485,8 @@ MONSTER_PET_NAMES = {   # what a monster led home and kept is called
 LEADS_TO = {   # spell: the animal, and the room that takes her in
     "chickenfy": ("hen", "coop"), "cowify": ("cow", "barn"),
     "sheepify": ("sheep", "barn"), "catify": ("cat", "cabin"),
-    "dogify": ("dog", "cabin"), "horseify": ("horse", "stable")}
+    "dogify": ("dog", "cabin"), "horseify": ("horse", "stable"),
+    "bunnify": ("rabbit", "hutch")}
 KID_DUE = 14                    # days from "let's have a baby" to the baby
 KID_GROWS = 14                  # days a baby, before walking and talking
 KID_OUT = 28                    # days old before playing in the farmyard
@@ -10086,7 +10124,8 @@ you can use, clean, decorate and empty for fertilizer
 (read the almanac and the Gazette riddle while you're
 in there); cowify, into a cow; sheepify, into a sheep;
 catify and dogify, into a cat or a dog; horseify, into a
-horse (not the children: they're too small); chairify, into
+horse (not the children: they're too small); bunnify, into
+a rabbit; chairify, into
 a chair, armchair, rocking chair, table, lamp, bookcase or
 grandfather clock (not the children either) that you can
 use once a day, pick up, and set down on your farm or in
@@ -10102,7 +10141,8 @@ chat, kiss and give her gifts and she can become your
 sweetheart and wife, like any maid.  Ask her to come with you and
 she follows you into the mine and the tower, and fights.  You can dismiss her,
 for good.  Lead a monster's hen, cow, sheep,
-cat or dog home on the leash, into your coop, barn or cabin.
+cat, dog, horse or rabbit home on the leash, into your coop,
+barn, cabin, stable or hutch.
 
 The axe fells trees (three swings) for wood; they grow
 back in a season.  For stone, take your pickaxe to
@@ -10131,6 +10171,19 @@ outside any door you go through.  Feed her like the cows
 leaves.  Left out at night, she walks home by herself, but
 she won't thank you.  A horseified villager led into the
 stable on the leash is one of your horses to ride.
+
+Ivy builds a rabbit hutch (room for twenty) and Mabel sells
+rabbits.  They give nothing but more rabbits: every ten days
+a grown doe has a litter of one to five, more the happier
+she is (a baby for each heart past the first).  Babies, the
+little ones, grow up in twenty days and have litters of their
+own.  Feed them hay like the hens, let them out to graze,
+pet them, and sell any you like to Mabel from the hutch
+(walk into one), or all the babies at once at the trough.
+A bunnified villager led into the hutch lives there till the
+spell turns her back; she has litters like any doe (her
+babies are yours to keep or sell), but she isn't yours to
+sell.
 
 The old mine, up in the north woods, goes down ten floors
 (and, past the Mine King, five more to a winged key that
@@ -12214,7 +12267,7 @@ class Game:
             "chickenfied": [], "maids": {}, "trees": [], "loos": [],
             "felled": {}, "leashed": None, "cows": [], "cowified": [],
             "sheepified": [], "catified": [], "dogified": [], "pets": [],
-            "horses": [], "horseified": [],
+            "horses": [], "horseified": [], "rabbits": [], "bunnified": [],
             "loo_in": None,
             "topics": [], "secret": None, "stats": {"shipped": 0,
                                                     "harvested": 0,
@@ -12286,6 +12339,8 @@ class Game:
         st.setdefault("pets", [])
         st.setdefault("horses", [])
         st.setdefault("horseified", [])
+        st.setdefault("rabbits", [])
+        st.setdefault("bunnified", [])
         if st.get("area") != "valley":      # saved indoors: she's outside
             for c in st["horses"]:
                 if c.pop("ridden", None):
@@ -12328,6 +12383,8 @@ class Game:
                 n.where, n.hidden = "barn", True
             elif self.stabled(vid):
                 n.where, n.hidden = "stable", True
+            elif self.hutched(vid):
+                n.where, n.hidden = "hutch", True
             elif self.homed(vid):
                 n.hidden = True
                 for c in st["pets"]:
@@ -12784,6 +12841,18 @@ class Game:
             if t == "trough":
                 self.trough_menu("stable")
                 return True
+        if a.key == "hutch":
+            i = self.rabbit_at(x, y)
+            if i is not None:
+                self.rabbit_menu(i)
+                return True
+            if t == "hay":
+                self.say("A rack of sweet hay, nibbled all along the bottom "
+                         "where the small ones can reach.", "info")
+                return True
+            if t == "trough":
+                self.trough_menu("hutch")
+                return True
         if a.key == "coop":
             i = self.chicken_at(x, y)
             if i is not None:
@@ -12888,7 +12957,8 @@ class Game:
         """Homes are open while someone's home and awake; shops in their
         hours; your own cabin always."""
         h = self.hhmm()
-        if key in ("cabin", "coop", "barn", "greenhouse", "stable"):
+        if key in ("cabin", "coop", "barn", "greenhouse", "stable",
+                   "hutch"):
             return True
         if self.festival_on() and key not in ("inn",):
             return False
@@ -13433,7 +13503,8 @@ class Game:
         colours = {"chickenfy": HEN_COLOURS, "cowify": COW_COLOURS,
                    "sheepify": SHEEP_COLOURS, "catify": CAT_COLOURS,
                    "dogify": DOG_COLOURS,
-                   "horseify": HORSE_COLOURS}.get(spell, (None,))
+                   "horseify": HORSE_COLOURS,
+                   "bunnify": RABBIT_COLOURS}.get(spell, (None,))
         self.floor_state(self.mine["floor"])["changed"][
             "%d,%d" % (mob.x, mob.y)] = {
                 "spell": spell, "kind": mob.kind, "day": -1, "pit": 0,
@@ -13460,7 +13531,8 @@ class Game:
                 "treeify": "mtree_" + kind, "looify": "mloo_" + kind,
                 "chickenfy": "hen_%s" % c, "cowify": "cow_%s" % c,
                 "catify": "cat_%s" % c, "dogify": "dog_%s" % c,
-                "horseify": "horse_%s" % c}[spell]
+                "horseify": "horse_%s" % c,
+                "bunnify": "rabbit_%s" % c}[spell]
 
     def visit_changed(self, x, y):
         """Walking into a monster you changed: what it gives you today,
@@ -13540,6 +13612,8 @@ class Game:
             p["energy"] = min(p["max_energy"], p["energy"] + 20)
         if spell == "horseify":
             p["energy"] = min(p["max_energy"], p["energy"] + 15)
+        if spell == "bunnify":
+            p["energy"] = min(p["max_energy"], p["energy"] + 10)
         self.sound.play("gold" if gold else "neigh" if spell == "horseify"
                         else "pick")
         text = CHANGED[spell][3]
@@ -14579,7 +14653,8 @@ class Game:
                          "hen": "clucks and trots", "cow": "moos and plods",
                          "sheep": "bleats and skips", "cat": "mews and "
                          "pads", "dog": "wags and bounds",
-                         "horse": "whickers and clops"}[animal],
+                         "horse": "whickers and clops",
+                         "rabbit": "twitches her nose and hops"}[animal],
                      room), "good")
         self.end_turn(1)
 
@@ -14633,6 +14708,7 @@ class Game:
         full = (len(st["chickens"]) >= COOP_ROOM if animal == "hen" else
                 len(st["cows"]) >= BARN_ROOM if room == "barn" else
                 len(st["horses"]) >= HORSE_ROOM if room == "stable" else
+                len(st["rabbits"]) >= HUTCH_ROOM if room == "hutch" else
                 len(st["pets"]) >= PET_ROOM)
         if full:
             self.say("There's no room for another %s. She waits by the "
@@ -14641,11 +14717,12 @@ class Game:
         c = (self.add_chicken() if animal == "hen" else self.add_cow()
              if animal == "cow" else self.add_sheep() if animal == "sheep"
              else self.add_horse() if animal == "horse"
+             else self.add_rabbit() if animal == "rabbit"
              else self.add_pet(animal))
         c["colour"] = f["colour"]
         name = MONSTER_PET_NAMES.get(f["kind"], "Shadow")
         used = {o["name"] for o in st["chickens"] + st["cows"] +
-                st["horses"] + st["pets"] if o is not c}
+                st["horses"] + st["rabbits"] + st["pets"] if o is not c}
         for i, roman in enumerate(("", " II", " III", " IV", " V")):
             if name + roman not in used:
                 break
@@ -15787,7 +15864,8 @@ class Game:
                 return n
             for key, at, pen in (("coop", self.chicken_at, "chickens"),
                                  ("barn", self.cow_at, "cows"),
-                                 ("stable", self.horse_at, "horses")):
+                                 ("stable", self.horse_at, "horses"),
+                                 ("hutch", self.rabbit_at, "rabbits")):
                 if self.area.key == key:
                     i = at(x, y)
                     vid = i is not None and self.st[pen][i].get("vid")
@@ -15881,7 +15959,8 @@ class Game:
                      "%s the hen glares at you." % name, "info")
             self.end_turn(TOOL_COST)
             return
-        if (self.barned(vid) or self.homed(vid) or self.stabled(vid)) and \
+        if (self.barned(vid) or self.homed(vid) or self.stabled(vid) or
+                self.hutched(vid)) and \
                 spell != BEASTS[self.beast(vid)]["spell"]:
             self.say("The spell fizzles out, and %s the %s gives you a "
                      "long look." % (name, self.beast(vid)), "info")
@@ -15898,6 +15977,9 @@ class Game:
             return
         if spell == "horseify":
             self.beastify(n, "horse")
+            return
+        if spell == "bunnify":
+            self.beastify(n, "rabbit")
             return
         if self.hoofed(vid) and spell != "petrify":
             self.say(BEASTS[self.beast(vid)]["bounce"], "info")
@@ -15947,7 +16029,8 @@ class Game:
                              "sheep": "shakes out her fleece and bleats",
                              "cat": "stretches, yawns, and washes a paw",
                              "dog": "shakes herself and barks",
-                             "horse": "shakes out her mane and whinnies"}.get(
+                             "horse": "shakes out her mane and whinnies",
+                             "rabbit": "sits up and twitches her nose"}.get(
                              self.beast(vid), "shakes out her feathers and "
                              "clucks")), "quest")
             self.end_turn(TOOL_COST)
@@ -15995,7 +16078,7 @@ class Game:
         if self.is_sheep(vid):
             return ("ssheep_" if gold else "sheepf_") + \
                 self.sheep_colour(vid)
-        if self.pet_kind(vid) or self.is_horse(vid):
+        if self.pet_kind(vid) or self.is_horse(vid) or self.is_rabbit(vid):
             kind = self.beast(vid)
             return ("s" if gold else "") + kind + "_" + \
                 self.beast_colour(vid, kind)
@@ -17623,9 +17706,10 @@ class Game:
             not self.statue(vid)
 
     def kept(self, vid):
-        """In your coop, barn, stable or home: one of your animals."""
+        """In your coop, barn, stable, hutch or home: one of your
+        animals."""
         return self.cooped(vid) or self.barned(vid) or self.homed(vid) or \
-            self.stabled(vid)
+            self.stabled(vid) or self.hutched(vid)
 
     def homed(self, vid):
         return any(c.get("vid") == vid for c in self.st.get("pets", ()))
@@ -17675,6 +17759,12 @@ class Game:
                 return "grey"
             return {"black": "black", "brown": "bay",
                     "ginger": "chestnut"}.get(hair, "palomino")
+        if kind == "rabbit":
+            grey = VILLAGERS[vid]["look"].get("hair")
+            if grey in ("#eeeeee", "#9a9a9a"):
+                return "white" if grey == "#eeeeee" else "grey"
+            return {"black": "black", "brown": "brown",
+                    "ginger": "sandy"}.get(hair, "white")
         return self.cow_colour(vid) if kind == "cow" else \
             self.sheep_colour(vid)
 
@@ -17842,6 +17932,10 @@ class Game:
                 n.where, n.x, n.y = "stable", c["x"], c["y"]
                 if c.get("lx") is not None:
                     n.where, n.x, n.y = "valley", c["lx"], c["ly"]
+        for c in list(st.get("rabbits", ())):
+            if c.get("vid") == vid:
+                st["rabbits"].remove(c)
+                n.where, n.x, n.y = "hutch", c["x"], c["y"]
         n.hidden = self.cooped(vid)
 
     def build_barn(self):
@@ -18360,6 +18454,262 @@ class Game:
                      "She does not look pleased."), "quest")
         self.render()
 
+    # ── Rabbits: a hutch that fills itself ──
+    #
+    # A rabbit is grown, or a baby ("baby": the day she was born) for her
+    # first RABBIT_GROWS days.  Every RABBIT_LITTER days ("bred": her last
+    # litter, or the day she came to you or grew up) a grown doe, a
+    # villager under the fur or not, has a litter, if she's fed and there's
+    # room in the hutch: one to five, and one more for each heart past the
+    # first.  A villager's babies are ordinary rabbits, yours to sell.
+
+    def is_rabbit(self, vid):
+        return vid in self.st.setdefault("bunnified", [])
+
+    def hutched(self, vid):
+        return any(c.get("vid") == vid for c in self.st.get("rabbits", ()))
+
+    def is_baby(self, c):
+        return c.get("baby") is not None
+
+    def rabbit_tile(self, c):
+        return ("bunny_" if self.is_baby(c) else "rabbit_") + c["colour"]
+
+    def litter_bonus(self, c):
+        return max(0, self.pet_hearts(c) - 1)
+
+    def hutch_squares(self):
+        a = self.areas["hutch"]
+        return [(x, y) for y in range(a.h) for x in range(a.w)
+                if a.grid[y][x] == "straw" and (x, y) != a.entry]
+
+    def rabbit_at(self, x, y):
+        out = self.grazing_now("hutch")
+        for i, c in enumerate(self.st["rabbits"]):
+            if (c["x"], c["y"]) == (x, y) and not (out and c.get("ox")
+                                                   is not None):
+                return i
+        return None
+
+    def free_hutch_square(self):
+        here = self.pos() if self.area and self.area.key == "hutch" \
+            else None
+        free = [sq for sq in self.hutch_squares()
+                if self.rabbit_at(*sq) is None and sq != here]
+        return random.choice(free) if free else None
+
+    def rabbit_name(self):
+        used = {c["name"] for c in self.st["rabbits"]}
+        names = [n for n in RABBIT_NAMES if n not in used]
+        if names:
+            return random.choice(names)
+        for k in range(2, 1000):
+            names = [n for n in ("%s %s" % (b, ROMAN_NUMS[k] if k < len(
+                ROMAN_NUMS) else k) for b in RABBIT_NAMES) if n not in used]
+            if names:
+                return random.choice(names)
+        return "Bunny"
+
+    def add_rabbit(self, colour=None, baby=False):
+        """A rabbit in the hutch: one from Mabel, or a newborn."""
+        st = self.st
+        x, y = self.free_hutch_square() or self.hutch_squares()[0]
+        c = {"name": self.rabbit_name(), "kind": "rabbit",
+             "colour": colour or random.choice(RABBIT_COLOURS),
+             "x": x, "y": y, "petted": -1, "day": st["day"],
+             "bred": st["day"]}
+        if baby:
+            c["baby"] = st["day"]
+        st["rabbits"].append(c)
+        if not baby and self.area and self.area.key == "hutch":
+            self.render()
+        return c
+
+    def rabbit_minute(self):
+        """The rabbits hop about the hutch."""
+        a = self.areas["hutch"]
+        for c in self.st["rabbits"]:
+            if random.random() > 0.15 or self.is_out(c, "hutch"):
+                continue
+            dx, dy = random.choice(DIRS)
+            x, y = c["x"] + dx, c["y"] + dy
+            if a.inside(x, y) and a.grid[y][x] == "straw" and \
+                    (x, y) != a.entry and self.rabbit_at(x, y) is None and \
+                    (x, y) != self.pos():
+                c["x"], c["y"] = x, y
+                if c.get("vid") and c["vid"] in self.npcs:
+                    self.npcs[c["vid"]].x, self.npcs[c["vid"]].y = x, y
+
+    def rabbit_menu(self, i):
+        st = self.st
+        c = st["rabbits"][i]
+        name = c["name"]
+        if self.is_baby(c):
+            left = RABBIT_GROWS - (st["day"] - c["baby"])
+            what = "a baby; grown %s" % (
+                "tonight" if left <= 1 else "in %d days" % left)
+        else:
+            left = RABBIT_LITTER - (st["day"] - c.get("bred", c["day"]))
+            bonus = self.litter_bonus(c)
+            what = "%s%s%s" % (
+                "no babies till she's fed" if c.get("hungry") and
+                left <= 1 else "babies due tonight" if left <= 1 else
+                "babies due in %d days" % left,
+                ", %d more for her hearts" % bonus if bonus else "",
+                "; %d born so far" % c["babies"] if c.get("babies") else "")
+        items = [("Pet %s" % name, lambda: self.pet_rabbit(i))]
+        if not c.get("vid"):
+            items.append(("Give her a new name",
+                          lambda: self.start_naming(i, "rabbits")))
+            items.append(("Sell her to Mabel (%dg)" % self.rabbit_price(c),
+                          lambda: self.sell_rabbits_menu([c])))
+        items += [("Squeeze past", lambda: self.edge_past(i, "rabbits")),
+                  ("Leave her be", lambda: None)]
+        self.open_menu("%s, a %s %s %s%s (%s)" % (
+            name, c["colour"], "baby rabbit" if self.is_baby(c) else
+            "rabbit", self.pet_hearts_text(c),
+            " (hungry)" if c.get("hungry") else "", what), items)
+
+    def pet_rabbit(self, i):
+        c = self.st["rabbits"][i]
+        self.flash(*self.animal_spot(c, "hutch"), "heart")
+        vid = c.get("vid")
+        if c.get("petted") == self.st["day"]:
+            self.say("%s has had her fuss for today. She thumps a back foot "
+                     "to say so." % c["name"], "info")
+            self.end_turn(1)
+            return
+        self.farm_love(c, FARM_LOVE["pet"])
+        c["petted"] = self.st["day"]
+        if vid and self.likes_change(vid, "bunnify"):
+            self.say("You stroke %s's ears flat along her back. She "
+                     "flops over on her side, blissful." % c["name"], "good")
+            self.befriend(vid, GIFT_POINTS["like"])
+        elif vid:
+            self.say("You stroke %s. She goes stiff as a loaf and glares "
+                     "at the wall." % c["name"], "info")
+        else:
+            self.say(random.choice(BUNNY_PETS if self.is_baby(c) else
+                                   RABBIT_PETS) % c["name"], "good")
+        self.end_turn(1)
+
+    def rabbit_price(self, c):
+        return RABBIT_SELL[1 if self.is_baby(c) else 0]
+
+    def sell_rabbits_menu(self, herd):
+        pay = sum(self.rabbit_price(c) for c in herd)
+        if len(herd) == 1:
+            title = "Sell %s to Mabel for %dg? She'll find her a good " \
+                    "home." % (herd[0]["name"], pay)
+            yes = "Yes, sell %s" % herd[0]["name"]
+        else:
+            title = "Sell all %d babies to Mabel for %dg? She'll find " \
+                    "them good homes." % (len(herd), pay)
+            yes = "Yes, sell them"
+        self.open_menu(title, [(yes, lambda: self.sell_rabbits(herd)),
+                               ("No, keep %s" % (
+                                   "her" if len(herd) == 1 else "them"),
+                                lambda: None)])
+
+    def sell_rabbits(self, herd):
+        """Mabel takes them off your hands, and pays for them."""
+        st = self.st
+        herd = [c for c in herd if c in st["rabbits"] and not c.get("vid")]
+        if not herd:
+            self.render()
+            return
+        pay = sum(self.rabbit_price(c) for c in herd)
+        for c in herd:
+            st["rabbits"].remove(c)
+        self.p["gold"] += pay
+        st["stats"]["earned"] = st["stats"].get("earned", 0) + pay
+        self.sound.play("gold")
+        self.say("Mabel comes up the lane with a basket lined with straw, "
+                 "and off %s to %s. (+%dg)" % (
+                     "goes " + herd[0]["name"] if len(herd) == 1 else
+                     "go %d little rabbits" % len(herd),
+                     "a good home" if len(herd) == 1 else "good homes", pay),
+                 "gold")
+        self.end_turn(2)
+
+    def hutch_rabbit(self, vid):
+        """A villager-rabbit led into the hutch: one of your rabbits now,
+        till bunnify turns her back.  She has litters like any doe, but
+        she isn't yours to sell."""
+        st = self.st
+        n = self.npcs[vid]
+        name = VILLAGERS[vid]["short"]
+        if len(st["rabbits"]) >= HUTCH_ROOM:
+            self.say("The hutch is full. %s waits by the door with you, "
+                     "nose twitching." % name, "info")
+            taken = {(m.where, m.x, m.y) for m in self.npcs.values()
+                     if m is not n}
+            n.where = "hutch"
+            n.x, n.y = self.free_spot("hutch", *self.pos(), taken)
+            return
+        st["leashed"] = None
+        x, y = self.free_hutch_square() or self.hutch_squares()[0]
+        st["rabbits"].append({"name": name, "kind": "rabbit",
+                              "colour": self.beast_colour(vid, "rabbit"),
+                              "x": x, "y": y, "petted": -1,
+                              "day": st["day"], "bred": st["day"],
+                              "vid": vid})
+        n.where, n.x, n.y, n.hidden = "hutch", x, y, True
+        n.goal, n.path, n.visit = None, [], None
+        self.say("You unclip the leash, and %s the rabbit hops into the "
+                 "straw and starts on the hay. She's one of your rabbits "
+                 "now. (%s)" % (
+                     name, "She looks very content." if self.likes_change(
+                         vid, "bunnify") else
+                     "She does not look pleased."), "quest")
+        self.render()
+
+    def rabbits_night(self):
+        """Overnight in the hutch: babies grow up, and does have
+        litters."""
+        st = self.st
+        day = st["day"]
+        grew, litters, crowded = [], [], []
+        for c in st["rabbits"]:
+            if self.is_baby(c) and day - c["baby"] >= RABBIT_GROWS:
+                del c["baby"]
+                c["bred"] = day
+                grew.append(c["name"])
+        for c in list(st["rabbits"]):
+            if self.is_baby(c) or c.get("hungry") or \
+                    day - c.get("bred", c.get("day", day)) < RABBIT_LITTER:
+                continue
+            c["bred"] = day
+            room = HUTCH_ROOM - len(st["rabbits"])
+            if room <= 0:
+                crowded.append(c["name"])
+                continue
+            bonus = self.litter_bonus(c)
+            want = random.randint(1, 5) + bonus
+            n = min(want, room)
+            for _ in range(n):
+                self.add_rabbit(c["colour"] if random.random() < 0.7 else
+                                random.choice(RABBIT_COLOURS), baby=True)
+            c["babies"] = c.get("babies", 0) + n
+            litters.append((c["name"], n, bonus, n < want))
+        if litters:
+            self.sound.play("quest")
+            self.say("In the hutch overnight: %s!%s" % (and_list([
+                "%s had %s%s" % (
+                    name, "a baby" if n == 1 else "%d babies" % n,
+                    " (%d for her hearts)" % min(bonus, n) if bonus else "")
+                for name, n, bonus, short in litters]),
+                " The hutch was too full for more." if any(
+                    l[3] for l in litters) else ""), "good")
+        if crowded:
+            self.say("The hutch is full: %s had no room for a litter. Sell "
+                     "a few to Mabel." % and_list(crowded), "info")
+        if grew:
+            self.say("%s %s grown up%s." % (
+                and_list(grew), "has" if len(grew) == 1 else "have",
+                ", and will soon have babies of her own" if len(grew) == 1
+                else ", and will soon have babies of their own"), "good")
+
     # ── Pets: cats curled up in your cabin, dogs out in the farmyard ──
 
     def pet_home(self, kind):
@@ -18557,14 +18907,16 @@ class Game:
                     c["ox"], c["oy"] = x, y
                     taken.add((x, y))
                     self.maybe_drop(left, {"chickens": "hen",
-                                           "horses": "horse"}.get(pen,
-                                                                  "pat"))
+                                           "horses": "horse",
+                                           "rabbits": "rabbit"}.get(pen,
+                                                                    "pat"))
 
     def maybe_drop(self, at, kind):
         """Now and then, a grazing animal leaves something behind."""
         st = self.st
         k = "%d,%d" % at
-        if random.random() < (0.012 if kind == "hen" else 0.02) and \
+        if random.random() < (0.012 if kind in ("hen", "rabbit") else
+                              0.02) and \
                 len(st["droppings"]) < DROPPINGS and \
                 k not in st["droppings"] and not self.thing_at(*at):
             st["droppings"][k] = kind
@@ -18604,10 +18956,17 @@ class Game:
             items.append(("Call them back in", lambda: self.call_in(b)))
         elif herd:
             items.append(("Let them out to graze", lambda: self.let_out(b)))
+        if b == "hutch":
+            babies = [c for c in st["rabbits"] if self.is_baby(c) and
+                      not c.get("vid")]
+            if babies:
+                items.append(("Sell the babies to Mabel (%d, %dg)" % (
+                    len(babies), len(babies) * RABBIT_SELL[1]),
+                    lambda: self.sell_rabbits_menu(babies)))
         items.append(("Leave it", lambda: None))
         self.open_menu("The feed trough: %d hay in it for %d %s%s. %s" % (
-            inside, herd, {"chickens": "hen", "horses": "horse"}.get(
-                pen, "animal"),
+            inside, herd, {"chickens": "hen", "horses": "horse",
+                           "rabbits": "rabbit"}.get(pen, "animal"),
             "" if herd == 1 else "s",
             "The silo keeps it topped up (%d hay left in it)." % st["hay"]
             if self.silo_room() else
@@ -18654,6 +19013,7 @@ class Game:
                  "sunshine. They'll be in by themselves at dusk." % (
                      b, "trot, clucking," if pen == "chickens" else
                      "clatter, tossing their manes," if pen == "horses"
+                     else "hop, noses twitching," if pen == "rabbits"
                      else "amble, one by one,"), "good")
         self.end_turn(2)
 
@@ -18917,7 +19277,8 @@ class Game:
                     name, "bleats happily and skips after you." if
                     self.likes_change(vid, "sheepify") else "bleats "
                     "crossly, but trots along. She has no choice."), "good")
-            elif self.pet_kind(vid) or self.is_horse(vid):
+            elif self.pet_kind(vid) or self.is_horse(vid) or \
+                    self.is_rabbit(vid):
                 kind = self.beast(vid)
                 self.say("You clip the leash on. %s the %s %s" % (
                     name, kind, BEASTS[kind]["leash"][
@@ -18941,7 +19302,8 @@ class Game:
         self.st["leashed"] = None
         n.goal, n.path, n.stuck = None, [], 0
         if not quiet:
-            if self.pet_kind(n.vid) or self.is_horse(n.vid):
+            if self.pet_kind(n.vid) or self.is_horse(n.vid) or \
+                    self.is_rabbit(n.vid):
                 self.say(BEASTS[self.beast(n.vid)]["unleash"] %
                          VILLAGERS[n.vid]["short"], "info")
                 self.end_turn(1)
@@ -18981,6 +19343,9 @@ class Game:
         if here == "stable" and area != "stable" and self.is_horse(vid):
             self.stable_horse(vid)
             return
+        if here == "hutch" and area != "hutch" and self.is_rabbit(vid):
+            self.hutch_rabbit(vid)
+            return
         if here == "cabin" and area != "cabin" and self.pet_kind(vid):
             self.home_pet(vid)
             return
@@ -18991,6 +19356,13 @@ class Game:
                      VILLAGERS[vid]["short"], "info")
             return
         if n.where == "valley" and here == "coop" and self.hoofed(vid):
+            return
+        if here != area and here == "hutch" and not self.is_rabbit(vid):
+            self.say("%s won't fit through the hutch door. She waits "
+                     "outside." % VILLAGERS[vid]["short"], "info")
+            return
+        if n.where == "valley" and here == "hutch" and \
+                not self.is_rabbit(vid):
             return
         if n.where != here or area != here:
             taken = {(m.where, m.x, m.y) for m in self.npcs.values()
@@ -19244,12 +19616,14 @@ class Game:
                 self.render()
             return
         squares = {"coop": self.coop_squares, "barn": self.barn_squares,
-                   "stable": self.stable_squares}[b]()
+                   "stable": self.stable_squares,
+                   "hutch": self.hutch_squares}[b]()
         here = self.pos()
         entry = self.areas[b].entry
         to = here if here in squares and here != entry else {
             "coop": self.free_coop_square, "barn": self.free_barn_square,
-            "stable": self.free_stable_square}[b]()
+            "stable": self.free_stable_square,
+            "hutch": self.free_hutch_square}[b]()
         if to is None:
             self.say("There's no room to get round %s." % c["name"], "info")
             self.render()
@@ -19268,6 +19642,11 @@ class Game:
                 c["name"], "info")
             if [x, y] in self.st["eggs"]:
                 self.pick_egg(x, y)
+        elif pen == "rabbits":
+            self.say(random.choice((
+                "%s hops out of your way, ears flat, and you step past.",
+                "You lift %s, warm and wriggling, step past, and set her "
+                "down behind you.")) % c["name"], "info")
         else:
             self.say(random.choice((
                 "You put a shoulder to %s and lean. Eventually, grudgingly, "
@@ -20415,6 +20794,7 @@ class Game:
         self.spawn_forage()
         self.stock_quarry()
         self.regrow_trees()
+        self.rabbits_night()
         # people
         for f in st["friends"].values():
             if self.weekday() == 0:
@@ -20587,6 +20967,8 @@ class Game:
             self.cow_minute()
         if here == "stable" and visible:
             self.horse_minute()
+        if here == "hutch" and visible:
+            self.rabbit_minute()
         if visible:
             self.pet_minute(here)
             if here == "valley":
@@ -20803,6 +21185,16 @@ class Game:
             if self.squeeze_past(n):
                 self.say("She %s aside and lets you by." % (
                     "slinks" if kind == "cat" else "bounds"), "info")
+            self.end_turn(1)
+            return
+        if self.is_rabbit(vid):
+            self.walking = None
+            self.say(random.choice(
+                RABBIT_HAPPY if self.likes_change(vid, "bunnify") else
+                RABBIT_ANGRY).replace("{who}", VILLAGERS[vid]["short"]),
+                "info")
+            if self.squeeze_past(n):
+                self.say("She hops aside and lets you by.", "info")
             self.end_turn(1)
             return
         if self.is_horse(vid):
@@ -21190,6 +21582,7 @@ class Game:
                            ("cat", lambda v: self.beast(v) == "cat"),
                            ("dog", lambda v: self.beast(v) == "dog"),
                            ("horse", self.is_horse),
+                           ("rabbit", self.is_rabbit),
                            ("statue", self.statue),
                            ("maid", self.maid), ("swapped", self.swapped)):
             if test(vid):
@@ -21211,7 +21604,8 @@ class Game:
                      "chickenfy", "maid": "maidify",
                      "cow": "cowify", "sheep": "sheepify",
                      "cat": "catify", "dog": "dogify",
-                     "horse": "horseify", "furniture": "chairify"}.get(
+                     "horse": "horseify", "rabbit": "bunnify",
+                     "furniture": "chairify"}.get(
                          kind, "genderswap")
             likes = self.likes_change(other, spell)
             line += " " + random.choice(GOSSIP_HINTS[kind][0 if likes
@@ -21329,7 +21723,7 @@ class Game:
                        n if vid == "juniper" else "Juniper's ever so proud "
                        "of her museum. %d pieces now!" % n)
         was = [c for c in st["chickens"] + st["cows"] + st["horses"] +
-               st["pets"] if c.get("was")]
+               st.get("rabbits", []) + st["pets"] if c.get("was")]
         if was:
             c = random.choice(was)
             out.append("Is it true %s on your farm used to be %s? %s" % (
@@ -21667,6 +22061,11 @@ class Game:
             if name == "horse" and ("stable" not in self.built() or len(
                     self.st["horses"]) >= HORSE_ROOM):
                 continue
+            if name == "rabbit hutch" and "hutch" in self.built():
+                continue
+            if name == "rabbit" and ("hutch" not in self.built() or len(
+                    self.st["rabbits"]) >= HUTCH_ROOM):
+                continue
             if name in WEAPONS and name in self.p["tools"]:
                 continue
             if name in ARMOUR and ARMOUR[name][0] <= self.p.get("armour",
@@ -21872,6 +22271,22 @@ class Game:
                             "don't leave her out all night: she'll walk "
                             "herself home, but she won't thank you." %
                        c["name"])
+            return
+        elif name == "rabbit":
+            c = self.add_rabbit()
+            self.speak(vid, "(happy)She's in your hutch already. Her name's "
+                            "%s. Hay in the trough, a pat every day, and in "
+                            "ten days... well. You'll see. The happier she "
+                            "is, the more you'll see. I'll buy back any you "
+                            "can't keep: just say so in the hutch." %
+                       c["name"])
+            return
+        elif name == "rabbit hutch":
+            self.build_on_farm("hutch")
+            self.speak(vid, "(happy)There: a snug little hutch between your "
+                            "well and your coop, with a trough and a hay "
+                            "rack. Room for twenty. Trust me, you'll need "
+                            "every inch.")
             return
         elif name == "stable":
             self.build_on_farm("stable")
@@ -22844,6 +23259,10 @@ class Game:
             for cow in st["cows"]:
                 if not self.is_out(cow, "barn"):
                     people[(cow["x"], cow["y"])] = self.barn_tile(cow)
+        if a.key == "hutch":
+            for r in st["rabbits"]:
+                if not self.is_out(r, "hutch"):
+                    people[(r["x"], r["y"])] = self.rabbit_tile(r)
         if a.key == "stable":
             for horse in st["horses"]:
                 if self.in_stall(horse):
@@ -22856,7 +23275,8 @@ class Game:
                         people[(beast["ox"], beast["oy"])] = (
                             "hen_" + beast["colour"] if pen == "chickens"
                             else "horse_" + beast["colour"] if
-                            pen == "horses" else self.barn_tile(beast))
+                            pen == "horses" else self.rabbit_tile(beast) if
+                            pen == "rabbits" else self.barn_tile(beast))
             for horse in st["horses"]:
                 if horse.get("lx") is not None:
                     people[(horse["lx"], horse["ly"])] = \
@@ -23542,6 +23962,17 @@ class Game:
                                " (left out)" if c.get("lx") is not None
                                else "")
                 for c in horses) + ".", 64)
+        rabbits = self.st.get("rabbits", [])
+        if rabbits:
+            babies = sum(1 for c in rabbits if self.is_baby(c))
+            lines += [""] + wrap("Your rabbits (%d grown, %d %s): " % (
+                len(rabbits) - babies, babies,
+                "baby" if babies == 1 else "babies") + ", ".join(
+                "%s%s %s%s" % (c["name"], " (baby)" if self.is_baby(c)
+                               else "", self.pet_hearts_text(c),
+                               " \u2665" if c.get("petted") ==
+                               self.st["day"] else "")
+                for c in rabbits) + ".", 64)
         for kind, label in (("cow", "Your cows: "), ("sheep",
                                                      "Your sheep: ")):
             herd = [c for c in self.st.get("cows", [])
@@ -24021,6 +24452,11 @@ COMMON_TOPICS = {
     "stable": "Ivy builds stables. Ask her.",
     "riding": "Get a horse from Mabel and walk into her to ride. Twice as "
               "fast as walking, and much more fun.",
+    "rabbit": "Ivy builds hutches, and Mabel sells rabbits. Mind, two "
+              "rabbits soon make twenty!",
+    "rabbits": "Ivy builds hutches, and Mabel sells rabbits. Mind, two "
+               "rabbits soon make twenty!",
+    "hutch": "Ivy builds rabbit hutches. Ask her.",
     "bouquet": "Mabel sells blossom bouquets. For someone special, you "
                "know.",
     "pendant": "Otto makes the blossom pendants. Only for a sweetheart at "
@@ -28074,6 +28510,161 @@ GOSSIP_HINTS["furniture"] = (
      "They creaked ever so happily when I dusted them."],
     ["They pinched me with a hinge. On purpose.",
      "I heard them squeaking crossly in an empty room."])
+RABBIT_BACK = {   # turned back: sorry to be human again, glad of it
+    "rowan": ("(blush)...It was quiet in the hutch. Warm straw. Nobody "
+              "wanting a horseshoe. I'd go back.",
+              "(cross)Otto picked me up by the scruff and asked if I'd "
+              "make a good hat. He was JOKING. I think."),
+    "felix": ("(happy)A rabbit's heart beats two hundred times a minute, "
+              "you know. I could feel every one. Fascinating.",
+              "(cross)I was a rabbit, {name}. I was frightened of a "
+              "LEAF. I am a doctor."),
+    "theo": ("(laugh)Dude, I could hop like, three feet straight up! I did "
+             "it all day! Binkies, they're called. Look it up!",
+             "(cross)Dude, Gus kept calling me 'bait'. Every time he walked "
+             "past. 'Morning, bait.'"),
+    "juniper": ("(blush)It was so cosy. I curled up in the straw and "
+                "didn't have to talk to anyone. Bliss.",
+                "(sad)I tried to read a book and nibbled the corner off. "
+                "A LIBRARY book."),
+    "wren": ("(laugh)My ears were as long as my arms! I could hear a "
+             "lark from the other side of the valley!",
+             "(cross)Someone tied a ribbon round my ear. A PINK one. I "
+             "look terrible in pink."),
+    "ivy": ("(laugh)Huh. I chewed through a whole fence post in an "
+            "afternoon. I could use teeth like that on the job.",
+            "(cross)I was in a hutch. A hutch I BUILT. The joints were "
+            "perfect and I couldn't even admire them."),
+    "edmund": ("(happy)A rabbit for mayor! Everyone wanted to stroke me! "
+               "My approval ratings have never been higher!",
+               "(cross)The council met without me. I was under the table "
+               "eating a lettuce."),
+    "rose": ("(laugh)Oh, I sat in the cabbages all afternoon, dear, and "
+             "nobody told me off for once!",
+             "(sad)Oh, sweetheart. I was frightened of my own teapot. "
+             "At my age."),
+    "mabel": ("(surprised)I ate for free all week! Do you know what that "
+              "saved me in greens?",
+              "(cross)Biscuit stalked me. My own cat. Round and round the "
+              "counter. I've never been so insulted."),
+    "otto": ("(laugh)HA! The mightiest rabbit in the valley! I thumped my "
+             "foot and the whole hutch shook!",
+             "(cross)Small! I was SMALL! Small and fluffy! A smith should "
+             "never be fluffy."),
+    "bernard": ("(happy)Oh! I dozed in a sunbeam all afternoon. Nobody "
+                "needed a pint. Ever so restful.",
+                "(sad)Oh dear. Somebody asked if I'd go nicely in a pie. At "
+                "my own inn."),
+    "amy": ("(happy)A burrow, a bit of clover, nobody wanting a crossword. "
+            "Not bad at all.",
+            "(cross)Rusty painted my tail pink. 'It's a pom-pom, "
+            "darling!' I'm going to need some quiet."),
+    "rusty": ("(laugh)Darling, the EARS! They framed my face perfectly! I "
+              "was born to be a lop!",
+              "(cross)Fluff, darling. Fluff everywhere. And not one of you "
+              "said I looked distinguished."),
+    "marisol": ("(laugh)I ate a whole carrot cake! Well, the carrots off "
+                "it! I'm making a rabbit-shaped loaf!",
+                "(cross)Somebody fed me a carrot. A raw one. I BAKE with "
+                "carrots."),
+    "silas": ("(happy)A rabbit sees almost all the way round its head. I "
+              "watched the whole sunset without turning once.",
+              "(cross)Everybody wanted to paint ME. Again. Nobody let me "
+              "paint."),
+    "dmitri": ("(happy)A rabbit's eyes see in the dark beautifully. I "
+               "watched the stars all night from the hutch. Remarkable.",
+               "(cross)A rabbit cannot use a telescope. I tried. I fell "
+               "in it."),
+    "jonah": ("(happy)The sheep didn't mind me at all. We grazed side by "
+              "side all day. Nice.",
+              "(cross)Duchess sat on me. A goat. On me."),
+    "clara": ("(laugh)Benji carried me round all day and told everyone I "
+              "was his pet! He was so proud!",
+              "(cross)Benji tried to post me! In the MAILBAG! First class!"),
+    "gus": ("(laugh)Ha! I dug a burrow clean under the boathouse! Snug as "
+            "a hold!",
+            "(cross)Theo called me 'bait'. Well. I called him worse, in "
+            "thumps."),
+    "agnes": ("(happy)A tidy, well-groomed doe. I washed my ears forty "
+              "times a day. I approve entirely.",
+              "(cross)I was passed round the schoolroom for a nature "
+              "lesson. By my own pupils."),
+    "bea": ("(laugh)Being a rabbit is BRILLIANT! Do you know their teeth "
+            "never stop growing? I checked!",
+            "(cross)I couldn't treat anyone! I couldn't even reach the "
+            "bandages!"),
+    "nell": ("(happy)Brilliant hind legs, a rabbit. Like a sprung "
+             "catapult. I've drawings to make.",
+             "(cross)I gnawed a cable in the workshop. It was "
+             "load-bearing."),
+    "colm": ("(laugh)I hopped the Gazette round the whole valley! Well, I "
+             "hopped. The Gazette stayed home.",
+             "(cross)Tomoko made me the front page. 'LOCAL BOY: FLUFFY.' "
+             "Above the fold."),
+    "tomoko": ("(laugh)I sat in the clover and twitched my nose. It was "
+               "not dignified. I would do it again tomorrow.",
+               "(cross)Colm wrote a column about my ears. We are not "
+               "discussing it."),
+    "john": ("(laugh)Ha! I dug a tunnel halfway to the quarry! Faster than "
+             "with a pick!",
+             "(cross)Pippa dressed me as a dragon. With paper wings. I let "
+             "her. Every time."),
+    "jonathan": ("(laugh)I mapped every burrow on the farm. There are "
+                 "forty-one. Best survey I've ever done.",
+                 "(cross)I kept trying to look at the map. Rabbits can't "
+                 "hold maps."),
+    "pip": ("(laugh)I could hop SO HIGH! I explored every burrow in the "
+            "woods! Can I be one again? Can I?",
+            "(cross)Ivy kept checking my teeth! She said I'd need them "
+            "filed! I DON'T!"),
+    "benji": ("(laugh)I was a knight's rabbit! A war rabbit! The fiercest "
+              "in the realm! I thumped at the mailbox!",
+              "(cross)Mum kept carrying me everywhere! Like a BABY! Knights "
+              "don't get carried!"),
+    "pippa": ("(happy)I was a dragon rabbit! Well, a rabbit. But I "
+              "pretended the wings! It was the best day!",
+              "(sad)I couldn't draw anything with paws. Not one dragon. "
+              "All week."),
+}
+RABBIT_HAPPY = ["The rabbit that is {who} twitches her nose at you, "
+                "friendly as anything.",
+                "{who} the rabbit does a little leap and a twist in the "
+                "air, for joy.",
+                "{who} flops over on her side in the grass, utterly "
+                "content.",
+                "{who} the rabbit nudges your boot with her nose."]
+RABBIT_ANGRY = ["The rabbit that is {who} thumps a back foot at you, hard.",
+                "{who} the rabbit turns her back on you, ears flat.",
+                "{who} gives a furious little grunt and hops off a pace.",
+                "{who} the rabbit glares at you. Rabbits can glare."]
+GOSSIP["rabbit"] = [
+    "(surprised)Is that rabbit by the hedge really {who}? I keep wondering "
+    "whether they like it.",
+    "(sad)I left a carrot out for {who}. Is that rude? Do you think "
+    "they're happy?",
+    "Do you suppose {who} still thinks like a person, under all that fluff? "
+    "Or just about clover?"]
+GOSSIP_HINTS["rabbit"] = (
+    ["They did a happy little leap when they saw me.",
+     "I saw them flopped out in the sun, happy as anything."],
+    ["They thumped their foot at me. Twice.",
+     "They wouldn't come out from under the bench by the inn."])
+BEASTS["rabbit"] = {
+    "spell": "bunnify", "list": "bunnified", "back": RABBIT_BACK,
+    "home": "hutch",
+    "bounce": "The spell bounces off the rabbit's fluff. Rabbits are "
+              "rabbits.",
+    "gold": "The spell skids off the gold. Gold doesn't hop.",
+    "grow": "With a pop, %s shrinks right down, ears shoot up, and there "
+            "sits a %s rabbit, %s.",
+    "happy": "nose twitching happily", "cross": "thumping a foot crossly",
+    "leash": ("hops along at your heel, ears up.",
+              "flattens her ears, and is towed along in little hops. She "
+              "has no choice."),
+    "unleash": "You unclip the leash. %s the rabbit gives a little leap "
+               "and hops off about her day.",
+    "unmade": "A last little hop, the ears shrink back, and %s is back on "
+              "two feet, brushing fluff off their sleeves."}
 CHICKEN_BACK = {   # turned back: sorry to be human again, glad of it
     "marisol": ("(laugh)I laid an egg! A perfect egg! I'm putting it in a "
                 "cake!",
@@ -28338,6 +28929,69 @@ def rider_art(look, colour):
     return px
 
 
+RABBIT_COLOURS = ("white", "brown", "grey", "black", "sandy")
+RABBIT_TONES = {   # fur, its shadow, and the belly and tail
+    "white": ("#f2eee8", "#c8c0b4", "#ffffff"),
+    "brown": ("#8a6440", "#5e4228", "#d8c0a0"),
+    "grey": ("#9a9aa4", "#6c6c78", "#d4d4da"),
+    "black": ("#38343c", "#1e1c22", "#7a7480"),
+    "sandy": ("#d8b47a", "#a8844e", "#f4e6c8")}
+RABBIT_NAMES = ["Clover", "Thistle", "Hazel", "Bluebell", "Primrose",
+                "Buttons", "Mopsy", "Bunting", "Dandelion", "Butterscotch",
+                "Honey", "Pipkin", "Cottontail", "Snowdrop", "Fern",
+                "Truffle", "Marigold", "Puffball", "Bramble", "Poppy",
+                "Toffee", "Nibbles", "Sorrel", "Willow"]
+ROMAN_NUMS = ("", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
+              "X", "XI", "XII")
+RABBIT_PETS = ["You stroke %s from nose to tail. She grinds her teeth "
+               "softly, which means she's very happy.",
+               "%s nudges your hand for more, then flops over, blissful.",
+               "You rub %s behind the ears. Her nose slows right down.",
+               "%s washes your fingers for you. Thoroughly."]
+BUNNY_PETS = ["You cup %s in both hands. She's no bigger than an apple.",
+              "%s falls asleep in your palm, ears and all.",
+              "You stroke %s with one finger. She sneezes, and falls over.",
+              "%s scrambles up your sleeve and sits on your shoulder."]
+RABBIT_ROWS = (   # sitting up, side on, facing right
+    "................",
+    "..........bb....",
+    "..........bkb.bb",
+    "...........bkbkb",
+    "...........bkbkb",
+    "............bbb.",
+    "...........bbbbb",
+    "...........bebbn",
+    "......bbbbbbbbbb",
+    "....bbbbbbbbbbb.",
+    "...bbbbbbbbbbbb.",
+    "..wbbbbbbbbbWW..",
+    "..wwbbbbbbbbWW..",
+    "...bbbbbbbbbW...",
+    "...BBBBBBBBbB...",
+    "....BBBB..lll...")
+BUNNY_ROWS = (    # a baby: half the size, and all ears
+    "................", "................", "................",
+    "................", "................", "................",
+    "................",
+    "..........b.b...",
+    "..........kbk...",
+    "..........bbbb..",
+    "..........bbebn.",
+    ".......bbbbbbb..",
+    "......wbbbbbW...",
+    "......wbbbbbW...",
+    ".......BBBBlB...",
+    "................")
+
+
+def rabbit_art(colour, rows=RABBIT_ROWS):
+    fur, dark, belly = RABBIT_TONES[colour]
+    pal = {"b": fur, "B": dark, "W": belly, "w": belly,
+           "k": "#f0a8b4", "e": "#b02838" if colour == "white" else
+           "#141010", "n": "#e07888", "l": dark}
+    return art_pixels(pal, rows)
+
+
 SHEEP_COLOURS = ("white", "cream", "brown", "black")
 SHEEP_NAMES = ["Woolly", "Fluff", "Dumpling", "Snowball", "Lambkin",
                "Clementine", "Nutmeg", "Cotton", "Pippa", "Biscuit Two",
@@ -28429,6 +29083,10 @@ SCOOPS = {
             "You shovel up the pat, holding your breath. The fields will "
             "thank you.",
             "Into the sack it goes. Somebody has to."],
+    "rabbit": ["You sweep up a scatter of rabbit pellets. The best "
+               "fertilizer there is, Rose says.",
+               "Rabbit droppings, into the sack. Lots of them. Rabbits.",
+               "You scoop up the little pellets. Tidy, at least."],
     "horse": ["You shovel up what the horse left. Roses love it, they say.",
               "Horse apples, into the sack. Not the eating kind.",
               "You scoop it up. Grassy, steaming, and good for the soil."],
@@ -28440,6 +29098,9 @@ STEP_IN = {
     "pat": ["Squelch. You've stepped right in a cow pat. Yuck!",
             "Ugh! That's going to need scraping off your boot.",
             "Yuck. Fresh, too. Still warm, even."],
+    "rabbit": ["Crunch. Rabbit pellets, all over your boot.",
+               "Ugh. A rabbit's been this way. Several times.",
+               "Little pellets underfoot. You don't look down."],
     "horse": ["Squelch. A horse has been this way. Yuck!",
               "Ugh! You've trodden right in what the horse left behind.",
               "Squish. It's a big one, too. Horses."],
@@ -28730,6 +29391,10 @@ def all_tiles(season=0):
     for colour in HORSE_COLOURS:
         sprites["horse_" + colour] = horse_art(colour)
         sprites["shorse_" + colour] = golden(sprites["horse_" + colour])
+    for colour in RABBIT_COLOURS:
+        sprites["rabbit_" + colour] = rabbit_art(colour)
+        sprites["srabbit_" + colour] = golden(sprites["rabbit_" + colour])
+        sprites["bunny_" + colour] = rabbit_art(colour, BUNNY_ROWS)
     for colour in SHEEP_COLOURS:
         sprites["sheep_" + colour] = sheep_art(colour, False)
         sprites["sheepf_" + colour] = sheep_art(colour, True)
@@ -28738,7 +29403,7 @@ def all_tiles(season=0):
         tiles[name] = px
         SPRITES.add(name)
         if name.startswith(("v_", "vx_", "vm_", "hen_", "cow_", "sheep",
-                            "cat_", "dog_", "horse_")):
+                            "cat_", "dog_", "horse_", "rabbit_", "bunny_")):
             tiles[name + "@1"] = px[1:] + [[None] * 16]   # a bob
     return tiles
 
@@ -28748,6 +29413,7 @@ def all_tiles(season=0):
 DAY_ONLY = ("v_", "s_", "vx_", "sx_", "vm_", "sm_", "tv_", "lh_", "shen_",
             "cow_", "scow_", "sheep", "ssheep", "cat_", "horse_", "shorse_",
             "ride_", "scat_", "dog_", "sdog_", "hen_", "mon_", "smon_",
+            "rabbit_", "srabbit_", "bunny_",
             "mmaid_", "mtree_", "mloo_", "tvg_", "mtreeg_", "ftg_")
 
 
@@ -28891,6 +29557,16 @@ ART["drop_horse"] = ({"b": "#6a4a28", "B": "#4a3018", "h": "#8a6a3a"}, (
     "....hbbBhbbBb...",
     ".....BBbBBBB....",
     "................", "................"))
+ART["drop_rabbit"] = ({"b": "#4a3a26", "h": "#6a5438"}, (
+    "................", "................", "................",
+    "................", "................", "................",
+    "................", "................", "................",
+    "................", "................",
+    "....hb...b......",
+    ".......hb...hb..",
+    "...b..b.....b...",
+    "......hb..b.....",
+    "................"))
 ART["drop_hen"] = ({"b": "#5a4a2e", "w": "#f4f0e6", "B": "#3a2e1a"}, (
     "................", "................", "................",
     "................", "................", "................",
@@ -29134,7 +29810,7 @@ def selftest():
         if vid not in SWAP_LINES or vid not in UNSTATUE or \
                 vid not in CHICKEN_BACK or vid not in TREE_BACK or \
                 vid not in TREE_TALK or vid not in TREE_CHOPPED or vid not in CAT_BACK or \
-                vid not in DOG_BACK or (
+                vid not in DOG_BACK or vid not in RABBIT_BACK or (
                     (vid not in MAID_LINES or vid not in LOO_BACK or
                      vid not in COW_BACK or vid not in SHEEP_BACK or
                      vid not in HORSE_BACK or
@@ -29301,6 +29977,7 @@ def selftest():
                     in ("checkup", "cabin extension", "cabin wing",
                         "chicken", "chicken coop", "leash", "barn",
                         "greenhouse", "stable", "horse",
+                        "rabbit hutch", "rabbit",
                         "cow", "milk pail", "sheep", "shears", "cat", "dog",
                         "fishing rod", "sprinkler", "short sword",
                         "broadsword") and entry[0] not in ARMOUR:

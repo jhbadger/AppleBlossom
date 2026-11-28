@@ -134,7 +134,7 @@ the tool would do something there.
 | Axe, on a tree | three swings fell it, for 8 wood and a stump to clear (6 more); it grows back after a season |
 | Fishing rod | ask Theo about FISHING; face water and cast |
 | Magic wand | casts a spell straight ahead (see below) |
-| Leash | from Mabel's: leads a villager the wand made into a hen, cow, sheep, cat, dog or horse, and lets her go again (see below) |
+| Leash | from Mabel's: leads a villager the wand made into a hen, cow, sheep, cat, dog, horse or rabbit, and lets her go again (see below) |
 | Milk pail | from Mabel's: milks a cow in your barn once a day, a sheep every other day |
 | Shears | from Mabel's: shears a woolly sheep in your barn, every third day each |
 
@@ -380,6 +380,28 @@ palomino.
   herself in the night, and she likes you a little less for it. Pet her
   each day and she grows happier, up to five hearts.
 
+### Rabbits
+
+Ivy builds a **rabbit hutch** between your well and your coop for 1,200g
+and 60 wood: room for twenty, with a hay rack and a feed trough. Once it's
+up, Mabel sells **rabbits** at 400g, in white, brown, grey, black or sandy.
+
+Rabbits give nothing but more rabbits:
+
+- **Litters:** every 10 days each grown doe has a litter of one to five
+  babies, plus one more for each heart she has past the first (so a doe at
+  five hearts has five to nine). She skips it if she went hungry that
+  night (and tries again the next), or if the hutch is full.
+- **Babies** are drawn half the size of a grown rabbit. They grow up in 20
+  days, and ten days after that have litters of their own. Walk into a
+  rabbit to see how long she has to go.
+- **Feeding:** like the hens: hay in the hutch's trough, the silo, or a day
+  at grass in front of the hutch. Pet each one daily to raise her hearts.
+- **Selling:** walk into a rabbit and sell her to Mabel (250g grown, 100g a
+  baby), or sell every baby at once from the trough. A villager you've
+  bunnified isn't yours to sell, though she has litters like the rest, and
+  her babies are.
+
 ### Machines
 
 Nell at **Garrow's Workshop** builds machines that turn what your farm
@@ -505,13 +527,14 @@ for what it gives:
 | Catify | a cat | a point of magic |
 | Dogify | a dog | 20 energy |
 | Horseify | a horse | a gallop round the cavern: 15 energy |
+| Bunnify | a rabbit | a quiet sit with her in your lap: 10 energy |
 | Chairify | a chair, armchair, rocking chair, table, lamp, bookcase or grandfather clock | what that piece of furniture does (see Chairify, below); or pick it up (8 energy) and set it on your farm or in your cabin, where it keeps on doing it |
 | Looify | a working outhouse | go in and use it like any other (the almanac, the Gazette riddle and the carvings are all there); empty its pit with a hoe for fertilizer |
 
-With Mabel's **leash** you can **lead a hen, cow, sheep, cat, dog or horse home**:
+With Mabel's **leash** you can **lead a hen, cow, sheep, cat, dog, horse or rabbit home**:
 she follows a step behind you, up the ladders, out of the mine and across
 the valley (monsters leave her be). Lead her into your coop (a hen), barn
-(a cow or sheep), stable (a horse) or cabin (a cat or dog, who then lives in the farmyard)
+(a cow or sheep), stable (a horse), hutch (a rabbit, who has litters like any other) or cabin (a cat or dog, who then lives in the farmyard)
 and she's one of your animals, named for what she was: Gobbles the
 goblin, Bones the skeleton, Sparky the imp... Walk into her on the way
 and you swap places; use a tool on her to let her go back to the mine,
@@ -715,6 +738,15 @@ gift.
   to match, once a day), pet her, feed her. Horseify her again, in the
   stable, to bring her back. The children are too small for it: the spell
   won't stick, and they tell you what they think of that.
+- **Bunnify** turns whoever it hits into a rabbit, white, brown, grey,
+  black or sandy to suit their hair; the children too. Walk into her and
+  she leaps for joy or thumps a foot, depending on whether this villager
+  likes being a rabbit, and every one of them has something to say about it
+  when you turn them back. Lead her on the **leash** into your **hutch**
+  and she lives there with your rabbits: pet her and feed her, and she has
+  litters like any doe (her babies are ordinary rabbits, yours to keep or
+  sell), but she herself isn't yours to sell. Bunnify her again to bring
+  her back; her babies stay.
 - **Chairify** turns whoever it hits into a piece of furniture: a chair,
   an armchair, a rocking chair, a table, a lamp, a bookcase or a
   grandfather clock, with the wood grained a little like their hair, the
@@ -741,7 +773,7 @@ gift.
   up or down as with the other spells, and every one of them has something to
   say when you chairify them again to stand them back up. Other spells soak
   into the polish without effect, and chairify won't take on a statue, hen,
-  cow, sheep, cat, dog, horse, maid, tree or outhouse. The children won't sit
+  cow, sheep, cat, dog, horse, rabbit, maid, tree or outhouse. The children won't sit
   still long enough for it, and tell you so. In the mine, a chairified
   monster is a piece of furniture for good: use it there, or carry it home.
 - **Maidify** turns whoever it hits into a maid: a young woman in a black
