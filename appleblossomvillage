@@ -12753,7 +12753,8 @@ class Game:
         if hit:
             self.walking = None
             {"chickens": self.chicken_menu, "cows": self.cow_menu,
-             "horses": self.horse_menu}[hit[0]](hit[1])
+             "horses": self.horse_menu,
+             "rabbits": self.rabbit_menu}[hit[0]](hit[1])
             return True
         if a.outdoor:
             if (x, y) in self.door_at:
