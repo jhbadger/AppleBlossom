@@ -792,6 +792,7 @@ gift.
   | Clear the fields | clears up to a dozen weeds, stones and branches, and bags what they drop |
   | Water the crops | waters every crop (not needed when it rains) |
   | Collect the eggs | gathers the coop's eggs and pets every hen |
+  | Mind the rabbits | pets every rabbit in the hutch and forks hay from your bag into their trough, enough for all of them, and says whose babies are due |
   | Milk the animals | milks every cow and sheep in your barn that has milk to give |
   | Shear the sheep | shears every woolly sheep (if you've the shears) |
   | Mind the pets | feeds your cats and dogs and gives them their daily fuss |

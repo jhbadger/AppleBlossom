@@ -17557,6 +17557,38 @@ class Game:
                 "collected %d egg%s for your bag" % (n, "s" if n > 1 else "")
                 if n else "found no eggs", "your hen" if len(hens) == 1
                 else "all %d hens" % len(hens))
+        if chore == "rabbits":
+            herd = st.get("rabbits", [])
+            if not herd:
+                return None
+            for c in herd:
+                if c.get("petted") != st["day"]:
+                    self.farm_love(c, PET_LOVE["maid"], quiet=True)
+                c["petted"] = st["day"]
+            self.top_up_troughs()
+            have = st["trough"].get("hutch", 0)
+            hay = min(max(0, len(herd) - have), self.p["items"].get("hay", 0))
+            if hay:
+                self.take("hay", hay)
+                st["trough"]["hutch"] = have + hay
+            short = len(herd) - st["trough"].get("hutch", 0)
+            babies = sum(1 for c in herd if self.is_baby(c))
+            due = [c["name"] for c in herd if not self.is_baby(c) and
+                   st["day"] - c.get("bred", c["day"]) >= RABBIT_LITTER - 1]
+            return "petted %s%s%s%s" % (
+                "your rabbit" if len(herd) == 1 else "all %d rabbits%s" % (
+                    len(herd), " (%d of them %s)" % (
+                        babies, "a baby" if babies == 1 else "babies")
+                    if babies else ""),
+                ", and forked %d hay from your bag into their trough" % hay
+                if hay else "",
+                ", but there was no hay for %s (out of hay: they'll go "
+                "hungry unless they graze)" % (
+                    "any of them" if short >= len(herd) else
+                    "%d of them" % short) if short > 0 else "",
+                " (%s %s babies due tonight)" % (
+                    and_list(due), "has" if len(due) == 1 else "have")
+                if due and short <= 0 else "")
         if chore == "milk":
             cows = [c for c in st["cows"] if self.milk_ready(c)]
             if not cows:
@@ -27019,6 +27051,8 @@ MAID_CHORES = {   # what you can tell a maid to do: menu, and in her words
     "weed": ("Clear the fields", "clear the weeds and stones and branches"),
     "water": ("Water the crops", "water the crops"),
     "eggs": ("Collect the eggs", "collect the eggs and see to the hens"),
+    "rabbits": ("Mind the rabbits", "feed the rabbits and give them a "
+                "fuss"),
     "milk": ("Milk the animals", "milk the cows and sheep"),
     "shear": ("Shear the sheep", "shear whichever sheep are woolly"),
     "pets": ("Mind the pets", "feed the pets and give them a fuss"),
