@@ -19282,7 +19282,7 @@ class Game:
                 kind = self.beast(vid)
                 self.say("You clip the leash on. %s the %s %s" % (
                     name, kind, BEASTS[kind]["leash"][
-                        0 if self.likes_change(vid, kind + "ify") else 1]),
+                        0 if self.likes_change(vid, BEASTS[kind]["spell"]) else 1]),
                     "good")
             elif self.is_cow(vid):
                 self.say("You clip the leash on. %s the cow %s" % (
